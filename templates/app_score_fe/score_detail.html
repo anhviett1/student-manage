@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Chi tiết điểm{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-star me-2"></i>Chi tiết điểm
+                    </h3>
+                    <div class="btn-group">
+                        {% if perms.app_score.can_manage_score %}
+                        <a href="{% url 'score_edit' score.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Chỉnh sửa
+                        </a>
+                        <a href="{% url 'score_delete' score.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'score_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Thông tin sinh viên -->
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Thông tin sinh viên</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Mã sinh viên</th>
+                                    <td>{{ score.student.student_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Họ và tên</th>
+                                    <td>{{ score.student.full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Lớp</th>
+                                    <td>{{ score.student.class_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Khoa</th>
+                                    <td>{{ score.student.faculty }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin môn học -->
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Thông tin môn học</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Mã môn học</th>
+                                    <td>{{ score.subject.subject_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tên môn học</th>
+                                    <td>{{ score.subject.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Số tín chỉ</th>
+                                    <td>{{ score.subject.credits }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Giảng viên</th>
+                                    <td>{{ score.subject.teacher.get_full_name|default:score.subject.teacher.username }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin điểm -->
+                        <div class="col-md-6 mt-4">
+                            <h4 class="mb-3">Thông tin điểm</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Học kỳ</th>
+                                    <td>{{ score.semester.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Điểm giữa kỳ</th>
+                                    <td>{{ score.midterm_score|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Điểm cuối kỳ</th>
+                                    <td>{{ score.final_score|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Điểm tổng kết</th>
+                                    <td>{{ score.total_score|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Xếp loại</th>
+                                    <td>
+                                        {% if score.grade == 'A' %}
+                                        <span class="badge bg-success">A</span>
+                                        {% elif score.grade == 'B' %}
+                                        <span class="badge bg-info">B</span>
+                                        {% elif score.grade == 'C' %}
+                                        <span class="badge bg-warning">C</span>
+                                        {% elif score.grade == 'D' %}
+                                        <span class="badge bg-danger">D</span>
+                                        {% elif score.grade == 'F' %}
+                                        <span class="badge bg-dark">F</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Chưa có</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin bổ sung -->
+                        <div class="col-md-6 mt-4">
+                            <h4 class="mb-3">Thông tin bổ sung</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Ghi chú</th>
+                                    <td>{{ score.notes|default:"Không có ghi chú"|linebreaks }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin hệ thống -->
+                        <div class="col-12 mt-4">
+                            <h4 class="mb-3">Thông tin hệ thống</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 20%">Người tạo</th>
+                                    <td>{{ score.created_by.get_full_name|default:score.created_by.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ngày tạo</th>
+                                    <td>{{ score.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ngày cập nhật</th>
+                                    <td>{{ score.updated_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Trạng thái hoạt động</th>
+                                    <td>
+                                        {% if score.is_active %}
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Không hoạt động</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

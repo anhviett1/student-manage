@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Chi tiết lớp học{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-chalkboard me-2"></i>Chi tiết lớp học
+                    </h3>
+                    <div class="btn-group">
+                        {% if perms.app_class.can_manage_class %}
+                        <a href="{% url 'class_edit' class.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Chỉnh sửa
+                        </a>
+                        <a href="{% url 'class_delete' class.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'class_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Thông tin cơ bản -->
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Thông tin cơ bản</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Mã lớp</th>
+                                    <td>{{ class.class_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tên lớp</th>
+                                    <td>{{ class.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Khoa</th>
+                                    <td>{{ class.faculty }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Chuyên ngành</th>
+                                    <td>{{ class.major }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin học tập -->
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Thông tin học tập</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Khóa học</th>
+                                    <td>{{ class.academic_year }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Số lượng tối đa</th>
+                                    <td>{{ class.max_students }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Giảng viên phụ trách</th>
+                                    <td>{{ class.advisor.get_full_name|default:class.advisor.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Trạng thái</th>
+                                    <td>
+                                        {% if class.status == 'active' %}
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                        {% elif class.status == 'inactive' %}
+                                        <span class="badge bg-danger">Không hoạt động</span>
+                                        {% elif class.status == 'graduated' %}
+                                        <span class="badge bg-info">Đã tốt nghiệp</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Chờ xác nhận</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin bổ sung -->
+                        <div class="col-md-6 mt-4">
+                            <h4 class="mb-3">Thông tin bổ sung</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 40%">Mô tả</th>
+                                    <td>{{ class.description|default:"Không có mô tả"|linebreaks }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ghi chú</th>
+                                    <td>{{ class.notes|default:"Không có ghi chú"|linebreaks }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Danh sách sinh viên -->
+                        <div class="col-md-6 mt-4">
+                            <h4 class="mb-3">Danh sách sinh viên</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã sinh viên</th>
+                                            <th>Họ và tên</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in class.students.all %}
+                                        <tr>
+                                            <td>{{ student.student_id }}</td>
+                                            <td>{{ student.full_name }}</td>
+                                            <td>
+                                                {% if student.status == 'active' %}
+                                                <span class="badge bg-success">Đang học</span>
+                                                {% elif student.status == 'inactive' %}
+                                                <span class="badge bg-danger">Tạm nghỉ</span>
+                                                {% elif student.status == 'graduated' %}
+                                                <span class="badge bg-info">Đã tốt nghiệp</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">Chờ xác nhận</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center">Chưa có sinh viên nào</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin hệ thống -->
+                        <div class="col-12 mt-4">
+                            <h4 class="mb-3">Thông tin hệ thống</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 20%">Người tạo</th>
+                                    <td>{{ class.created_by.get_full_name|default:class.created_by.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ngày tạo</th>
+                                    <td>{{ class.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ngày cập nhật</th>
+                                    <td>{{ class.updated_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Trạng thái hoạt động</th>
+                                    <td>
+                                        {% if class.is_active %}
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Không hoạt động</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

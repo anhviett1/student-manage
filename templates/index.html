@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Trang chủ - Hệ thống Quản lý Sinh viên{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Welcome Section -->
+        <div class="col-12 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i class="fas fa-graduation-cap me-2"></i>Chào mừng đến với Hệ thống Quản lý Sinh viên
+                    </h2>
+                    <p class="card-text">Hệ thống quản lý toàn diện cho việc quản lý sinh viên, giảng viên, khóa học và điểm số.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-12 mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-user-graduate me-2"></i>Sinh viên
+                            </h5>
+                            <p class="card-text display-6">{{ total_students }}</p>
+                            <a href="{% url 'student_list' %}" class="btn btn-light btn-sm">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Giảng viên
+                            </h5>
+                            <p class="card-text display-6">{{ total_teachers }}</p>
+                            <a href="{% url 'teacher_list' %}" class="btn btn-light btn-sm">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-book me-2"></i>Môn học
+                            </h5>
+                            <p class="card-text display-6">{{ total_subjects }}</p>
+                            <a href="{% url 'subject_list' %}" class="btn btn-light btn-sm">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-users me-2"></i>Lớp học
+                            </h5>
+                            <p class="card-text display-6">{{ total_classes }}</p>
+                            <a href="{% url 'class_list' %}" class="btn btn-light btn-sm">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Cards -->
+        <div class="col-12">
+            <div class="row">
+                <!-- Sinh viên -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-user-graduate text-info me-2"></i>Quản lý Sinh viên
+                            </h5>
+                            <p class="card-text">Quản lý thông tin sinh viên, hồ sơ học tập và kết quả học tập.</p>
+                            <div class="list-group">
+                                <a href="{% url 'student_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-list me-2"></i>Danh sách sinh viên
+                                </a>
+                                <a href="{% url 'student_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-plus me-2"></i>Thêm sinh viên mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giảng viên -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-chalkboard-teacher text-success me-2"></i>Quản lý Giảng viên
+                            </h5>
+                            <p class="card-text">Quản lý thông tin giảng viên, phân công giảng dạy và lịch giảng.</p>
+                            <div class="list-group">
+                                <a href="{% url 'teacher_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-list me-2"></i>Danh sách giảng viên
+                                </a>
+                                <a href="{% url 'teacher_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-plus me-2"></i>Thêm giảng viên mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Môn học -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-book text-warning me-2"></i>Quản lý Môn học
+                            </h5>
+                            <p class="card-text">Quản lý thông tin môn học, chương trình học và tài liệu giảng dạy.</p>
+                            <div class="list-group">
+                                <a href="{% url 'subject_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-list me-2"></i>Danh sách môn học
+                                </a>
+                                <a href="{% url 'subject_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-plus me-2"></i>Thêm môn học mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lớp học -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-users text-danger me-2"></i>Quản lý Lớp học
+                            </h5>
+                            <p class="card-text">Quản lý thông tin lớp học, lịch học và danh sách sinh viên.</p>
+                            <div class="list-group">
+                                <a href="{% url 'class_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-list me-2"></i>Danh sách lớp học
+                                </a>
+                                <a href="{% url 'class_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-plus me-2"></i>Thêm lớp học mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Điểm số -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-chart-bar text-primary me-2"></i>Quản lý Điểm số
+                            </h5>
+                            <p class="card-text">Quản lý điểm số, báo cáo kết quả học tập và thống kê.</p>
+                            <div class="list-group">
+                                <a href="{% url 'score_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-list me-2"></i>Danh sách điểm số
+                                </a>
+                                <a href="{% url 'score_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-plus me-2"></i>Nhập điểm mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Đăng ký -->
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-clipboard-list text-secondary me-2"></i>Quản lý Đăng ký
+                            </h5>
+                            <p class="card-text">Quản lý đăng ký môn học, xác nhận đăng ký và thông báo.</p>
+                            <div class="list-group">
+                                <a href="{% url 'enrollment_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-list me-2"></i>Danh sách đăng ký
+                                </a>
+                                <a href="{% url 'enrollment_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-plus me-2"></i>Thêm đăng ký mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

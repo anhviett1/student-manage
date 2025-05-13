@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Danh sách điểm{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-star me-2"></i>Danh sách điểm
+        </h2>
+        {% if perms.app_score.can_manage_score %}
+        <a href="{% url 'score_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Thêm điểm mới
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Tìm kiếm theo mã sinh viên, tên sinh viên..." value="{{ search_query }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="subject" class="form-select" onchange="this.form.submit()">
+                        <option value="">Tất cả môn học</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.pk }}" {% if subject_filter == subject.pk %}selected{% endif %}>{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="semester" class="form-select" onchange="this.form.submit()">
+                        <option value="">Tất cả học kỳ</option>
+                        {% for semester in semesters %}
+                        <option value="{{ semester.pk }}" {% if semester_filter == semester.pk %}selected{% endif %}>{{ semester.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'score_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo me-2"></i>Đặt lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Score List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Mã sinh viên</th>
+                            <th>Họ và tên</th>
+                            <th>Môn học</th>
+                            <th>Học kỳ</th>
+                            <th>Điểm giữa kỳ</th>
+                            <th>Điểm cuối kỳ</th>
+                            <th>Điểm tổng kết</th>
+                            <th>Xếp loại</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for score in page_obj %}
+                        <tr>
+                            <td>{{ score.student.student_id }}</td>
+                            <td>{{ score.student.full_name }}</td>
+                            <td>{{ score.subject.name }}</td>
+                            <td>{{ score.semester.name }}</td>
+                            <td>{{ score.midterm_score|default:"-" }}</td>
+                            <td>{{ score.final_score|default:"-" }}</td>
+                            <td>{{ score.total_score|default:"-" }}</td>
+                            <td>
+                                {% if score.grade == 'A' %}
+                                <span class="badge bg-success">A</span>
+                                {% elif score.grade == 'B' %}
+                                <span class="badge bg-info">B</span>
+                                {% elif score.grade == 'C' %}
+                                <span class="badge bg-warning">C</span>
+                                {% elif score.grade == 'D' %}
+                                <span class="badge bg-danger">D</span>
+                                {% elif score.grade == 'F' %}
+                                <span class="badge bg-dark">F</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Chưa có</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'score_detail' score.pk %}" class="btn btn-sm btn-info" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if perms.app_score.can_manage_score %}
+                                    <a href="{% url 'score_edit' score.pk %}" class="btn btn-sm btn-warning" title="Chỉnh sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'score_delete' score.pk %}" class="btn btn-sm btn-danger" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center">Không có điểm nào</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}{% if semester_filter %}&semester={{ semester_filter }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}{% if semester_filter %}&semester={{ semester_filter }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}{% if semester_filter %}&semester={{ semester_filter }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}{% if semester_filter %}&semester={{ semester_filter }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if subject_filter %}&subject={{ subject_filter }}{% endif %}{% if semester_filter %}&semester={{ semester_filter }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

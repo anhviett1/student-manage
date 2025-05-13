@@ -1,15 +1,32 @@
-# Sử dụng Python image
-FROM python:3.10.11
+FROM python:3.9-slim
 
-# Cài đặt thư mục làm việc
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Set work directory
 WORKDIR /app
 
-# Copy code vào container
-COPY . /app/
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Cài đặt các thư viện cần thiết
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Migrate và runserver mặc định (hoặc để docker-compose run)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Copy project
+COPY . .
+
+# Create media and static directories
+RUN mkdir -p /app/media /app/static
+
+# Run migrations and collect static files
+RUN python manage.py collectstatic --noinput
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["gunicorn", "student_be.wsgi:application", "--bind", "0.0.0.0:8000"]

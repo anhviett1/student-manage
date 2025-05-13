@@ -3,6 +3,9 @@ from .models import Class
 
 @admin.register(Class)
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ('class_name', 'class_code', 'instructor', 'start_date', 'end_date')
-    search_fields = ('class_name', 'class_code', 'instructor')
-    list_filter = ('start_date', 'end_date')
+    list_display = ['class_id', 'name', 'faculty', 'status', 'is_active', 'created_at']
+    list_filter = ['faculty', 'status', 'is_active']
+    search_fields = ['class_id', 'name', 'description']
+    raw_id_fields = ['semester', 'subject', 'teacher']
+    list_per_page = 20
+    ordering = ['-created_at']
