@@ -11,12 +11,15 @@ class TeacherAdmin(admin.ModelAdmin):
     raw_id_fields = ['user']
     fieldsets = (
         ('Thông tin cá nhân', {
-            'fields': ('user', 'first_name', 'last_name', 'email', 'phone_number', 'date_of_birth', 'profile_picture')
+            'fields': ('user', 'teacher_id', 'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'gender')
         }),
         ('Địa chỉ', {
-            'fields': ('address', 'city', 'state')
+            'fields': ('address',)
         }),
-        ('Thông tin công việc', {
-            'fields': ('faculty', 'status', 'is_active')
+        ('Thông tin chuyên môn', {
+            'fields': ('faculty', 'degree', 'specialization', 'years_of_experience')
+        }),
+        ('Thông tin hệ thống', {
+            'fields': ('status', 'is_active')
         }),
     )

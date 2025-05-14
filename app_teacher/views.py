@@ -11,9 +11,19 @@ from student_be.mixins import SearchTermMixin
 from .models import Teacher
 from .serializers import TeacherSerializer, TeacherCreateSerializer, TeacherDetailSerializer
 from .forms import TeacherForm
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Create your views here.
 
+@extend_schema_view(
+    list=extend_schema(tags=['Teachers']),
+    retrieve=extend_schema(tags=['Teachers']),
+    create=extend_schema(tags=['Teachers']),
+    update=extend_schema(tags=['Teachers']),
+    partial_update=extend_schema(tags=['Teachers']),
+    destroy=extend_schema(tags=['Teachers']),
+    by_subject=extend_schema(tags=['Teachers']),
+)
 class TeacherViewSet(viewsets.ModelViewSet):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer

@@ -32,7 +32,7 @@ class Student(models.Model):
     first_name = models.CharField(max_length=100, verbose_name='Tên')
     last_name = models.CharField(max_length=100, verbose_name='Họ')
     email = models.EmailField(unique=True, verbose_name='Email')
-    phone_number = models.CharField(max_length=15, unique=True, verbose_name='Số điện thoại')
+    phone = models.CharField(max_length=15, blank=True, verbose_name='Số điện thoại')
     date_of_birth = models.DateField(verbose_name='Ngày sinh')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name='Giới tính')
     address = models.TextField(verbose_name='Địa chỉ')
@@ -75,8 +75,7 @@ class Student(models.Model):
     subjects = models.ManyToManyField('app_subject.Subject', related_name='students', blank=True, verbose_name='Môn học')
     scores = models.ManyToManyField('app_score.Score', related_name='students', blank=True, verbose_name='Điểm số')
     
-    # New fields
-    phone = models.CharField(max_length=15, blank=True, verbose_name='Số điện thoại')
+    # Cập nhật tên trường
     faculty = models.CharField(max_length=50, choices=FACULTY_CHOICES, verbose_name='Khoa')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_students')

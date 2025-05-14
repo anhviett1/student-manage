@@ -17,13 +17,13 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP đăng nhập cuối')
-    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True, verbose_name='Ảnh đại diện')
     
-    # Thông tin liên hệ
-    phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name='Số điện thoại')
-    emergency_contact = models.CharField(max_length=100, blank=True, null=True, verbose_name='Liên hệ khẩn cấp')
-    emergency_phone = models.CharField(max_length=15, blank=True, null=True, verbose_name='Số điện thoại khẩn cấp')
+    # Các trường tạm thời bỏ qua do chưa có trong database
+    # last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name='IP đăng nhập cuối')
+    # profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True, verbose_name='Ảnh đại diện')
+    # phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name='Số điện thoại')
+    # emergency_contact = models.CharField(max_length=100, blank=True, null=True, verbose_name='Liên hệ khẩn cấp')
+    # emergency_phone = models.CharField(max_length=15, blank=True, null=True, verbose_name='Số điện thoại khẩn cấp')
     
     class Meta:
         verbose_name = "Users"

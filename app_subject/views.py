@@ -11,9 +11,19 @@ from rest_framework.decorators import action
 from .models import Subject
 from .serializers import SubjectSerializer, SubjectCreateSerializer, SubjectDetailSerializer
 from .forms import SubjectForm
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Create your views here.
 
+@extend_schema_view(
+    list=extend_schema(tags=['Subjects']),
+    retrieve=extend_schema(tags=['Subjects']),
+    create=extend_schema(tags=['Subjects']),
+    update=extend_schema(tags=['Subjects']),
+    partial_update=extend_schema(tags=['Subjects']),
+    destroy=extend_schema(tags=['Subjects']),
+    by_teacher=extend_schema(tags=['Subjects']),
+)
 class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer

@@ -12,7 +12,19 @@ from .serializers import EnrollmentSerializer, EnrollmentCreateSerializer, Enrol
 from .forms import EnrollmentForm
 from app_subject.models import Subject
 from app_semester.models import Semester
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
+@extend_schema_view(
+    list=extend_schema(tags=['Enrollments']),
+    retrieve=extend_schema(tags=['Enrollments']),
+    create=extend_schema(tags=['Enrollments']),
+    update=extend_schema(tags=['Enrollments']),
+    partial_update=extend_schema(tags=['Enrollments']),
+    destroy=extend_schema(tags=['Enrollments']),
+    by_student=extend_schema(tags=['Enrollments']),
+    by_class=extend_schema(tags=['Enrollments']),
+    by_status=extend_schema(tags=['Enrollments']),
+)
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer

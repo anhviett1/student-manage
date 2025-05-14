@@ -15,9 +15,20 @@ from .serializers import ScoreSerializer, ScoreCreateSerializer, ScoreDetailSeri
 from .forms import ScoreForm
 from app_subject.models import Subject
 from app_semester.models import Semester
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Create your views here.
 
+@extend_schema_view(
+    list=extend_schema(tags=['Scores']),
+    retrieve=extend_schema(tags=['Scores']),
+    create=extend_schema(tags=['Scores']),
+    update=extend_schema(tags=['Scores']),
+    partial_update=extend_schema(tags=['Scores']),
+    destroy=extend_schema(tags=['Scores']),
+    by_student=extend_schema(tags=['Scores']),
+    by_subject=extend_schema(tags=['Scores']),
+)
 class ScoreViewSet(viewsets.ModelViewSet):
     queryset = Score.objects.select_related(
         'student', 'subject', 'semester', 'created_by'

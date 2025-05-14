@@ -11,7 +11,17 @@ from student_be.mixins import SearchTermMixin
 from .models import Student
 from .serializers import StudentSerializer, StudentCreateSerializer, StudentDetailSerializer
 from .forms import StudentForm
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
+@extend_schema_view(
+    list=extend_schema(tags=['Students']),
+    retrieve=extend_schema(tags=['Students']),
+    create=extend_schema(tags=['Students']),
+    update=extend_schema(tags=['Students']),
+    partial_update=extend_schema(tags=['Students']),
+    destroy=extend_schema(tags=['Students']),
+    active=extend_schema(tags=['Students']),
+)
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.filter(is_deleted=False)
     serializer_class = StudentSerializer

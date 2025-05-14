@@ -13,6 +13,7 @@ from django.db.models import Count
 from app_subject.models import Subject
 from app_class.models import Class
 from app_activity.models import Activity
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 User = get_user_model()
 
@@ -74,6 +75,7 @@ class HomeApiEndpointSerializer(serializers.Serializer):
     message = serializers.CharField()
     api_endpoints = serializers.DictField(child=serializers.CharField())
 
+@extend_schema(tags=['Home'])
 class HomeAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = HomeApiEndpointSerializer

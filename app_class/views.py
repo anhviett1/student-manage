@@ -10,9 +10,19 @@ from rest_framework.decorators import action
 from .models import Class
 from .serializers import ClassSerializer, ClassCreateSerializer, ClassDetailSerializer
 from .forms import ClassForm
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Create your views here.
 
+@extend_schema_view(
+    list=extend_schema(tags=['Classes']),
+    retrieve=extend_schema(tags=['Classes']),
+    create=extend_schema(tags=['Classes']),
+    update=extend_schema(tags=['Classes']),
+    partial_update=extend_schema(tags=['Classes']),
+    destroy=extend_schema(tags=['Classes']),
+    by_instructor=extend_schema(tags=['Classes']),
+)
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer

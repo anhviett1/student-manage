@@ -1,3 +1,6 @@
+from rest_framework import viewsets, permissions
+from .models import Semester
+from .serializers import SemesterSerializer, SemesterDetailSerializer
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
@@ -5,8 +8,31 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Semester
 from .forms import SemesterForm
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Create your views here.
+@extend_schema_view(
+    list=extend_schema(tags=['Semesters']),
+    retrieve=extend_schema(tags=['Semesters']),
+    create=extend_schema(tags=['Semesters']),
+    update=extend_schema(tags=['Semesters']),
+    partial_update=extend_schema(tags=['Semesters']),
+    destroy=extend_schema(tags=['Semesters']),
+)
+class SemesterViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing semester information.
+    """
+    queryset = Semester.objects.all().order_by('-start_date')
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return SemesterDetailSerializer
+        return SemesterSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 @login_required
 def semester_list(request):
