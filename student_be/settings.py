@@ -93,7 +93,7 @@ WSGI_APPLICATION = 'student_be.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'student_manage'),
+        'NAME': os.getenv('DB_NAME', 'student_manage_db'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
         'HOST': os.getenv('DB_HOST', 'localhost'),

@@ -7,7 +7,7 @@ class SemesterForm(forms.ModelForm):
     class Meta:
         model = Semester
         fields = [
-            'name', 'code', 'academic_year',
+            'name', 'academic_year',
             'start_date', 'end_date',
             'registration_start', 'registration_end',
             'add_drop_deadline', 'status',

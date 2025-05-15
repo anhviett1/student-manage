@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/v1/scores/', include('app_score.urls', namespace='app_scores')),
     path('api/v1/enrollments/', include('app_enrollment.urls', namespace='app_enrollments')),
     path('api/v1/home/', include('app_home.urls', namespace='app_home')),
-    path('api/v1/semesters/', include('app_semester.urls', namespace='app_semesters')),
+    #path('api/v1/semesters/', include('app_semester.urls', namespace='app_semesters')),
+    path('api/v1/semester/', include('app_semester.urls', namespace='app_semester')),
     path('api/v1/activities/', include('app_activity.urls', namespace='app_activities')),
 ]

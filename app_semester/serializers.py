@@ -7,7 +7,7 @@ class SemesterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Semester
         fields = [
-            'semester_id', 'name', 'code', 'academic_year', 
+            'semester_id', 'name', 'academic_year', 
             'start_date', 'end_date', 'status', 'is_active'
         ]
 

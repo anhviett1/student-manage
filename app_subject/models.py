@@ -19,16 +19,16 @@ class Subject(models.Model):
         ('khac', 'Khác'),
     ]
     
-    subject_id = models.CharField(max_length=20, unique=True, verbose_name='Mã môn học')
-    name = models.CharField(max_length=200, verbose_name='Tên môn học')
+    subject_id = models.CharField(max_length=20, primary_key=True, unique=True, verbose_name='Mã môn học', default='MH001')
+    name = models.CharField(max_length=200, verbose_name='Tên môn học', default='Môn học mặc định', null=False, blank=False)
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
-    credits = models.PositiveIntegerField(verbose_name='Số tín chỉ')
-    faculty = models.CharField(max_length=50, choices=FACULTY_CHOICES, verbose_name='Khoa')
+    credits = models.PositiveIntegerField(verbose_name='Số tín chỉ', default=3)
+    faculty = models.CharField(max_length=50, choices=FACULTY_CHOICES, verbose_name='Khoa', default='cntt')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Trạng thái')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     
     # Thông tin hệ thống
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo', null=False, blank=False)
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_subjects')
     
