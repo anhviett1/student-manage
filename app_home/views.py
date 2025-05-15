@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
@@ -14,10 +14,11 @@ from app_subject.models import Subject
 from app_class.models import Class
 from app_activity.models import Activity
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from .forms import ChangePasswordForm
 
 User = get_user_model()
 
-'''Signal handler được vô hiệu hóa - Admin sẽ tạo Student/Teacher từ trang admin
+#Signal handler được vô hiệu hóa - Admin sẽ tạo Student/Teacher từ trang admin
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     # Bỏ qua tự động tạo profile nếu là superuser
@@ -69,7 +70,7 @@ def create_user_profile(sender, instance, created, **kwargs):
                 pass
         elif hasattr(instance, 'role') and instance.role == 'admin':
             # Admin profile update logic if needed
-            pass'''
+            pass
 
 class HomeApiEndpointSerializer(serializers.Serializer):
     message = serializers.CharField()
@@ -100,7 +101,41 @@ class HomeAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 def home_view(request):
-    return render(request, 'home_be.html')
+    # Get total counts
+    total_students = Student.objects.filter(is_active=True).count()
+    total_teachers = Teacher.objects.filter(is_active=True).count()
+    total_subjects = Subject.objects.filter(is_active=True).count()
+    total_classes = Class.objects.filter(is_active=True).count()
+
+    # Get students by faculty
+    student_by_faculty = Student.objects.filter(is_active=True).values('faculty').annotate(
+        count=Count('id')
+    ).values('faculty__name', 'count')
+
+    # Get subjects by semester
+    subjects_by_semester = Subject.objects.filter(is_active=True).values('semester').annotate(
+        count=Count('id')
+    ).values('semester__name', 'count')
+
+    # Get recent activities
+    recent_activities = Activity.objects.select_related('user').order_by('-created_at')[:10]
+
+    context = {
+        'total_students': total_students,
+        'total_teachers': total_teachers,
+        'total_subjects': total_subjects,
+        'total_classes': total_classes,
+        'student_by_faculty': student_by_faculty,
+        'subjects_by_semester': subjects_by_semester,
+        'recent_activities': recent_activities,
+    }
+
+    return render(request, 'fe/templates/index.html', context)
+
+# Nếu muốn dashboard phụ:
+def dashboard_view(request):
+    # Dùng lại context như home_view để tránh lặp code
+    return home_view(request)
 
 @login_required
 def home(request):
@@ -133,4 +168,15 @@ def home(request):
         'recent_activities': recent_activities,
     }
 
-    return render(request, 'app_home_fe/home.html', context)
+    return render(request, 'fe/app_home_fe/home.html', context)
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        form = ChangePasswordForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('password_change_done')
+    else:
+        form = ChangePasswordForm(user=request.user)
+    return render(request, 'fe/app_home_fe/change_password.html', {'form': form})

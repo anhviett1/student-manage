@@ -2,6 +2,62 @@
 
 {% block title %}Trang chủ{% endblock %}
 
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .activity-item {
+        transition: background-color 0.2s ease;
+    }
+    
+    .activity-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .profile-image {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .profile-image:hover {
+        transform: scale(1.1);
+    }
+    
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 2rem;
+        height: 2rem;
+        margin: -1rem 0 0 -1rem;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Welcome Section -->
@@ -19,10 +75,49 @@
         </div>
     </div>
 
+    <!-- Form nhỏ: Đổi mật khẩu, Login, Logout, Avatar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quản lý tài khoản</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                    <div class="d-flex align-items-center mb-3">
+                        {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="rounded-circle profile-image me-3" loading="lazy">
+                        {% else %}
+                        <i class="fas fa-user-circle me-3" style="font-size: 64px;"></i>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                            <p class="text-muted mb-0">{{ user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'change_password' %}" class="btn btn-primary" data-loading-text="Đang xử lý...">
+                            <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                        </a>
+                        <a href="{% url 'logout' %}" class="btn btn-danger" data-loading-text="Đang đăng xuất...">
+                            <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                        </a>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Stats -->
     <div class="row mb-4">
+        {% if perms.app_student.view_student %}
         <div class="col-md-3">
-            <div class="card bg-success text-white">
+            <div class="card bg-success text-white stat-card">
                 <div class="card-body">
                     <h5 class="card-title">
                         <i class="fas fa-user-graduate me-2"></i>
@@ -30,11 +125,15 @@
                     </h5>
                     <h2 class="card-text">{{ total_students }}</h2>
                     <p class="card-text">Tổng số sinh viên</p>
+                    <a href="{% url 'student_list' %}" class="btn btn-light btn-sm" data-loading-text="Đang tải...">Xem chi tiết</a>
                 </div>
             </div>
         </div>
+        {% endif %}
+
+        {% if perms.app_teacher.view_teacher %}
         <div class="col-md-3">
-            <div class="card bg-info text-white">
+            <div class="card bg-info text-white stat-card">
                 <div class="card-body">
                     <h5 class="card-title">
                         <i class="fas fa-chalkboard-teacher me-2"></i>
@@ -42,11 +141,15 @@
                     </h5>
                     <h2 class="card-text">{{ total_teachers }}</h2>
                     <p class="card-text">Tổng số giảng viên</p>
+                    <a href="{% url 'teacher_list' %}" class="btn btn-light btn-sm" data-loading-text="Đang tải...">Xem chi tiết</a>
                 </div>
             </div>
         </div>
+        {% endif %}
+
+        {% if perms.app_subject.view_subject %}
         <div class="col-md-3">
-            <div class="card bg-warning text-white">
+            <div class="card bg-warning text-white stat-card">
                 <div class="card-body">
                     <h5 class="card-title">
                         <i class="fas fa-book me-2"></i>
@@ -54,11 +157,15 @@
                     </h5>
                     <h2 class="card-text">{{ total_subjects }}</h2>
                     <p class="card-text">Tổng số môn học</p>
+                    <a href="{% url 'subject_list' %}" class="btn btn-light btn-sm" data-loading-text="Đang tải...">Xem chi tiết</a>
                 </div>
             </div>
         </div>
+        {% endif %}
+
+        {% if perms.app_class.view_class %}
         <div class="col-md-3">
-            <div class="card bg-danger text-white">
+            <div class="card bg-danger text-white stat-card">
                 <div class="card-body">
                     <h5 class="card-title">
                         <i class="fas fa-users me-2"></i>
@@ -66,13 +173,16 @@
                     </h5>
                     <h2 class="card-text">{{ total_classes }}</h2>
                     <p class="card-text">Tổng số lớp học</p>
+                    <a href="{% url 'class_list' %}" class="btn btn-light btn-sm" data-loading-text="Đang tải...">Xem chi tiết</a>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- Recent Activities -->
     <div class="row">
+        {% if perms.app_activity.view_activity %}
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
@@ -84,7 +194,7 @@
                 <div class="card-body">
                     <div class="list-group">
                         {% for activity in recent_activities %}
-                        <div class="list-group-item">
+                        <div class="list-group-item activity-item">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1">{{ activity.title }}</h6>
                                 <small>{{ activity.created_at|timesince }} trước</small>
@@ -101,7 +211,9 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
+        {% if perms.app_student.view_student or perms.app_subject.view_subject %}
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
@@ -112,6 +224,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        {% if perms.app_student.view_student %}
                         <div class="col-md-6">
                             <h6 class="text-muted">Sinh viên theo khoa</h6>
                             <ul class="list-group">
@@ -123,6 +236,9 @@
                                 {% endfor %}
                             </ul>
                         </div>
+                        {% endif %}
+                        
+                        {% if perms.app_subject.view_subject %}
                         <div class="col-md-6">
                             <h6 class="text-muted">Môn học theo học kỳ</h6>
                             <ul class="list-group">
@@ -134,10 +250,45 @@
                                 {% endfor %}
                             </ul>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading state to buttons
+    const buttons = document.querySelectorAll('[data-loading-text]');
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const originalText = this.innerHTML;
+            this.innerHTML = this.dataset.loadingText;
+            this.classList.add('loading');
+            
+            // Reset button state after navigation
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.classList.remove('loading');
+            }, 1000);
+        });
+    });
+    
+    // Add hover effect to stat cards
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}
