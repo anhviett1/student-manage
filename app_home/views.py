@@ -109,13 +109,13 @@ def home_view(request):
 
     # Get students by faculty
     student_by_faculty = Student.objects.filter(is_active=True).values('faculty').annotate(
-        count=Count('id')
-    ).values('faculty__name', 'count')
+        count=Count('student_id')
+    )
 
     # Get subjects by semester
     subjects_by_semester = Subject.objects.filter(is_active=True).values('semester').annotate(
-        count=Count('id')
-    ).values('semester__name', 'count')
+        count=Count('subject_id')
+    )
 
     # Get recent activities
     recent_activities = Activity.objects.select_related('user').order_by('-created_at')[:10]
@@ -147,13 +147,13 @@ def home(request):
 
     # Get students by faculty
     student_by_faculty = Student.objects.filter(is_active=True).values('faculty').annotate(
-        count=Count('id')
-    ).values('faculty__name', 'count')
+        count=Count('student_id')
+    )
 
     # Get subjects by semester
     subjects_by_semester = Subject.objects.filter(is_active=True).values('semester').annotate(
-        count=Count('id')
-    ).values('semester__name', 'count')
+        count=Count('semester_id')
+    )
 
     # Get recent activities
     recent_activities = Activity.objects.select_related('user').order_by('-created_at')[:10]

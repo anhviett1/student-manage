@@ -1,32 +1,30 @@
-# FROM python:3.9-slim
+# Sử dụng image Python 3.10
+FROM python:3.10
 
-# # Set environment variables
-# ENV PYTHONDONTWRITEBYTECODE 1
-# ENV PYTHONUNBUFFERED 1
+# Thiết lập biến môi trường
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# # Set work directory
-# WORKDIR /app
+# Thiết lập thư mục làm việc
+WORKDIR /app
 
-# # Install system dependencies
-# RUN apt-get update && apt-get install -y \
-#     postgresql-client \
-#     && rm -rf /var/lib/apt/lists/*
+# Cài đặt các gói hệ thống cần thiết
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# # Install Python dependencies
-# COPY requirements.txt .
-# # RUN pip install --no-cache-dir -r requirements.txt
+# Cài đặt Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# # Copy project
-# COPY . .
+# Sao chép mã nguồn
+COPY . .
 
-# # Create media and static directories
-# RUN mkdir -p /app/media /app/static
+# Tạo thư mục static và media
+RUN mkdir -p /app/static /app/media
 
-# # Run migrations and collect static files
-# RUN python manage.py collectstatic --noinput
+# Mở cổng
+EXPOSE 8088
 
-# # Expose port
-# EXPOSE 8000
-
-# # Run the application
-# CMD ["gunicorn", "student_be.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Chạy ứng dụng với Gunicorn
+CMD ["gunicorn", "student_be.wsgi:application", "--bind", "0.0.0.0:8088"]
