@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate, login
 from app_student.models import Student
 from app_teacher.models import Teacher
 from rest_framework.views import APIView, Response
@@ -15,6 +15,7 @@ from app_class.models import Class
 from app_activity.models import Activity
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from .forms import ChangePasswordForm
+from django.contrib.auth.forms import AuthenticationForm
 
 User = get_user_model()
 
@@ -130,7 +131,7 @@ def home_view(request):
         'recent_activities': recent_activities,
     }
 
-    return render(request, 'fe/templates/index.html', context)
+    return render(request, 'index.html', context)
 
 # Nếu muốn dashboard phụ:
 def dashboard_view(request):
@@ -168,7 +169,7 @@ def home(request):
         'recent_activities': recent_activities,
     }
 
-    return render(request, 'fe/app_home_fe/home.html', context)
+    return render(request, 'index.html', context)
 
 @login_required
 def change_password(request):
@@ -180,3 +181,17 @@ def change_password(request):
     else:
         form = ChangePasswordForm(user=request.user)
     return render(request, 'fe/app_home_fe/change_password.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'app_home_fe/login.html', {'form': form})

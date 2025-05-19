@@ -23,6 +23,7 @@ class Subject(models.Model):
     name = models.CharField(max_length=200, verbose_name='Tên môn học', default='Môn học mặc định', null=False, blank=False)
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
     credits = models.PositiveIntegerField(verbose_name='Số tín chỉ', default=3)
+    semester = models.ForeignKey('app_semester.Semester', on_delete=models.CASCADE, verbose_name='Học kỳ', null=True, blank=True)
     faculty = models.CharField(max_length=50, choices=FACULTY_CHOICES, verbose_name='Khoa', default='cntt')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Trạng thái')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')

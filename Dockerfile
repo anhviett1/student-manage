@@ -18,7 +18,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Sao chép mã nguồn
-COPY . .
+COPY . /app/
 
 # Tạo thư mục static và media
 RUN mkdir -p /app/static /app/media
@@ -27,4 +27,4 @@ RUN mkdir -p /app/static /app/media
 EXPOSE 8088
 
 # Chạy ứng dụng với Gunicorn
-CMD ["gunicorn", "student_be.wsgi:application", "--bind", "0.0.0.0:8088"]
+CMD ["gunicorn", "student_be.wsgi:application", "--bind", "0.0.0.0:8088", "--workers", "3", "--timeout", "120"]

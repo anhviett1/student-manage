@@ -2,7 +2,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
-from app_home.views import home_view
+from app_home.views import home_view, login_view
+from django.contrib.auth.views import LogoutView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,6 +18,13 @@ urlpatterns = [
     
     path('api-gateway/', include('api_gateway.urls', namespace='api_gateway')),
     path('', home_view, name='home'),
+    path('login/', login_view, name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
 ]
+
+
+# if settings.DEBUG:
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
