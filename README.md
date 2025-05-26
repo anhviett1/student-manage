@@ -15,17 +15,75 @@ Hệ thống quản lý sinh viên toàn diện với các tính năng quản l�
 - **Xác thực JWT**: Bảo mật API với JSON Web Tokens
 - **API Documentation**: Tài liệu API tự động với Swagger/ReDoc
 
-## 🔧 Yêu cầu hệ thống
+## 👥 Phân quyền người dùng
 
-- **Python**: 3.9+
-- **PostgreSQL**: 12+
-- **Django**: 4.2+
-- **Django REST Framework**: 3.14+
-- **Docker** và **Docker Compose** (tùy chọn)
+### 1. Admin
+- **Quyền quản lý**:
+  - Quản lý sinh viên (CRUD)
+  - Quản lý giảng viên (CRUD)
+  - Quản lý lớp học (CRUD)
+  - Quản lý môn học (CRUD)
+  - Quản lý điểm số (CRUD)
+  - Quản lý đăng ký học (CRUD)
+  - Quản lý học kỳ (CRUD)
+  - Xem báo cáo và thống kê
 
-## 🚀 Cài đặt
+### 2. Giảng viên
+- **Quyền quản lý**:
+  - Xem thông tin lớp học
+  - Xem thông tin môn học
+  - Nhập và cập nhật điểm số
+  - Xem lịch giảng dạy
+  - Quản lý lịch giảng dạy
 
-### Cài đặt với Docker (Khuyến nghị)
+### 3. Sinh viên
+- **Quyền truy cập**:
+  - Xem thông tin cá nhân
+  - Xem điểm số của mình
+  - Đăng ký môn học
+  - Xem lịch học
+
+## 🔒 Permissions
+
+### Admin Permissions
+```python
+permissions = [
+    ("can_manage_students", "Có thể quản lý sinh viên"),
+    ("can_manage_teachers", "Có thể quản lý giảng viên"),
+    ("can_manage_classes", "Có thể quản lý lớp học"),
+    ("can_manage_subjects", "Có thể quản lý môn học"),
+    ("can_manage_scores", "Có thể quản lý điểm số"),
+    ("can_manage_enrollments", "Có thể quản lý đăng ký"),
+    ("can_view_reports", "Có thể xem báo cáo"),
+]
+```
+
+### Teacher Permissions
+```python
+permissions = [
+    ("can_view_teacher_details", "Có thể xem thông tin giảng viên"),
+    ("can_manage_teacher", "Có thể quản lý giảng viên"),
+    ("can_view_teacher_schedule", "Có thể xem lịch giảng dạy"),
+    ("can_manage_teacher_schedule", "Có thể quản lý lịch giảng dạy"),
+]
+```
+
+### Student Permissions
+```python
+permissions = [
+    ("can_view_student_details", "Có thể xem thông tin sinh viên"),
+    ("can_view_student_grades", "Có thể xem điểm sinh viên"),
+]
+```
+
+## 🚀 Cài đặt với Docker
+
+### 1. Yêu cầu hệ thống
+- Docker
+- Docker Compose
+- Git
+
+### 2. Cài đặt
 
 1. Clone repository:
 ```bash
@@ -39,7 +97,8 @@ cp .env.example .env
 ```
 
 3. Chỉnh sửa các biến môi trường trong file .env:
-```
+```env
+# Backend
 SECRET_KEY=your-secret-key
 DEBUG=True
 DB_NAME=student_manage
@@ -47,212 +106,72 @@ DB_USER=postgres
 DB_PASSWORD=123456
 DB_HOST=db
 DB_PORT=5432
+
+# Frontend
+VITE_API_URL=http://localhost:8088/api
 ```
 
-4. Chạy với Docker Compose:
+4. Build và chạy containers:
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 5. Tạo superuser:
 ```bash
-docker-compose exec web python manage.py createsuperuser
+docker-compose exec backend python manage.py createsuperuser
 ```
 
-### Cài đặt thủ công
-
-1. Tạo môi trường ảo:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
-
-2. Cài đặt dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Tạo file .env trong thư mục gốc và cấu hình:
-```
-SECRET_KEY=your-secret-key
-DEBUG=True
-DB_NAME=student_manage
-DB_USER=postgres
-DB_PASSWORD=123456
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-4. Tạo database PostgreSQL:
-```bash
-# Đăng nhập vào PostgreSQL
-psql -U postgres
-
-# Tạo database
-CREATE DATABASE student_manage;
-```
-
-5. Chạy migrations:
-```bash
-python manage.py migrate
-```
-
-6. Tạo superuser:
-```bash
-python manage.py createsuperuser
-```
-
-7. Chạy server:
-```bash
-python manage.py runserver
-```
-
-## 🖥️ Sử dụng
-
-1. Truy cập admin panel tại `http://localhost:8000/admin`
-2. Đăng nhập với tài khoản superuser
-3. Bắt đầu quản lý hệ thống
-4. API có thể được truy cập tại `http://localhost:8000/api/v1/`
-
-## 📚 API Documentation
-
-API documentation có sẵn tại:
-- Swagger UI: `http://localhost:8000/api/docs/`
-- ReDoc: `http://localhost:8000/api/redoc/`
-
-API được phân loại theo các tag sau:
-- 📚 Quản lý sinh viên (Students)
-- 👨‍🏫 Quản lý giáo viên (Teachers)
-- 📝 Quản lý môn học (Subjects)
-- 🏫 Quản lý lớp học (Classes)
-- 📊 Quản lý điểm số (Scores)
-- 📋 Quản lý đăng ký học (Enrollments)
-- 🗓️ Quản lý học kỳ (Semesters)
-- 📆 Quản lý hoạt động (Activities)
-- 🏠 Trang chủ (Home)
+### 3. Truy cập ứng dụng
+- Frontend: http://localhost:80
+- Backend API: http://localhost:8088
+- Admin Panel: http://localhost:8088/admin
+- API Documentation: http://localhost:8088/api/docs/
 
 ## 🏗️ Cấu trúc dự án
 
 ```
 student-manage/
-├── api_gateway/         # API gateway và routing
-├── app_activity/        # Quản lý hoạt động
-├── app_class/           # Quản lý lớp học
-├── app_enrollment/      # Quản lý đăng ký học
-├── app_home/            # Quản lý người dùng và trang chủ
-├── app_score/           # Quản lý điểm số
-├── app_semester/        # Quản lý học kỳ
-├── app_student/         # Quản lý sinh viên
-├── app_subject/         # Quản lý môn học
-├── app_teacher/         # Quản lý giảng viên
-├── templates/           # Templates HTML
-├── static/              # Static files (CSS, JS, images)
-├── media/               # Uploaded files
-├── student_be/          # Backend configuration
-│   ├── settings.py      # Cấu hình chính của project
-│   ├── urls.py          # URL routing
-│   ├── middleware.py    # Custom middleware
-│   └── utils.py         # Utility functions
-├── manage.py            # Django CLI
-├── requirements.txt     # Dependencies
-├── Dockerfile           # Cấu hình Docker
-└── docker-compose.yml   # Cấu hình Docker Compose
+├── frontend/           # Vue.js frontend
+│   ├── src/
+│   │   ├── components/ # Vue components
+│   │   ├── views/     # Page views
+│   │   ├── stores/    # Pinia stores
+│   │   ├── services/  # API services
+│   │   └── router/    # Vue Router
+│   └── Dockerfile     # Frontend Dockerfile
+│
+├── backend/           # Django backend
+│   ├── api/          # Django apps
+│   │   ├── app_home/        # User management
+│   │   ├── app_student/     # Student management
+│   │   ├── app_teacher/     # Teacher management
+│   │   ├── app_subject/     # Subject management
+│   │   ├── app_class/       # Class management
+│   │   ├── app_score/       # Score management
+│   │   ├── app_enrollment/  # Enrollment management
+│   │   └── app_semester/    # Semester management
+│   └── Dockerfile    # Backend Dockerfile
+│
+└── docker-compose.yml # Docker Compose configuration
 ```
 
-## 📝 Mô tả các ứng dụng
+## 🧪 Testing
 
-- **app_home**: Quản lý người dùng, xác thực và trang chủ
-- **app_student**: Quản lý thông tin sinh viên và hồ sơ học tập
-- **app_teacher**: Quản lý giảng viên và phân công giảng dạy
-- **app_subject**: Quản lý môn học, tín chỉ và yêu cầu điều kiện
-- **app_class**: Quản lý lớp học, thời khóa biểu và phòng học
-- **app_score**: Quản lý điểm số, tính toán GPA và theo dõi tiến độ học tập
-- **app_enrollment**: Quản lý đăng ký học của sinh viên
-- **app_semester**: Quản lý học kỳ và năm học
-- **app_activity**: Theo dõi hoạt động của người dùng trong hệ thống
-
-## 🧪 Phát triển
-
-### Quy trình phát triển
-
-1. Tạo nhánh mới:
+### Backend Tests
 ```bash
-git checkout -b feature/your-feature
+docker-compose exec backend python manage.py test
 ```
 
-2. Viết mã và kiểm tra:
+### Frontend Tests
 ```bash
-python manage.py test
+docker-compose exec frontend npm run test
 ```
 
-3. Commit changes:
-```bash
-git commit -m "Add your feature"
-```
+## 📚 API Documentation
 
-4. Push to GitHub:
-```bash
-git push origin feature/your-feature
-```
-
-5. Tạo Pull Request trên GitHub
-
-### Coding Standards
-
-- Tuân thủ PEP 8 cho Python code
-- Sử dụng docstrings cho classes và functions
-- Viết unit tests cho mọi chức năng mới
-- Đặt tên biến và hàm bằng tiếng Anh, rõ ràng và mô tả
-
-## 🧰 Testing
-
-Chạy toàn bộ test suite:
-```bash
-python manage.py test
-```
-
-Chạy test cho một ứng dụng cụ thể:
-```bash
-python manage.py test app_student
-```
-
-Coverage report:
-```bash
-coverage run --source='.' manage.py test
-coverage report
-```
-
-## 🚢 Deployment
-
-### Chuẩn bị cho Production
-
-1. Cập nhật cài đặt trong settings.py:
-```python
-DEBUG = False
-ALLOWED_HOSTS = ['your-domain.com']
-```
-
-2. Cấu hình HTTPS với Let's Encrypt
-
-3. Collect static files:
-```bash
-python manage.py collectstatic
-```
-
-### Deployment với Docker
-
-1. Cập nhật biến môi trường trong file .env.prod
-2. Build và run containers:
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Deployment với Gunicorn và Nginx
-
-1. Cài đặt Gunicorn và Nginx
-2. Cấu hình Gunicorn service
-3. Cấu hình Nginx để proxy requests đến Gunicorn
+API documentation có sẵn tại:
+- Swagger UI: http://localhost:8088/api/docs/
+- ReDoc: http://localhost:8088/api/redoc/
 
 ## 🛠️ Bảo trì
 
@@ -260,14 +179,6 @@ docker-compose -f docker-compose.prod.yml up -d
 - Cập nhật dependencies định kỳ
 - Theo dõi logs để phát hiện và giải quyết vấn đề
 - Kiểm tra bảo mật và cập nhật các lỗ hổng
-
-## 📜 Đóng góp
-
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/your-feature`)
-3. Commit changes (`git commit -m 'Add your feature'`)
-4. Push to branch (`git push origin feature/your-feature`)
-5. Tạo Pull Request
 
 ## 📄 License
 
