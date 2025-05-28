@@ -1,8 +1,8 @@
 from django import forms
 from .models import Class
-from app_teacher.models import Teacher
-from app_semester.models import Semester
-from app_subject.models import Subject
+from ..app_teacher.models import Teacher
+from ..app_semester.models import Semester
+from ..app_subject.models import Subject
 from django.core.exceptions import ValidationError
 from datetime import date
 

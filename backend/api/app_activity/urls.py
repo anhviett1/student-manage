@@ -5,7 +5,7 @@ from .views import ActivityViewSet
 router = DefaultRouter()
 router.register(r'', ActivityViewSet)
 
-app_name = 'activities'
+app_name = 'app_activities'
 
 urlpatterns = [
     path('', include(router.urls)),

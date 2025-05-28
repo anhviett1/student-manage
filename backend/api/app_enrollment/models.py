@@ -1,13 +1,13 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from app_student.models import Student
-from app_subject.models import Subject
-from app_semester.models import Semester
-from django.utils import timezone
+from ..app_student.models import Student
+from ..app_subject.models import Subject
+from ..app_semester.models import Semester
+from datetime import date
 from django.utils.translation import gettext_lazy as _
-from app_home.models import BaseModel
-from app_class.models import Class
+from ..app_home.models import BaseModel
+from ..app_class.models import Class
 
 User = get_user_model()
 
@@ -37,7 +37,7 @@ class Enrollment(BaseModel):
     class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='class_enrollments')
     
     # Thông tin đăng ký
-    enrollment_date = models.DateField(verbose_name='Ngày đăng ký', default=timezone.now)
+    enrollment_date = models.DateField(verbose_name='Ngày đăng ký', default=date.today)
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Chờ xử lý'),
         ('approved', 'Đã duyệt'),

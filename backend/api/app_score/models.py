@@ -2,10 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from app_home.models import BaseModel
-from app_student.models import Student
-from app_subject.models import Subject
-from app_semester.models import Semester
+from ..app_home.models import BaseModel
+from ..app_student.models import Student
+from ..app_subject.models import Subject
+from ..app_semester.models import Semester
 
 User = get_user_model()
 
@@ -59,7 +59,9 @@ class Score(BaseModel):
         unique_together = ['student', 'subject', 'semester']
         permissions = [
             ("can_view_score_details", "Có thể xem thông tin điểm số"),
-            ("can_manage_score", "Có thể quản lý điểm số"),
+            ("can_manage_scores", "Có thể quản lý điểm số"),
             ("can_view_score_statistics", "Có thể xem thống kê điểm số"),
             ("can_export_score", "Có thể xuất điểm số"),
+            
         ]
+        

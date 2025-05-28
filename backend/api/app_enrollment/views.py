@@ -7,13 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from student_be.mixins import SearchTermMixin
-from student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
+from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
 from .models import Enrollment
 from .serializers import EnrollmentSerializer, EnrollmentCreateSerializer, EnrollmentDetailSerializer
 from .forms import EnrollmentForm
-from app_subject.models import Subject
-from app_semester.models import Semester
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 @extend_schema_view(

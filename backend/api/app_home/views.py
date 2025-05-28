@@ -15,14 +15,14 @@ from django.contrib import messages
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
-from app_student.models import Student
-from app_teacher.models import Teacher
-from app_subject.models import Subject
-from app_class.models import Class
-from app_activity.models import Activity
+from ..app_student.models import Student
+from ..app_teacher.models import Teacher
+from ..app_subject.models import Subject
+from ..app_class.models import Class
+from ..app_activity.models import Activity
 from .forms import ChangePasswordForm, UserProfileForm
-from .models import Department, Role
-from .serializers import UserSerializer, DepartmentSerializer, RoleSerializer
+from .models import Department
+from .serializers import UserSerializer, DepartmentSerializer
 
 User = get_user_model()
 

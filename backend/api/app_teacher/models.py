@@ -1,9 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+from datetime import date
 from django.utils.translation import gettext_lazy as _
-from app_home.models import BaseModel, Department
+from ..app_home.models import BaseModel, Department
 
 User = get_user_model()
 
@@ -36,7 +36,7 @@ class Teacher(BaseModel):
     last_name = models.CharField(max_length=100, verbose_name='Họ', default='Họ')
     email = models.EmailField(unique=True, verbose_name='Email', default='teacher@example.com')
     phone = models.CharField(max_length=15, unique=True, verbose_name='Số điện thoại', default='0123456789')
-    date_of_birth = models.DateField(verbose_name='Ngày sinh', default=timezone.now)
+    date_of_birth = models.DateField(verbose_name='Ngày sinh', default=date.today, help_text='Định dạng: YYYY-MM-DD')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name='Giới tính', default='M')
     address = models.TextField(verbose_name='Địa chỉ', default='Địa chỉ mặc định')
     

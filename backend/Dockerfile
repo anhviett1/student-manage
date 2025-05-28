@@ -1,15 +1,16 @@
-# Sử dụng image Python 3.10
-FROM python:3.10-slim
+# Sử dụng image Python 3.11
+FROM python:3.11
 
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    PYTHONPATH=/app
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Cài đặt các dependencies hệ thống
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     build-essential \
@@ -18,32 +19,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Install Python dependencies
+# Cài đặt các dependencies Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
     && rm -rf /root/.cache/pip/*
 
-# Create necessary directories
+# Tạo các thư mục cần thiết
 RUN mkdir -p /app/staticfiles /app/media
 
-# Copy project files
+# Copy toàn bộ source code
 COPY . .
 
-# Set permissions
+# Cấp quyền thực thi
 RUN chmod +x /app/manage.py
 
 # Expose port
 EXPOSE 8088
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8088/health/ || exit 1
-
-# Run application
+# Khởi chạy ứng dụng
 CMD ["gunicorn", \
      "--bind", "0.0.0.0:8088", \
      "--workers", "3", \
      "--timeout", "120", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
-     "api.wsgi:application"]
+     "--forwarded-allow-ips", "*", \
+     "api.student_be.wsgi:application"]

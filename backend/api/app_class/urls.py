@@ -12,7 +12,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'', ClassViewSet)
 
-app_name = 'classes'
+app_name = 'app_classes'
 
 urlpatterns = [
     path('api/', include(router.urls)),

@@ -7,14 +7,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from student_be.mixins import SearchTermMixin
-from student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
-from .models import Teacher
-from .serializers import TeacherSerializer, TeacherCreateSerializer, TeacherDetailSerializer
-from .forms import TeacherForm
-from app_home.permissions import IsAdmin
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from app_home.models import Department
+from .models import Teacher
+from .forms import TeacherForm
+from .serializers import TeacherSerializer, TeacherCreateSerializer, TeacherDetailSerializer
+from ..student_be.mixins import SearchTermMixin
+from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
+from ..app_home.permissions import IsAdmin
+from ..app_home.models import Department
 
 # Create your views here.
 

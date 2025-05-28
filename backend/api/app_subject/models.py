@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from app_home.models import BaseModel, Department
+from ..app_home.models import BaseModel, Department
 
 User = get_user_model()
 

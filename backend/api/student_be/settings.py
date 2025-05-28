@@ -1,4 +1,6 @@
-# student_be/settings.py
+"""
+Django settings for student_be project.
+"""
 from pathlib import Path
 from datetime import timedelta
 import os
@@ -8,9 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -22,39 +22,43 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-kssc$dtafz&%p+jx_h8-dt)n+u
 DEBUG = os.getenv('DEBUG', 'False') 
 
 # Allow localhost and 127.0.0.1 for development
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+#ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
-# CORS settings
-CORS_ALLOWED_ALL_ORIGINS = True  # Allow all origins for development
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 # Application definition
 INSTALLED_APPS = [
+    # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     
+    # Third party apps
     'allauth',
     'allauth.account',
-    
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework.authtoken',
     'drf_spectacular',
     'corsheaders',
     
-    'api_gateway',
-    'app_student',
-    'app_teacher',
-    'app_home',
-    'app_class',
-    'app_score',
-    'app_subject',
-    'app_enrollment',
-    'app_activity',
-    'app_semester',
+    # Local apps
+   
+    'api.app_student',
+    'api.app_teacher',
+    'api.app_home',
+    'api.app_class',
+    'api.app_score',
+    'api.app_subject',
+    'api.app_enrollment',
+    'api.app_activity',
+    'api.app_semester',
 ]
 
 MIDDLEWARE = [
@@ -67,28 +71,16 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-  
 ]
 
-# Remove duplicate SecurityMiddleware (it was listed twice in your original settings)
-# Ensure middleware order is correct as per Django documentation
+ROOT_URLCONF = 'api.student_be.urls'
+WSGI_APPLICATION = 'api.student_be.wsgi.application'
 
-ROOT_URLCONF = 'student_be.urls'
-STATIC_URL = '/static/'
-
-# Static files (CSS, JavaScript, Images)
-STATICFILES_DIRS = [ BASE_DIR / "backend" / 'static']
-
-# STATIC_URL = '/staticfiles/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ BASE_DIR / "backend" / 'static'],
+        'DIRS': [BASE_DIR / "static"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -97,15 +89,11 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-            
         },
     },
 ]
 
-WSGI_APPLICATION = 'student_be.wsgi.application'
-
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -114,7 +102,6 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
         'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
-        
     }
 }
 
@@ -142,12 +129,23 @@ AUTHENTICATION_BACKENDS = [
 
 # Internationalization
 LANGUAGE_CODE = 'vi-vn'
-TIME_ZONE = 'Asia/Ho_Chi_Minh'  # Corrected to match your requirement
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 USE_TZ = True
 
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
-
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -166,8 +164,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-
-    
 }
 
 # Simple JWT settings
@@ -191,12 +187,12 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_SETTINGS': {
         'displayRequestDuration': True,
         'filter': True,
-        'docExpansion': 'list',  # Các endpoint được mở theo danh sách
+        'docExpansion': 'list',
         'deepLinking': True,
         'displayOperationId': False,
         'persistAuthorization': True,
-        'defaultModelsExpandDepth': -1,  # Đóng tất cả các model
-        'defaultModelExpandDepth': 1,  # Mở model đến cấp độ 1
+        'defaultModelsExpandDepth': -1,
+        'defaultModelExpandDepth': 1,
     },
     'TAGS': [
         {'name': 'Students', 'description': 'Quản lý sinh viên', 'x-displayName': '📚 Quản lý sinh viên'},
@@ -209,7 +205,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Activities', 'description': 'Quản lý hoạt động', 'x-displayName': '📆 Quản lý hoạt động'},
         {'name': 'Home', 'description': 'Quản lý người dùng và trang chủ', 'x-displayName': '🏠 Trang chủ'},
     ],
-    'TAG_NAMESPACES': True,  # Use namespace as tags for better organization
+    'TAG_NAMESPACES': True,
     'ENUM_NAME_OVERRIDES': {},
 }
 
@@ -225,13 +221,6 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-
-# Static files optimization
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-]
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
@@ -250,33 +239,16 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'debug.log',
-            'formatter': 'verbose',
-        },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'app_home': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
 }
 

@@ -12,7 +12,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'semesters', SemesterViewSet)
 
-app_name = 'semesters'
+app_name = 'app_semesters'
 
 urlpatterns = [
     path('api/', include(router.urls)),

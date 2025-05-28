@@ -1,10 +1,12 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+from datetime import date
 from django.utils.translation import gettext_lazy as _
-from app_home.models import BaseModel, Department, User
 
+from ..app_home.models import BaseModel, Department, User
+
+User = get_user_model()
 class Student(BaseModel):
     """
     Model đại diện cho sinh viên trong hệ thống
@@ -25,19 +27,8 @@ class Student(BaseModel):
     ]
     
     # Thông tin cơ bản
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        verbose_name='Tài khoản'
-    )
-    student_id = models.CharField(
-        max_length=20,
-        primary_key=True,
-        verbose_name='Mã sinh viên',
-        default='SV001'
-    )
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student')
+    student_id = models.CharField(max_length=20, unique=True, verbose_name=_('Student ID'))
     first_name = models.CharField(
         max_length=100,
         verbose_name='Tên',
@@ -61,7 +52,8 @@ class Student(BaseModel):
     )
     date_of_birth = models.DateField(
         verbose_name='Ngày sinh',
-        default=timezone.now
+        default= date.today,  # Ngày sinh mặc định là ngày hiện tại
+        help_text='Định dạng: YYYY-MM-DD'
     )
     gender = models.CharField(
         max_length=1,
@@ -101,20 +93,18 @@ class Student(BaseModel):
     )
     
     # Thông tin học tập
-    enrollment_date = models.DateField(
-        verbose_name='Ngày nhập học',
-        default=timezone.now
-    )
-    graduation_date = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Ngày tốt nghiệp'
-    )
+    enrollment_date = models.DateField(verbose_name=_('Enrollment Date'))
+    graduation_date = models.DateField(null=True, blank=True, verbose_name=_('Graduation Date'))
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
+        choices=[
+            ('active', _('Active')),
+            ('graduated', _('Graduated')),
+            ('suspended', _('Suspended')),
+            ('withdrawn', _('Withdrawn')),
+        ],
         default='active',
-        verbose_name='Trạng thái'
+        verbose_name=_('Status')
     )
     major = models.CharField(
         max_length=100,
@@ -197,13 +187,7 @@ class Student(BaseModel):
     is_deleted = models.BooleanField(default=False, verbose_name='Đã xóa')
     
     # Quan hệ
-    department = models.ForeignKey(
-        Department,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='student_departments',
-        verbose_name='Khoa'
-    )
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='students')
     class_assigned = models.ManyToManyField(
         'app_class.Class',
         related_name='student_classes',
@@ -224,7 +208,7 @@ class Student(BaseModel):
     )
     
     def __str__(self):
-        return f"{self.student_id} - {self.get_full_name()}"
+        return f"{self.student_id} - {self.user.get_full_name()}"
     
     def get_full_name(self):
         """Lấy họ và tên đầy đủ của sinh viên"""
@@ -250,9 +234,9 @@ class Student(BaseModel):
         return self.gpa
     
     class Meta:
-        verbose_name = _('student')
-        verbose_name_plural = _('students')
-        ordering = ['last_name', 'first_name']
+        verbose_name = _('Student')
+        verbose_name_plural = _('Students')
+        ordering = ['student_id']
         permissions = [
             ("can_view_student_details", "Có thể xem thông tin sinh viên"),
             ("can_manage_student", "Có thể quản lý sinh viên"),

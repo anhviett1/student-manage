@@ -2,8 +2,8 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from .models import Score
-from app_student.models import Student
-from app_class.models import Class
+from ..app_student.models import Student
+from ..app_class.models import Class
 
 User = get_user_model()
 

@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from app_home.models import BaseModel
+from ..app_home.models import BaseModel
 
 class Semester(BaseModel):
     STATUS_CHOICES = [

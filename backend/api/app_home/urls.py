@@ -11,7 +11,7 @@ from .views import (
     home_be_view
 )
 
-app_name = 'home'
+app_name = 'app_home'
 
 urlpatterns = [
     # API endpoints

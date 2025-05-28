@@ -7,13 +7,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from student_be.mixins import SearchTermMixin
-from student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
+from ..student_be.mixins import SearchTermMixin
+from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
 from .models import Subject
 from .serializers import SubjectSerializer, SubjectCreateSerializer, SubjectDetailSerializer
 from .forms import SubjectForm
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from app_home.models import Department
+from ..app_home.models import Department
 
 # Create your views here.
 

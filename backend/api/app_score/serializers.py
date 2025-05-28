@@ -14,6 +14,9 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
         model = Score
         fields = ['student', 'subject', 'semester', 'midterm_score', 'final_score', 'notes']
         
+ 
+        
+        
 @extend_schema_serializer(component_name='ScoreDetailSerializer')
 class ScoreDetailSerializer(serializers.ModelSerializer):
     class Meta:

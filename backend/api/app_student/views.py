@@ -7,14 +7,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from student_be.mixins import SearchTermMixin
-from student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
 from .models import Student
 from .serializers import StudentSerializer, StudentCreateSerializer, StudentDetailSerializer
 from .forms import StudentForm
-from app_home.permissions import IsAdmin, IsTeacher
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from app_home.models import Department
+from django.urls import reverse_lazy
+from ..student_be.mixins import SearchTermMixin
+from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
+from ..app_home.permissions import IsAdmin, IsTeacher
+from ..app_home.models import Department
+
 
 @extend_schema_view(
     list=extend_schema(tags=['Students']),

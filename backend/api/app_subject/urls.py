@@ -12,7 +12,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'', SubjectViewSet)
 
-app_name = 'subjects'
+app_name = 'app_subjects'
 
 urlpatterns = [
     path('api/', include(router.urls)),

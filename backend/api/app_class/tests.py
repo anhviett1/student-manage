@@ -2,9 +2,9 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from .models import Class
-from app_semester.models import Semester
-from app_subject.models import Subject
-from app_teacher.models import Teacher
+from ..app_semester.models import Semester
+from ..app_subject.models import Subject
+from ..app_teacher.models import Teacher
 
 User = get_user_model()
 

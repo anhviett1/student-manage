@@ -9,14 +9,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from student_be.mixins import SearchTermMixin
-from student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
 from .models import Score
 from .serializers import ScoreSerializer, ScoreCreateSerializer, ScoreDetailSerializer
+from ..student_be.mixins import SearchTermMixin
+from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
 from .forms import ScoreForm
-from app_subject.models import Subject
-from app_semester.models import Semester
-from app_home.permissions import IsAdmin, IsTeacher, CanManageScores, CanViewOwnScores
+from ..app_subject.models import Subject
+from ..app_semester.models import Semester
+from ..app_home.permissions import IsAdmin, IsTeacher, CanManageScores, CanViewOwnScores
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Create your views here.
@@ -42,15 +42,15 @@ class ScoreViewSet(viewsets.ModelViewSet):
             return ScoreDetailSerializer
         return ScoreSerializer
     
-    def get_permissions(self):
-        if self.action == 'my_scores':
-            return [IsAuthenticated()]
-        return super().get_permissions()
-    
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.save()
-        
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'destroy']:
+            self.permission_classes = [CanManageScores]
+        elif self.action in ['list', 'retrieve']:
+            self.permission_classes = [CanViewOwnScores]
+        return super().get_permissions()   
     @action(detail=False, methods=['get'])
     def my_scores(self, request):
         if request.user.role == 'student':
@@ -71,7 +71,7 @@ class ScoreViewSet(viewsets.ModelViewSet):
 
 class ScoreListView(BaseListView):
     model = Score
-    template_name = 'app_score_fe/score_list.html'
+    
     context_object_name = 'scores'
     search_fields = ['student__student_id', 'student__first_name', 'student__last_name']
     
@@ -101,7 +101,7 @@ class ScoreListView(BaseListView):
             'status_choices': Score.STATUS_CHOICES,
         })
         return context
-
+'''
 class ScoreDetailView(BaseDetailView):
     model = Score
     template_name = 'app_score_fe/score_detail.html'
@@ -146,6 +146,7 @@ class ScoreDeleteView(BaseDeleteView):
         messages.success(request, 'Điểm số đã được xóa thành công.')
         return redirect(self.success_url)
 
+'''
 class ScoreSearchMixin(SearchTermMixin):
     search_fields = ['student__student_id', 'student__first_name', 'student__last_name',
                     'subject__name', 'semester__name']

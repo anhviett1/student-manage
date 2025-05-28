@@ -183,13 +183,6 @@ class User(AbstractUser):
         blank=True,
         verbose_name=_('Khoa')
     )
-    role = models.ForeignKey(
-        'Role',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name=_('Vai trò')
-    )
     
     class Meta:
         verbose_name = _('user')
@@ -198,60 +191,45 @@ class User(AbstractUser):
         permissions = [
             ("can_view_dashboard", _("Có thể xem bảng điều khiển")),
             ("can_manage_students", _("Có thể quản lý sinh viên")),
-            ("can_manage_teachers", _("Có thể quản lý giảng viên")),
-            ("can_manage_classes", _("Có thể quản lý lớp học")),
-            ("can_manage_subjects", _("Có thể quản lý môn học")),
-            ("can_manage_scores", _("Có thể quản lý điểm số")),
-            ("can_view_reports", _("Có thể xem báo cáo")),
-            ("can_manage_enrollments", _("Có thể quản lý đăng ký")),
         ]
     
     def __str__(self):
-        return self.username
+        return self.get_full_name() or self.username
     
     def get_full_name(self):
-        """Lấy họ và tên đầy đủ của người dùng"""
         return f"{self.first_name} {self.last_name}".strip() or self.username
 
     def get_short_name(self):
-        """Lấy tên ngắn gọn của người dùng"""
         return self.first_name or self.username
 
     @property
     def is_student(self):
-        """Kiểm tra xem người dùng có phải là sinh viên không"""
         return self.role == 'student'
 
     @property
     def is_teacher(self):
-        """Kiểm tra xem người dùng có phải là giảng viên không"""
         return self.role == 'teacher'
 
     @property
     def is_admin(self):
-        """Kiểm tra xem người dùng có phải là admin không"""
         return self.role == 'admin'
 
     def get_role_display_name(self):
-        """Lấy tên hiển thị của vai trò"""
         return dict(self.ROLE_CHOICES).get(self.role, self.role)
 
     def update_last_login_ip(self, ip_address):
-        """Cập nhật IP đăng nhập cuối cùng"""
         self.last_login_ip = ip_address
         self.save(update_fields=['last_login_ip'])
 
     def soft_delete(self):
-        """Soft delete user"""
-        self.is_active = False
         self.is_deleted = True
-        self.save(update_fields=['is_active', 'is_deleted'])
+        self.is_active = False
+        self.save(update_fields=['is_deleted', 'is_active'])
 
     def restore(self):
-        """Restore soft deleted user"""
-        self.is_active = True
         self.is_deleted = False
-        self.save(update_fields=['is_active', 'is_deleted'])
+        self.is_active = True
+        self.save(update_fields=['is_deleted', 'is_active'])
 
 class Department(models.Model):
     """
@@ -259,41 +237,41 @@ class Department(models.Model):
     """
     name = models.CharField(
         max_length=200, 
-        verbose_name='Tên khoa',
+        verbose_name=_('Tên khoa'),
         null=False,
         blank=False
     )
     code = models.CharField(
         max_length=20, 
         unique=True, 
-        verbose_name='Mã khoa',
+        verbose_name=_('Mã khoa'),
         null=False,
         blank=False
     )
     description = models.TextField(
         blank=True, 
         null=True, 
-        verbose_name='Mô tả'
+        verbose_name=_('Mô tả')
     )
     is_active = models.BooleanField(
         default=True, 
-        verbose_name='Đang hoạt động'
+        verbose_name=_('Đang hoạt động')
     )
     created_at = models.DateTimeField(
         auto_now_add=True, 
-        verbose_name='Ngày tạo'
+        verbose_name=_('Ngày tạo')
     )
     updated_at = models.DateTimeField(
         auto_now=True, 
-        verbose_name='Ngày cập nhật'
+        verbose_name=_('Ngày cập nhật')
     )
     is_deleted = models.BooleanField(
         default=False, 
-        verbose_name='Đã xóa'
+        verbose_name=_('Đã xóa')
     )
 
     def __str__(self):
-        return f"{self.name} ({self.code})"
+        return f"{self.code} - {self.name}"
 
     class Meta:
         verbose_name = _('department')
@@ -301,40 +279,21 @@ class Department(models.Model):
         ordering = ['name']
         db_table = 'app_home_department'
         permissions = [
-            ("can_view_department", "Có thể xem thông tin khoa"),
-            ("can_manage_department", "Có thể quản lý khoa"),
+            ("can_manage_department", _("Có thể quản lý khoa")),
+            ("can_view_department", _("Có thể xem thông tin khoa")),
         ]
 
     def save(self, *args, **kwargs):
         if not self.code:
-            # Tự động tạo mã khoa nếu chưa có
-            last_department = Department.objects.order_by('-id').first()
-            if last_department:
-                last_id = int(last_department.code[2:]) if last_department.code.startswith('KH') else 0
-                self.code = f'KH{str(last_id + 1).zfill(3)}'
-            else:
-                self.code = 'KH001'
+            self.code = self.name.upper().replace(' ', '_')
         super().save(*args, **kwargs)
 
     def soft_delete(self):
-        """Soft delete object"""
         self.is_deleted = True
-        self.save(update_fields=['is_deleted'])
+        self.is_active = False
+        self.save(update_fields=['is_deleted', 'is_active'])
 
     def restore(self):
-        """Restore soft deleted object"""
         self.is_deleted = False
-        self.save(update_fields=['is_deleted'])
-
-class Role(BaseModel):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    permissions = models.ManyToManyField('auth.Permission', blank=True)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = _('role')
-        verbose_name_plural = _('roles')
-
-    def __str__(self):
-        return self.name
+        self.is_active = True
+        self.save(update_fields=['is_deleted', 'is_active'])

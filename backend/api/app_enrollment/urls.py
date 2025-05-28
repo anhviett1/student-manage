@@ -12,7 +12,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'enrollments', EnrollmentViewSet)
 
-app_name = 'enrollments'
+app_name = 'app_enrollments'
 
 urlpatterns = [
     path('api/', include(router.urls)),

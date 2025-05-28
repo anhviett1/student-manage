@@ -1,6 +1,6 @@
 from django import forms
 from .models import Student
-from app_home.models import Department
+from ..app_home.models import Department
 
 class StudentForm(forms.ModelForm):
     class Meta:
