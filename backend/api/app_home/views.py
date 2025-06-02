@@ -9,11 +9,12 @@ from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
 from rest_framework.views import APIView, Response
 from rest_framework.permissions import AllowAny
-from rest_framework import status, serializers
+from rest_framework import status, serializers, viewsets, permissions
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.contrib import messages
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 
 from ..app_student.models import Student
 from ..app_teacher.models import Teacher
@@ -23,6 +24,11 @@ from ..app_activity.models import Activity
 from .forms import ChangePasswordForm, UserProfileForm
 from .models import Department
 from .serializers import UserSerializer, DepartmentSerializer
+from .permissions import (
+    IsAdmin, IsTeacher, IsStudent, IsAdminOrTeacher,
+    IsAdminOrReadOnly, IsOwnerOrAdmin, CanViewOwnScores,
+    CanManageSubject, CanViewSubjectScores
+)
 
 User = get_user_model()
 
@@ -223,3 +229,52 @@ def home_be_view(request):
         'total_classes': total_classes,
     }
     return render(request, 'app_home/home_be.html', context)
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action == 'create':
+            permission_classes = [permissions.AllowAny]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdmin]
+        elif self.action == 'me':
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsAdminOrReadOnly]
+        return [permission() for permission in permission_classes]
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        """
+        Get current user information
+        """
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def change_password(self, request):
+        """
+        Change user password
+        """
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not user.check_password(old_password):
+            return Response(
+                {'error': 'Wrong password.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'status': 'password changed'})

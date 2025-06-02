@@ -1,19 +1,15 @@
-# Sử dụng image Nginx Alpine (nhẹ)
-FROM nginx:alpine
+FROM nginx:stable-alpine
 
-# Xóa cấu hình mặc định
-RUN rm /etc/nginx/conf.d/default.conf
+# Cài đặt curl cho healthcheck
+RUN apk add --no-cache curl
 
-# Copy file cấu hình Nginx của chúng ta
-COPY nginx.conf /etc/nginx/conf.d
+# Copy nginx config
+COPY conf.d/default.conf /etc/nginx/conf.d/default.conf
 
-# Tạo thư mục cho các file tĩnh (nếu cần)
-RUN mkdir -p /usr/share/nginx/html/static
-RUN mkdir -p /usr/share/nginx/html/media
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
 
-# Expose port 80 (HTTP) và 443 (HTTPS - nếu cần)
 EXPOSE 80
-EXPOSE 443
 
-# Khởi chạy Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"] 

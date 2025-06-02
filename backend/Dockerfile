@@ -1,47 +1,35 @@
-# Sử dụng image Python 3.11
-FROM python:3.11
+# Sử dụng image Python 3.11-slim
+FROM python:3.11-slim
 
-# Environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH=/app
-
-# Set working directory
 WORKDIR /app
 
-# Cài đặt các dependencies hệ thống
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
     build-essential \
     libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && rm -rf /var/lib/apt/lists/*
 
-# Cài đặt các dependencies Python
+# Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && rm -rf /root/.cache/pip/*
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip
 
-# Tạo các thư mục cần thiết
+# Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Copy toàn bộ source code
+# Copy project files
 COPY . .
 
-# Cấp quyền thực thi
+# Make manage.py executable
 RUN chmod +x /app/manage.py
 
-# Expose port
-EXPOSE 8088
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+ENV DJANGO_SETTINGS_MODULE=api.student_be.settings
 
-# Khởi chạy ứng dụng
-CMD ["gunicorn", \
-     "--bind", "0.0.0.0:8088", \
-     "--workers", "3", \
-     "--timeout", "120", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "--forwarded-allow-ips", "*", \
-     "api.student_be.wsgi:application"]
+# Expose port
+EXPOSE 8000
+
+# Run migrations and start server
+CMD ["gunicorn", "api.student_be.wsgi:application", "--bind", "0.0.0.0:8000"]

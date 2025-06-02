@@ -3,30 +3,19 @@ FROM node:18-alpine as build-stage
 
 WORKDIR /app
 
-# Cài đặt các dependencies cần thiết
-RUN apk add --no-cache python3 make g++ curl
-
-# Copy package files
-COPY package*.json ./
-
-# Kiểm tra phiên bản Node.js và npm
-RUN node -v && npm -v
-
 # Cài đặt dependencies
-RUN npm install && \
-    npm cache clean --force
+COPY package*.json ./
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
-# Build ứng dụng
+# Build ứng dụng với production mode
+ENV NODE_ENV=production
 RUN npm run build
 
 # Production stage
-FROM nginx:stable-alpine as production-stage
-
-# Cài đặt curl cho healthcheck
-RUN apk add --no-cache curl
+FROM nginx:stable-alpine
 
 # Copy build files từ build-stage
 COPY --from=build-stage /app/dist /usr/share/nginx/html
@@ -34,9 +23,10 @@ COPY --from=build-stage /app/dist /usr/share/nginx/html
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/ || exit 1
+# Tạo thư mục và set quyền
+RUN mkdir -p /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html && \
+    chown -R nginx:nginx /usr/share/nginx/html
 
 EXPOSE 80
 
