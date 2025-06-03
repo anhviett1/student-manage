@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     HomeAPIView,
     home_view,
@@ -8,10 +9,14 @@ from .views import (
     profile_view,
     change_password,
     home,
-    home_be_view
+    home_be_view,
+    UserViewSet
 )
 
 app_name = 'app_home'
+
+router = DefaultRouter()
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     # API endpoints
@@ -29,4 +34,6 @@ urlpatterns = [
     path('main/', home, name='main'),
     path('profile/', profile_view, name='profile'),
     
+    path('', include(router.urls)),
+    path('auth/', include('rest_framework.urls')),
 ] 
