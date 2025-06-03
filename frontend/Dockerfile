@@ -31,8 +31,6 @@ RUN apk add --no-cache curl
 # Copy build files từ build-stage
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

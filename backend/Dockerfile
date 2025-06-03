@@ -30,17 +30,15 @@ RUN mkdir -p /app/staticfiles /app/media
 # Copy toàn bộ source code
 COPY . .
 
+RUN python manage.py collectstatic --noinput
 # Cấp quyền thực thi
 RUN chmod +x /app/manage.py
 
-# Expose port
-EXPOSE 8088
-
 # Khởi chạy ứng dụng
 CMD ["gunicorn", \
-     "--bind", "0.0.0.0:8088", \
+     "--bind", "0.0.0.0:8000", \
      "--workers", "3", \
-     "--timeout", "120", \
+     "--timeout", "60", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "--forwarded-allow-ips", "*", \

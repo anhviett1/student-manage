@@ -45,4 +45,8 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 
 
 
+from django.http import JsonResponse
 
+urlpatterns = [
+    path('', lambda request: JsonResponse({"status": "OK"})),
+]

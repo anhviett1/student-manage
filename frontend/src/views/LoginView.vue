@@ -1,10 +1,10 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h1>Login</h1>
+      <h1>Đăng nhập</h1>
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="username">Username</label>
+          <label for="username">Tên người dùng</label>
           <InputText
             id="username"
             v-model="credentials.username"
@@ -12,11 +12,11 @@
             required
             autofocus
           />
-          <small class="p-error" v-if="submitted && !credentials.username">Username is required.</small>
+          <small class="p-error" v-if="submitted && !credentials.username">Tên người dùng là bắt buộc.</small>
         </div>
 
         <div class="form-group">
-          <label for="password">Password</label>
+          <label for="password">Mật khẩu</label>
           <Password
             id="password"
             v-model="credentials.password"
@@ -25,13 +25,13 @@
             :class="{ 'p-invalid': submitted && !credentials.password }"
             required
           />
-          <small class="p-error" v-if="submitted && !credentials.password">Password is required.</small>
+          <small class="p-error" v-if="submitted && !credentials.password">Mật khẩu là bắt buộc.</small>
         </div>
 
         <div class="form-actions">
           <Button
             type="submit"
-            label="Login"
+            label="Đăng nhập"
             icon="pi pi-sign-in"
             :loading="loading"
             class="w-full"
@@ -43,112 +43,194 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useToast } from 'primevue/usetoast'
-import { useAuthStore } from '@/stores/auth'
-import { api } from '@/services/api'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/stores/auth';
+import { api } from '@/services/api';
+import InputText from 'primevue/inputtext';
+import Password from 'primevue/password';
+import Button from 'primevue/button';
 
-const router = useRouter()
-const toast = useToast()
-const authStore = useAuthStore()
+const router = useRouter();
+const toast = useToast();
+const authStore = useAuthStore();
 
 const credentials = ref({
   username: '',
   password: ''
-})
-const submitted = ref(false)
-const loading = ref(false)
+});
+const submitted = ref(false);
+const loading = ref(false);
 
 const handleLogin = async () => {
-  submitted.value = true
+  submitted.value = true;
 
   if (credentials.value.username && credentials.value.password) {
     try {
-      loading.value = true
-      const response = await api.login(credentials.value)
-      
-      authStore.setToken(response.token)
-      authStore.setUser(response.user)
-      
+      loading.value = true;
+      const response = await api.login(credentials.value);
+
+      // Kiểm tra nếu response không hợp lệ
+      if (!response.ok) {
+        throw new Error('Phản hồi từ server không hợp lệ');
+      }
+
+      const data = await response.json(); // Parse JSON
+      console.log('Dữ liệu từ API:', data); // Debug dữ liệu
+
+      authStore.setToken(data.token);
+      authStore.setUser(data.user);
+
       toast.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Login successful',
+        summary: 'Thành công',
+        detail: 'Đăng nhập thành công',
         life: 3000
-      })
+      });
 
-      router.push('/')
+      router.push('/');
     } catch (error) {
+      console.error('Lỗi đăng nhập:', error); // Debug lỗi
       toast.add({
         severity: 'error',
-        summary: 'Error',
-        detail: error.message || 'Invalid credentials',
+        summary: 'Lỗi',
+        detail: error.message || 'Thông tin đăng nhập không hợp lệ',
         life: 3000
-      })
+      });
     } finally {
-      loading.value = false
+      loading.value = false; // Đảm bảo loading được reset
     }
   }
-}
+};
 </script>
 
 <style scoped>
+/* Full-screen container */
 .login-container {
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  padding: 1rem;
+  align-items: center;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
+/* Responsive login card */
 .login-card {
   background: white;
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 100%;
+  width: 90%;
   max-width: 400px;
+  min-width: 300px;
+  margin: 1rem;
 }
 
+/* Title styling */
 .login-card h1 {
   text-align: center;
-  color: var(--text-color);
+  color: #333;
   margin-bottom: 2rem;
   font-size: 1.75rem;
+  font-weight: 600;
 }
 
+/* Form layout */
 .login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+/* Form group spacing */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Label styling */
 .form-group label {
   font-weight: 500;
-  color: var(--text-color);
+  color: #333;
+  text-align: left;
 }
 
+/* Style for input fields */
+:deep(.p-inputtext),
+:deep(.p-password-input) {
+  width: 100% !important;
+  height: 48px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  transition: border-color 0.3s;
+}
+
+/* Focus state for inputs */
+:deep(.p-inputtext:focus),
+:deep(.p-password-input:focus) {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Ensure password field container is visible */
+:deep(.p-password) {
+  width: 100% !important;
+  display: block !important;
+}
+
+/* Error state for inputs */
+:deep(.p-invalid) {
+  border-color: #ef4444 !important;
+}
+
+/* Error message styling */
+.p-error {
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+/* Style for the button */
+:deep(.p-button) {
+  width: 100% !important;
+  height: 48px;
+  font-size: 1rem;
+  border-radius: 6px;
+  display: block !important; /* Đảm bảo nút luôn hiển thị */
+}
+
+/* Form actions spacing */
 .form-actions {
   margin-top: 1rem;
+  display: flex;
+  justify-content: center;
 }
 
-:deep(.p-password) {
-  width: 100%;
-}
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.5rem;
+    min-width: 280px;
+  }
 
-:deep(.p-password-input) {
-  width: 100%;
-}
+  .login-card h1 {
+    font-size: 1.5rem;
+  }
 
-:deep(.p-button) {
-  width: 100%;
+  :deep(.p-inputtext),
+  :deep(.p-password-input),
+  :deep(.p-button) {
+    height: 44px;
+    font-size: 0.9375rem;
+  }
 }
-</style> 
+</style>
