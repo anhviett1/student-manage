@@ -20,7 +20,7 @@ RUN mkdir -p /app/staticfiles /app/media
 # Copy project files
 COPY . .
 
-<<<<<<< HEAD
+
 RUN python manage.py collectstatic --noinput
 # Cấp quyền thực thi
 RUN chmod +x /app/manage.py
@@ -34,7 +34,7 @@ CMD ["gunicorn", \
      "--error-logfile", "-", \
      "--forwarded-allow-ips", "*", \
      "api.student_be.wsgi:application"]
-=======
+
 # Make manage.py executable
 RUN chmod +x /app/manage.py
 
@@ -48,4 +48,4 @@ EXPOSE 8000
 
 # Run migrations and start server
 CMD ["gunicorn", "api.student_be.wsgi:application", "--bind", "0.0.0.0:8000"]
->>>>>>> 7ee0b4ac6d7b4e7ceca6d7faa9cdde2ade62a9bb
+
