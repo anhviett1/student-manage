@@ -34,7 +34,7 @@
             label="Đăng nhập"
             icon="pi pi-sign-in"
             :loading="loading"
-            class="w-full"
+            class="w-full debug-login-button"
           />
         </div>
       </form>
@@ -89,7 +89,7 @@ const handleLogin = async () => {
         life: 3000
       });
 
-      router.push('/');
+      router.push('/home');
     } catch (error) {
       console.error('Lỗi đăng nhập:', error); // Debug lỗi
       toast.add({
@@ -113,7 +113,7 @@ const handleLogin = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background-image: url('@/assets/images/banner-background.jpg');
   overflow: hidden;
   position: fixed;
   top: 0;
@@ -233,4 +233,27 @@ const handleLogin = async () => {
     font-size: 0.9375rem;
   }
 }
+:deep(.p-button.debug-login-button) {
+  width: 100% !important;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.p-button.debug-login-button):hover {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.p-button .p-button-icon) {
+  font-size: 1.25rem;
+}
+
 </style>

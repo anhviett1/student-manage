@@ -15,7 +15,7 @@ from drf_spectacular.views import (
 urlpatterns = [
     # Admin and Authentication
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
+    path('auth/login/', include('rest_framework.urls')),
     path('accounts/', include('allauth.urls')),
     
     # JWT Authentication
@@ -42,11 +42,4 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 
-
-
-from django.http import JsonResponse
-
-urlpatterns = [
-    path('', lambda request: JsonResponse({"status": "OK"})),
-]
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

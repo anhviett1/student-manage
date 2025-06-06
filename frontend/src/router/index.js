@@ -6,6 +6,11 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'index',
+      component: () => import('../components/Index.vue')
+    },
+    {
+      path: '/home',
       name: 'home',
       component: () => import('../views/HomeView.vue'),
       meta: { requiresAuth: true }
@@ -74,6 +79,11 @@ const router = createRouter({
       name: 'change-password',
       component: () => import('../views/ChangePasswordView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/welcome',
+      name: 'welcome',
+      component: () => import('../components/Index.vue')
     }
   ]
 })
@@ -81,7 +91,7 @@ const router = createRouter({
 // Navigation guard
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  const isAuthenticated = authStore.isAuthenticated()
+  const isAuthenticated = authStore.isAuthenticated
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')

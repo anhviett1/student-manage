@@ -1,5 +1,7 @@
 <script setup>
 import Toast from '@/components/Toast.vue'
+
+
 </script>
 
 <template>
@@ -40,7 +42,7 @@ body {
 }
 
 .btn-primary {
-  background: #3498db;
+  background: #6ba0c4;
   color: white;
 }
 

@@ -1,14 +1,17 @@
 <template>
-  <div class="home">
-    <h1>Chào mừng đến với Hệ thống Quản lý Sinh viên</h1>
-    <div class="content">
-      <p>Vui lòng chọn một chức năng từ menu bên trái để bắt đầu.</p>
+  <BaseLayout>
+    <div class="home">
+      <h1>Chào mừng đến với Hệ thống Quản lý Sinh viên</h1>
+      <div class="content">
+        <p>Vui lòng chọn một chức năng từ menu bên trái để bắt đầu.</p>
+      </div>
     </div>
-  </div>
+  </BaseLayout>
 </template>
 
 <script setup>
-// Component logic here
+import BaseLayout from '@/components/BaseLayout.vue'
+
 </script>
 
 <style scoped>

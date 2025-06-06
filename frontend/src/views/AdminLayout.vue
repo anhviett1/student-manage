@@ -63,7 +63,9 @@ const logout = async () => {
 <style scoped>
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;  
+  overflow: hidden;
 }
 
 .sidebar {
@@ -71,44 +73,17 @@ const logout = async () => {
   background: #2c3e50;
   color: white;
   padding: 1rem;
-}
-
-.logo {
-  padding: 1rem 0;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.nav-menu {
-  margin-top: 2rem;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem 1rem;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-  transition: background 0.3s;
-}
-
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nav-item.router-link-active {
-  background: #3498db;
-}
-
-.nav-item i {
-  margin-right: 0.8rem;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .main-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background: #f5f6fa;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .top-bar {
@@ -119,22 +94,10 @@ const logout = async () => {
   justify-content: flex-end;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.logout-btn {
-  padding: 0.5rem 1rem;
-  background: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 .content {
+  flex: 1;
+  overflow-y: auto;
   padding: 2rem;
 }
+
 </style> 
