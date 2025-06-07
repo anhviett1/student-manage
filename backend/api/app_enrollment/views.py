@@ -46,8 +46,6 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
 class EnrollmentListView(BaseListView):
     model = Enrollment
-    template_name = 'app_enrollment_fe/enrollment_list.html'
-    context_object_name = 'enrollments'
     search_fields = ['student__student_id', 'student__first_name', 'student__last_name', 'class__name']
     
     def get_queryset(self):
@@ -79,8 +77,6 @@ class EnrollmentListView(BaseListView):
 
 class EnrollmentDetailView(BaseDetailView):
     model = Enrollment
-    template_name = 'app_enrollment_fe/enrollment_detail.html'
-    context_object_name = 'enrollment'
     
     def get_queryset(self):
         return Enrollment.objects.select_related(
@@ -90,8 +86,6 @@ class EnrollmentDetailView(BaseDetailView):
 class EnrollmentCreateView(BaseCreateView):
     model = Enrollment
     form_class = EnrollmentForm
-    template_name = 'app_enrollment_fe/enrollment_form.html'
-    success_url = 'enrollments:enrollment_list'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -100,9 +94,6 @@ class EnrollmentCreateView(BaseCreateView):
 
 class EnrollmentUpdateView(BaseUpdateView):
     model = Enrollment
-    form_class = EnrollmentForm
-    template_name = 'app_enrollment_fe/enrollment_form.html'
-    success_url = 'enrollments:enrollment_list'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -111,8 +102,7 @@ class EnrollmentUpdateView(BaseUpdateView):
 
 class EnrollmentDeleteView(BaseDeleteView):
     model = Enrollment
-    template_name = 'app_enrollment_fe/enrollment_confirm_delete.html'
-    success_url = 'enrollments:enrollment_list'
+
     
     def delete(self, request, *args, **kwargs):
         enrollment = self.get_object()

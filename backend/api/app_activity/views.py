@@ -9,19 +9,11 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
     retrieve=extend_schema(tags=['Activities']),
 )
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint for viewing activity logs.
-    This is a read-only viewset as activities should only be created by the system.
-    """
     queryset = Activity.objects.all().order_by('-created_at')
     serializer_class = ActivitySerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        """
-        This view returns activities for the current user unless the user is staff/admin.
-        Staff/admin users can see all activities.
-        """
         user = self.request.user
         if user.is_staff or user.is_superuser:
             return Activity.objects.all().order_by('-created_at')

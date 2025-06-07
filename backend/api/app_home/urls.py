@@ -8,7 +8,6 @@ from .views import (
     logout_view,
     profile_view,
     change_password,
-    home,
     home_be_view,
     UserViewSet
 )
@@ -19,8 +18,15 @@ router = DefaultRouter()
 router.register(r'users', UserViewSet)
 
 urlpatterns = [ 
-    path('change-password/', change_password, name='change_password'), 
-    path('profile/', profile_view, name='profile'),    
-    path('', include(router.urls)),
+    path('api/', HomeAPIView.as_view(), name='home_api'),
+    path('', home_view, name='home'),   
+    path('dashboard/', dashboard_view, name='dashboard'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+    path('profile/', profile_view, name='profile'),
+    path('change-password/', change_password, name='change_password'),
+    path('home-be/', home_be_view, name='home_be'),
+         
+    
 
 ]  

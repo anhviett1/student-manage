@@ -51,7 +51,6 @@ class ClassViewSet(viewsets.ModelViewSet):
 
 class ClassListView(BaseListView):
     model = Class
-    template_name = 'app_class_fe/class_list.html'
     context_object_name = 'classes'
     search_fields = ['class_id', 'name', 'description']
     
@@ -83,7 +82,6 @@ class ClassListView(BaseListView):
 
 class ClassDetailView(BaseDetailView):
     model = Class
-    template_name = 'app_class_fe/class_detail.html'
     context_object_name = 'class'
     
     def get_queryset(self):
@@ -94,8 +92,6 @@ class ClassDetailView(BaseDetailView):
 class ClassCreateView(BaseCreateView):
     model = Class
     form_class = ClassForm
-    template_name = 'app_class_fe/class_form.html'
-    success_url = 'classes:class_list'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -104,9 +100,6 @@ class ClassCreateView(BaseCreateView):
 
 class ClassUpdateView(BaseUpdateView):
     model = Class
-    form_class = ClassForm
-    template_name = 'app_class_fe/class_form.html'
-    success_url = 'classes:class_list'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -115,8 +108,7 @@ class ClassUpdateView(BaseUpdateView):
 
 class ClassDeleteView(BaseDeleteView):
     model = Class
-    template_name = 'app_class_fe/class_confirm_delete.html'
-    success_url = 'classes:class_list'
+
     
     def delete(self, request, *args, **kwargs):
         class_obj = self.get_object()

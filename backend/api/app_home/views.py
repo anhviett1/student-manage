@@ -15,7 +15,7 @@ from django.contrib import messages
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from ..app_student.models import Student
 from ..app_teacher.models import Teacher
 from ..app_subject.models import Subject
@@ -23,11 +23,11 @@ from ..app_class.models import Class
 from ..app_activity.models import Activity
 from .forms import ChangePasswordForm, UserProfileForm
 from .models import Department
-from .serializers import UserSerializer, DepartmentSerializer
+from .serializers import UserSerializer, DepartmentSerializer, ChangePasswordSerializer,UserProfileSerializer
 from .permissions import (
-    IsAdmin, IsTeacher, IsStudent, IsAdminOrTeacher,
-    IsAdminOrReadOnly, IsOwnerOrAdmin, CanViewOwnScores,
-    CanManageSubject, CanViewSubjectScores
+    IsAdmin,
+    IsAdminOrReadOnly, 
+    IsOwnerOrAdmin
 )
 
 User = get_user_model()
@@ -91,7 +91,7 @@ class HomeApiEndpointSerializer(serializers.Serializer):
     message = serializers.CharField()
     api_endpoints = serializers.DictField(child=serializers.CharField())
 
-@extend_schema(tags=['Home'])
+@extend_schema(tags=['app_home'])
 class HomeAPIView(APIView):
     """API View cho trang chủ"""
     permission_classes = [AllowAny]
@@ -107,8 +107,23 @@ class HomeAPIView(APIView):
             'token_obtain': '/api/token/',
             'token_refresh': '/api/token/refresh/',
             'token_verify': '/api/token/verify/',
+            'login': '/api/login/',
+            'logout': '/api/logout/',
+            'profile': '/api/profile/',
+            'change_password': '/api/change-password/',
         }
-        
+        dashboard_data = get_dashboard_context()
+        api_endpoints.update({
+            'dashboard': '/api/dashboard/',
+            'students': '/api/students/',
+            'teachers': '/api/teachers/',
+            'subjects': '/api/subjects/',
+            'classes': '/api/classes/',
+            'scores': '/api/scores/',
+            'enrollments': '/api/enrollments/',
+            'activities': '/api/activities/',
+            'semesters': '/api/semesters/',
+        })
         data = {
             'message': 'Welcome to Student Management API',
             'api_endpoints': api_endpoints
@@ -124,157 +139,115 @@ def get_dashboard_context():
         'total_teachers': Teacher.objects.filter(is_active=True).count(),
         'total_subjects': Subject.objects.filter(is_active=True).count(),
         'total_classes': Class.objects.filter(is_active=True).count(),
-        # 'student_by_faculty': Student.objects.filter(is_active=True).values('faculty').annotate(
-        #     count=Count('student_id')
-        # ),
+
         'subjects_by_semester': Subject.objects.filter(is_active=True).values('semester').annotate(
             count=Count('subject_id')
         ),
         'recent_activities': Activity.objects.select_related('user').order_by('-created_at')[:10],
     }
 
-def home_view(request):
-    """View cho trang chủ"""
-    return render(request, 'index.html', get_dashboard_context())
+@extend_schema(tags=['Authentication'])
+class LoginAPIView(APIView):
+    """API View cho đăng nhập"""
+    permission_classes = [AllowAny]
 
-def dashboard_view(request):
-    """View cho dashboard"""
-    return home_view(request)
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'message': 'Đăng nhập thành công',
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'role': user.role if hasattr(user, 'role') else None
+                }
+            }, status=status.HTTP_200_OK)
+        return Response({'error': 'Thông tin đăng nhập không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
 
-@login_required
-def home(request):
-    """View cho trang chủ đã đăng nhập"""
-    return render(request, 'index.html', get_dashboard_context())
+@extend_schema(tags=['Authentication'])
+class LogoutAPIView(APIView):
+    """API View cho đăng xuất"""
+    permission_classes = [IsAuthenticated]
 
-@login_required
-def change_password(request):
-    """View cho trang đổi mật khẩu"""
-    if request.method == 'POST':
-        form = ChangePasswordForm(user=request.user, data=request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('password_change_done')
-    else:
-        form = ChangePasswordForm(user=request.user)
-    return render(request, 'app_home_fe/change_password.html', {'form': form})
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            logout(request)
+            return Response({'message': 'Đăng xuất thành công'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-def login_view(request):
-    """View cho trang đăng nhập"""
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('home')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'app_home_fe/login.html', {'form': form})
+@extend_schema(tags=['Profile'])
+class ProfileAPIView(APIView):
+    """API View cho hồ sơ người dùng"""
+    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
 
-@login_required
-def logout_view(request):
-    """View cho đăng xuất"""
-    logout(request)
-    return redirect('login')
+    def get(self, request):
+        user = request.user
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-@login_required
-def profile_view(request):
-    """View cho trang hồ sơ"""
-    user = request.user
-    context = {
-        'title': _('Hồ sơ'),
-        'user': user,
-        'profile': user,
-        'form': None
-    }
-    
-    if request.method == 'POST':
-        form = UserProfileForm(request.POST, request.FILES, instance=user)
-        if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, _('Cập nhật hồ sơ thành công!'))
-                return redirect('home:profile')
-            except Exception as e:
-                messages.error(request, _('Có lỗi xảy ra khi cập nhật hồ sơ. Vui lòng thử lại.'))
-                if settings.DEBUG:
-                    messages.error(request, str(e))
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{form.fields[field].label}: {error}")
-    else:
-        form = UserProfileForm(instance=user)
-    
-    context['form'] = form
-    return render(request, 'app_home_fe/profile.html', context)
+    def patch(self, request):
+        user = request.user
+        serializer = UserProfileSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Cập nhật hồ sơ thành công', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@login_required
-def home_be_view(request):
-    """
-    View function cho trang home_be.html
-    """
-    # Lấy thông tin thống kê
-    total_students = User.objects.filter(role__name='student').count()
-    total_teachers = User.objects.filter(role__name='teacher').count()
-    total_subjects = Department.objects.count()
-    total_classes = Department.objects.count()
+@extend_schema(tags=['Profile'])
+class ChangePasswordAPIView(APIView):
+    """API View cho đổi mật khẩu"""
+    permission_classes = [IsAuthenticated]
 
-    context = {
-        'total_students': total_students,
-        'total_teachers': total_teachers,
-        'total_subjects': total_subjects,
-        'total_classes': total_classes,
-    }
-    return render(request, 'app_home/home_be.html', context)
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = request.user
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({'message': 'Đổi mật khẩu thành công'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(tags=['Users'])
 class UserViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows users to be viewed or edited.
-    """
+    """API endpoint cho quản lý người dùng"""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrReadOnly]
 
     def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
         if self.action == 'create':
-            permission_classes = [permissions.AllowAny]
+            permission_classes = [AllowAny]
         elif self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [IsAdmin]
         elif self.action == 'me':
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAdminOrReadOnly]
         return [permission() for permission in permission_classes]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """
-        Get current user information
-        """
+        """Lấy thông tin người dùng hiện tại"""
         serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
-        """
-        Change user password
-        """
-        user = request.user
-        old_password = request.data.get('old_password')
-        new_password = request.data.get('new_password')
-
-        if not user.check_password(old_password):
-            return Response(
-                {'error': 'Wrong password.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user.set_password(new_password)
-        user.save()
-        return Response({'status': 'password changed'})
+        """Đổi mật khẩu người dùng"""
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = request.user
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({'message': 'Đổi mật khẩu thành công'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
