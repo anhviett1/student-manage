@@ -1,37 +1,59 @@
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 const toasts = ref([])
-let toastId = 0
+const toastIdCounter = ref(0)
 
 export function useToast() {
-  const showToast = (message, type = 'info', duration = 3000) => {
-    const id = ++toastId
+  const addToast = ({ severity = 'info', summary = '', detail = '', life = 3000 }) => {
+    const id = ++toastIdCounter.value
     const toast = {
       id,
-      message,
-      type,
-      duration
+      severity: normalizeSeverity(severity),
+      summary,
+      detail,
+      life,
+      progress: 100,
     }
 
     toasts.value.push(toast)
 
+    const startTime = Date.now()
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      toast.progress = Math.max(0, 100 - (elapsed / life) * 100)
+      if (elapsed >= life) {
+        clearInterval(interval)
+        removeToast(id)
+      }
+    }, 16)
+
     setTimeout(() => {
       removeToast(id)
-    }, duration)
+      clearInterval(interval)
+    }, life)
 
     return id
   }
 
   const removeToast = (id) => {
-    const index = toasts.value.findIndex(toast => toast.id === id)
+    const index = toasts.value.findIndex((toast) => toast.id === id)
     if (index !== -1) {
       toasts.value.splice(index, 1)
     }
   }
 
+  const normalizeSeverity = (severity) => {
+    const validSeverities = ['success', 'info', 'warn', 'error']
+    return validSeverities.includes(severity) ? severity : 'info'
+  }
+
+  onUnmounted(() => {
+    toasts.value = []
+  })
+
   return {
     toasts,
-    showToast,
-    removeToast
+    addToast,
+    removeToast,
   }
-} 
+}

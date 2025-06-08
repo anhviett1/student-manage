@@ -1,19 +1,38 @@
 from rest_framework import serializers
-from .models import User, Department
+from django.contrib.auth import get_user_model
+from django.utils import gettext_lazy as _
+from ..app_home.models import Department
+
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    
-    password = serializers.CharField(write_only=True, required=False)
-    
     class Meta:
         model = User
-        fields = [ 'username', 'password', 'role']
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'role': {'required': True}
-        }
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
+        read_only_fields = ['id']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        read_only_fields = ['id', 'username']
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError(_('Mật khẩu cũ không đúng'))
+        return value
+    
+    def validate_new_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError(_('Mật khẩu mới phải có ít nhất 8 ký tự'))
+        return value
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = ['id', 'name', 'code', 'description', 'is_active']
+        fields = '__all__'

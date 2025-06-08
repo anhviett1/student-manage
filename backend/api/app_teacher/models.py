@@ -21,8 +21,6 @@ class Teacher(BaseModel):
         ('on_leave', 'Nghỉ phép'),
     ]
     
-    
-    
     DEGREE_CHOICES = [
         ('bachelor', 'Cử nhân'),
         ('master', 'Thạc sĩ'),

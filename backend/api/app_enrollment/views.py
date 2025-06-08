@@ -1,112 +1,100 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
-from rest_framework.response import Response
 from rest_framework.decorators import action
-from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
-from .models import Enrollment
-from .serializers import EnrollmentSerializer, EnrollmentCreateSerializer, EnrollmentDetailSerializer
-from .forms import EnrollmentForm
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from ..app_enrollment.models import Enrollment
+from ..app_enrollment.serializers import EnrollmentSerializer
+from django.db.models import Q
+import pandas as pd
+from django.http import HttpResponse
+from datetime import datetime
 
-@extend_schema_view(
-    list=extend_schema(tags=['Enrollments']),
-    retrieve=extend_schema(tags=['Enrollments']),
-    create=extend_schema(tags=['Enrollments']),
-    update=extend_schema(tags=['Enrollments']),
-    partial_update=extend_schema(tags=['Enrollments']),
-    destroy=extend_schema(tags=['Enrollments']),
-    active=extend_schema(tags=['Enrollments']),
-)
 class EnrollmentViewSet(viewsets.ModelViewSet):
-    queryset = Enrollment.objects.filter(is_deleted=False)
+    queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAuthenticated]
-    
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return EnrollmentCreateSerializer
-        elif self.action in ['retrieve', 'list']:
-            return EnrollmentDetailSerializer
-        return EnrollmentSerializer
-    
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.save()
-        
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        active_enrollments = Enrollment.objects.filter(is_deleted=False)
-        serializer = self.get_serializer(active_enrollments, many=True)
-        return Response(serializer.data)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['status', 'is_active', 'semester__semester_id', 'student__student_id', 'subject__subject_id']
+    search_fields = ['student__name', 'subject__name', 'semester__name', 'notes']
 
-class EnrollmentListView(BaseListView):
-    model = Enrollment
-    search_fields = ['student__student_id', 'student__first_name', 'student__last_name', 'class__name']
-    
     def get_queryset(self):
         queryset = super().get_queryset()
-        class_filter = self.request.GET.get('class', '')
-        semester_filter = self.request.GET.get('semester', '')
-        status_filter = self.request.GET.get('status', '')
-        
-        if class_filter:
-            queryset = queryset.filter(class_obj=class_filter)
-        if semester_filter:
-            queryset = queryset.filter(semester=semester_filter)
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-            
-        return queryset.select_related(
-            'student', 'class_obj', 'semester', 'created_by'
-        ).order_by('-created_at')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'class_filter': self.request.GET.get('class', ''),
-            'semester_filter': self.request.GET.get('semester', ''),
-            'status_filter': self.request.GET.get('status', ''),
-            'status_choices': Enrollment.STATUS_CHOICES,
-        })
-        return context
+        if not self.request.user.has_perm('app_enrollment.can_manage_enrollment'):
+            # Non-managers only see their own enrollments
+            if hasattr(self.request.user, 'student'):
+                queryset = queryset.filter(student=self.request.user.student)
+            else:
+                queryset = queryset.none()
+        return queryset
 
-class EnrollmentDetailView(BaseDetailView):
-    model = Enrollment
-    
-    def get_queryset(self):
-        return Enrollment.objects.select_related(
-            'student', 'class_obj', 'semester', 'created_by'
-        )
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
 
-class EnrollmentCreateView(BaseCreateView):
-    model = Enrollment
-    form_class = EnrollmentForm
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Thêm đăng ký học'
-        return context
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
-class EnrollmentUpdateView(BaseUpdateView):
-    model = Enrollment
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Cập nhật đăng ký học'
-        return context
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.updated_by = self.request.user
+        instance.save()
 
-class EnrollmentDeleteView(BaseDeleteView):
-    model = Enrollment
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def restore(self, request, pk=None):
+        try:
+            instance = self.get_object()
+            if not instance.is_deleted:
+                return Response({'error': 'Đăng ký chưa bị xóa.'}, status=status.HTTP_400_BAD_REQUEST)
+            instance.is_deleted = False
+            instance.updated_by = request.user
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response({'data': serializer.data, 'message': 'Khôi phục đăng ký thành công.'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    
-    def delete(self, request, *args, **kwargs):
-        enrollment = self.get_object()
-        enrollment.is_deleted = True
-        enrollment.save()
-        messages.success(request, 'Đăng ký học đã được xóa thành công.')
-        return redirect(self.success_url)
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def change_status(self, request, pk=None):
+        try:
+            instance = self.get_object()
+            new_status = request.data.get('status')
+            if new_status not in dict(Enrollment.STATUS_CHOICES):
+                return Response({'error': 'Trạng thái không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
+            instance.status = new_status
+            instance.updated_by = request.user
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response({'data': serializer.data, 'message': 'Cập nhật trạng thái thành công.'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def export(self, request):
+        if not request.user.has_perm('app_enrollment.can_export_enrollment'):
+            return Response({'error': 'Không có quyền xuất dữ liệu.'}, status=status.HTTP_403_FORBIDDEN)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        data = []
+        for enrollment in queryset:
+            data.append({
+                'Student ID': enrollment.student.student_id,
+                'Student Name': enrollment.student.name,
+                'Subject ID': enrollment.subject.subject_id,
+                'Subject Name': enrollment.subject.name,
+                'Semester ID': enrollment.semester.semester_id,
+                'Semester Name': enrollment.semester.name,
+                'Class ID': enrollment.class_obj.class_id,
+                'Enrollment Date': enrollment.enrollment_date,
+                'Status': enrollment.status,
+                'Is Active': enrollment.is_active,
+                'Notes': enrollment.notes,
+                'Created At': enrollment.created_at,
+                'Updated At': enrollment.updated_at
+            })
+
+        df = pd.DataFrame(data)
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=enrollments_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        df.to_excel(response, index=False)
+        return response

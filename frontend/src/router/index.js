@@ -1,106 +1,143 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { endpoints } from '@/config/api'
 
+// Tạo router với lịch sử trình duyệt
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL || '/'),
   routes: [
+    // Trang chủ
     {
       path: '/',
-      name: 'index',
-      component: () => import('../components/Index.vue')
-    },
-    {
-      path: '/home',
       name: 'home',
       component: () => import('../views/HomeView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, title: 'Trang Chủ' },
     },
+    // Đăng nhập
     {
       path: '/login',
       name: 'login',
-      component: () => import('../views/LoginView.vue')
+      component: () => import('../views/LoginView.vue'),
+      meta: { title: 'Đăng Nhập' },
     },
+    // Hồ sơ người dùng
     {
       path: '/profile',
       name: 'profile',
       component: () => import('../views/ProfileView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, title: 'Hồ Sơ' },
     },
-    {
-      path: '/students',
-      name: 'students',
-      component: () => import('../views/StudentListView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
-      path: '/teachers',
-      name: 'teachers',
-      component: () => import('../views/TeacherListView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
-      path: '/classes',
-      name: 'classes',
-      component: () => import('../views/ClassListView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
-      path: '/subjects',
-      name: 'subjects',
-      component: () => import('../views/SubjectListView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
-      path: '/enrollments',
-      name: 'enrollments',
-      component: () => import('../views/EnrollmentListView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
-      path: '/semesters',
-      name: 'semesters',
-      component: () => import('../views/SemesterListView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
-      path: '/scores',
-      name: 'scores',
-      component: () => import('../views/ScoreListView.vue'),
-      meta: { requiresAuth: true, role: 'teacher' }
-    },
-    {
-      path: '/my-scores',
-      name: 'my-scores',
-      component: () => import('../views/MyScoresView.vue'),
-      meta: { requiresAuth: true, role: 'student' }
-    },
+    // Đổi mật khẩu
     {
       path: '/change-password',
       name: 'change-password',
       component: () => import('../views/ChangePasswordView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, title: 'Đổi Mật Khẩu' },
     },
+    // Django Admin (external redirect)
+    {
+      path: '/admin',
+      name: 'admin',
+      beforeEnter: (to, from, next) => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated || !authStore.isAdmin) {
+          next('/')
+        } else {
+          window.location.href = endpoints.djangoAdmin // /admin/
+        }
+      },
+      meta: { requiresAuth: true, role: 'admin', title: 'Django Admin' },
+    },
+    // Quản lý sinh viên
+    {
+      path: '/students',
+      name: 'students',
+      component: () => import('../views/StudentView.vue'),
+      meta: { requiresAuth: true, role: 'admin', title: 'Quản Lý Sinh Viên' },
+    },
+    // Quản lý giảng viên
+    {
+      path: '/teachers',
+      name: 'teachers',
+      component: () => import('../views/TeacherView.vue'),
+      meta: { requiresAuth: true, role: 'admin', title: 'Quản Lý Giảng Viên' },
+    },
+    // Quản lý lớp học
+    {
+      path: '/classes',
+      name: 'classes',
+      component: () => import('../views/ClassView.vue'),
+      meta: { requiresAuth: true, role: 'admin', title: 'Quản Lý Lớp Học' },
+    },
+    // Quản lý môn học
+    {
+      path: '/subjects',
+      name: 'subjects',
+      component: () => import('../views/SubjectView.vue'),
+      meta: { requiresAuth: true, role: 'admin', title: 'Quản Lý Môn Học' },
+    },
+    // Quản lý ghi danh
+    {
+      path: '/enrollments',
+      name: 'enrollments',
+      component: () => import('../views/EnrollmentView.vue'),
+      meta: { requiresAuth: true, role: 'admin', title: 'Quản Lý Ghi Danh' },
+    },
+    // Quản lý học kỳ
+    {
+      path: '/semesters',
+      name: 'semesters',
+      component: () => import('../views/SemesterView.vue'),
+      meta: { requiresAuth: true, role: 'admin', title: 'Quản Lý Học Kỳ' },
+    },
+    // Quản lý điểm số
+    {
+      path: '/scores',
+      name: 'scores',
+      component: () => import('../views/ScoreListView.vue'),
+      meta: { requiresAuth: true, role: 'teacher', title: 'Quản Lý Điểm Số' },
+    },
+    // Trang chào mừng (không yêu cầu đăng nhập)
     {
       path: '/welcome',
       name: 'welcome',
-      component: () => import('../components/Index.vue')
-    }
-  ]
+      component: () => import('../components/Index.vue'),
+      meta: { title: 'Chào Mừng' },
+    },
+    // Redirect các route không tồn tại về trang chủ
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
+    },
+  ],
 })
 
-// Navigation guard
-router.beforeEach((to, from, next) => {
+// Navigation guard toàn cục
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  // Đảm bảo trạng thái xác thực đã được tải
+  if (!authStore.user && authStore.isAuthenticated) {
+    try {
+      await authStore.fetchCurrentUser()
+    } catch (error) {
+      authStore.logout()
+    }
+  }
+
   const isAuthenticated = authStore.isAuthenticated
-  
+  const requiredRole = to.meta.role
+
+  // Kiểm tra quyền truy cập
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-  } else if (to.meta.role && !authStore.canAccess(to.meta.role)) {
-    // Redirect to home if user doesn't have required role
+    next({ name: 'login', query: { redirect: to.fullPath } })
+  } else if (requiredRole && !authStore.hasRole(requiredRole)) {
     next('/')
   } else {
+    // Cập nhật tiêu đề trang
+    document.title = to.meta.title ? `${to.meta.title} - Hệ Thống Quản Lý Sinh Viên` : 'Hệ Thống Quản Lý Sinh Viên'
     next()
   }
 })
 
-export default router 
+export default router

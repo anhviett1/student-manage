@@ -1,133 +1,195 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
-from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from .models import Student
-from .serializers import StudentSerializer, StudentCreateSerializer, StudentDetailSerializer
-from .forms import StudentForm
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from django.urls import reverse_lazy
-from ..student_be.mixins import SearchTermMixin
-from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
-from ..app_home.permissions import IsAdmin, IsTeacher
-from ..app_home.models import Department
+from .serializers import StudentSerializer
+import pandas as pd
+from django.http import HttpResponse
+from datetime import datetime
+from django.utils.translation import gettext_lazy as _
 
-
-@extend_schema_view(
-    list=extend_schema(tags=['Students']),
-    retrieve=extend_schema(tags=['Students']),
-    create=extend_schema(tags=['Students']),
-    update=extend_schema(tags=['Students']),
-    partial_update=extend_schema(tags=['Students']),
-    destroy=extend_schema(tags=['Students']),
-    active=extend_schema(tags=['Students']),
-)
 class StudentViewSet(viewsets.ModelViewSet):
-    queryset = Student.objects.filter(is_deleted=False)
+    queryset = Student.objects.all()
     serializer_class = StudentSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
-    
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return StudentCreateSerializer
-        elif self.action in ['retrieve', 'list']:
-            return StudentDetailSerializer
-        return StudentSerializer
-    
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.save()
-        
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        active_students = Student.objects.filter(is_deleted=False)
-        serializer = self.get_serializer(active_students, many=True)
-        return Response(serializer.data)
-
-class StudentListView(BaseListView):
-    model = Student
-    template_name = 'app_student_fe/student_list.html'
-    context_object_name = 'students'
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['status', 'is_active', 'department__name', 'major']
     search_fields = ['student_id', 'first_name', 'last_name', 'email']
-    
+
     def get_queryset(self):
-        queryset = Student.objects.all()
-        search_query = self.request.GET.get('search', '')
-        status_filter = self.request.GET.get('status', '')
-        department_filter = self.request.GET.get('department', '')
+        """
+        Lọc queryset dựa trên quyền của người dùng.
+        Người không có quyền quản lý chỉ thấy thông tin của chính họ nếu là sinh viên.
+        """
+        queryset = super().get_queryset()
+        if not self.request.user.has_perm('app_student.can_manage_student'):
+            if hasattr(self.request.user, 'student'):
+                queryset = queryset.filter(user=self.request.user)
+            else:
+                queryset = queryset.none()
+        return queryset
 
-        if search_query:
-            queryset = queryset.filter(
-                Q(student_id__icontains=search_query) |
-                Q(first_name__icontains=search_query) |
-                Q(last_name__icontains=search_query) |
-                Q(email__icontains=search_query)
-            )
-        
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-            
-        if department_filter:
-            queryset = queryset.filter(department_id=department_filter)
-            
-        return queryset.select_related('department')
+    def perform_create(self, serializer):
+        """
+        Tạo mới sinh viên, xử lý quan hệ ManyToMany và gán thông tin người tạo/cập nhật.
+        """
+        class_assigned_ids = serializer.validated_data.pop('class_assigned', [])
+        subject_ids = serializer.validated_data.pop('subjects', [])
+        score_ids = serializer.validated_data.pop('scores', [])
+        student = serializer.save(
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
+        student.class_assigned.set(class_assigned_ids)
+        student.subjects.set(subject_ids)
+        student.scores.set(score_ids)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'search_query': self.request.GET.get('search', ''),
-            'status_filter': self.request.GET.get('status', ''),
-            'department_filter': self.request.GET.get('department', ''),
-            'departments': Department.objects.all(),
-            'status_choices': Student.STATUS_CHOICES,
-        })
-        return context
+    def perform_update(self, serializer):
+        """
+        Cập nhật sinh viên, xử lý quan hệ ManyToMany và gán thông tin người cập nhật.
+        """
+        class_assigned_ids = serializer.validated_data.pop('class_assigned', None)
+        subject_ids = serializer.validated_data.pop('subjects', None)
+        score_ids = serializer.validated_data.pop('scores', None)
+        student = serializer.save(updated_by=self.request.user)
+        if class_assigned_ids is not None:
+            student.class_assigned.set(class_assigned_ids)
+        if subject_ids is not None:
+            student.subjects.set(subject_ids)
+        if score_ids is not None:
+            student.scores.set(score_ids)
 
-class StudentDetailView(BaseDetailView):
-    model = Student
-    template_name = 'app_student_fe/student_detail.html'
-    context_object_name = 'student'
-    
-    def get_queryset(self):
-        return Student.objects.select_related(
-            'user', 'created_by', 'department'
-        ).prefetch_related('enrollments', 'scores')
+    def perform_destroy(self, instance):
+        """
+        Thực hiện xóa mềm bằng cách đánh dấu is_deleted và lưu thông tin người xóa.
+        """
+        instance.is_deleted = True
+        instance.deleted_by = self.request.user
+        instance.deleted_at = datetime.now()
+        instance.save()
 
-class StudentCreateView(BaseCreateView):
-    model = Student
-    form_class = StudentForm
-    template_name = 'app_student_fe/student_form.html'
-    success_url = 'students:student_list'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Thêm sinh viên'
-        return context
+    def create(self, request, *args, **kwargs):
+        """
+        API tạo mới sinh viên.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({
+            'data': serializer.data,
+            'message': _('Tạo sinh viên thành công.')
+        }, status=status.HTTP_201_CREATED)
 
-class StudentUpdateView(BaseUpdateView):
-    model = Student
-    form_class = StudentForm
-    template_name = 'app_student_fe/student_form.html'
-    success_url = 'students:student_list'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Cập nhật sinh viên'
-        return context
+    def retrieve(self, request, *args, **kwargs):
+        """
+        API lấy thông tin chi tiết sinh viên.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({
+            'data': serializer.data,
+            'message': _('Lấy thông tin sinh viên thành công.')
+        }, status=status.HTTP_200_OK)
 
-class StudentDeleteView(BaseDeleteView):
-    model = Student
-    template_name = 'app_student_fe/student_confirm_delete.html'
-    success_url = 'students:student_list'
-    
-    def delete(self, request, *args, **kwargs):
-        student = self.get_object()
-        student.is_deleted = True
-        student.save()
-        messages.success(request, 'Sinh viên đã được xóa thành công.')
-        return redirect(self.success_url)
+    def update(self, request, *args, **kwargs):
+        """
+        API cập nhật thông tin sinh viên.
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({
+            'data': serializer.data,
+            'message': _('Cập nhật sinh viên thành công.')
+        }, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        API xóa mềm sinh viên.
+        """
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({
+            'message': _('Xóa sinh viên thành công.')
+        }, status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def restore(self, request, pk=None):
+        """
+        Khôi phục sinh viên đã bị xóa mềm.
+        """
+        try:
+            instance = self.get_object()
+            if not instance.is_deleted:
+                return Response({'error': _('Sinh viên chưa bị xóa.')}, status=status.HTTP_400_BAD_REQUEST)
+            instance.is_deleted = False
+            instance.deleted_by = None
+            instance.deleted_at = None
+            instance.updated_by = request.user
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response({
+                'data': serializer.data,
+                'message': _('Khôi phục sinh viên thành công.')
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def change_status(self, request, pk=None):
+        """
+        Thay đổi trạng thái của sinh viên.
+        """
+        try:
+            instance = self.get_object()
+            new_status = request.data.get('status')
+            if new_status not in dict(Student.STATUS_CHOICES):
+                return Response({'error': _('Trạng thái không hợp lệ.')}, status=status.HTTP_400_BAD_REQUEST)
+            instance.status = new_status
+            instance.updated_by = request.user
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response({
+                'data': serializer.data,
+                'message': _('Cập nhật trạng thái thành công.')
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def export(self, request):
+        """
+        Xuất danh sách sinh viên ra file Excel.
+        """
+        if not request.user.has_perm('app_student.can_manage_student'):
+            return Response({'error': _('Không có quyền xuất dữ liệu.')}, status=status.HTTP_403_FORBIDDEN)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        data = []
+        for student in queryset:
+            data.append({
+                'Mã Sinh Viên': student.student_id,
+                'Họ và Tên': student.get_full_name(),
+                'Email': student.email,
+                'Số Điện Thoại': student.phone,
+                'Ngày Sinh': student.date_of_birth,
+                'Giới Tính': dict(Student.GENDER_CHOICES).get(student.gender, student.gender),
+                'Trạng Thái': dict(Student.STATUS_CHOICES).get(student.status, student.status),
+                'Chuyên Ngành': student.major,
+                'GPA': student.gpa,
+                'Tín Chỉ Tích Lũy': student.credits_earned,
+                'Khoa': student.department.name,
+                'Ngày Tạo': student.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'Ngày Cập Nhật': student.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+            })
+
+        df = pd.DataFrame(data)
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=students_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        df.to_excel(response, index=False)
+        return response

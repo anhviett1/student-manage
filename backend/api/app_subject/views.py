@@ -1,121 +1,170 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
-from rest_framework.response import Response
 from rest_framework.decorators import action
-from ..student_be.mixins import SearchTermMixin
-from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from .models import Subject
-from .serializers import SubjectSerializer, SubjectCreateSerializer, SubjectDetailSerializer
-from .forms import SubjectForm
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from ..app_home.models import Department
+from .serializers import SubjectSerializer
+from datetime import datetime
+import pandas as pd
+from django.http import HttpResponse
+from django.utils.translation import gettext_lazy as _
 
-# Create your views here.
-
-@extend_schema_view(
-    list=extend_schema(tags=['Subjects']),
-    retrieve=extend_schema(tags=['Subjects']),
-    create=extend_schema(tags=['Subjects']),
-    update=extend_schema(tags=['Subjects']),
-    partial_update=extend_schema(tags=['Subjects']),
-    destroy=extend_schema(tags=['Subjects']),
-    active=extend_schema(tags=['Subjects']),
-)
 class SubjectViewSet(viewsets.ModelViewSet):
-    queryset = Subject.objects.filter(is_deleted=False)
+    queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     permission_classes = [IsAuthenticated]
-    
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return SubjectCreateSerializer
-        elif self.action in ['retrieve', 'list']:
-            return SubjectDetailSerializer
-        return SubjectSerializer
-    
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.save()
-        
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        active_subjects = Subject.objects.filter(is_deleted=False)
-        serializer = self.get_serializer(active_subjects, many=True)
-        return Response(serializer.data)
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['status', 'is_active', 'department__name', 'semester__name']
+    search_fields = ['subject_id', 'name']
 
-class SubjectListView(BaseListView):
-    model = Subject
-    template_name = 'app_subject_fe/subject_list.html'
-    context_object_name = 'subjects'
-    search_fields = ['subject_id', 'name', 'description']
-    
     def get_queryset(self):
+        """
+        Lọc queryset dựa trên quyền của người dùng.
+        Người không có quyền quản lý chỉ thấy các môn học đang hoạt động và chưa bị xóa.
+        """
         queryset = super().get_queryset()
-        department_filter = self.request.GET.get('department', '')
-        status_filter = self.request.GET.get('status', '')
-        
-        if department_filter:
-            queryset = queryset.filter(department=department_filter)
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-            
-        return queryset.select_related('created_by').order_by('-created_at')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'department_filter': self.request.GET.get('department', ''),
-            'status_filter': self.request.GET.get('status', ''),
-            'departments': Department.objects.filter(is_active=True),
-            'status_choices': Subject.STATUS_CHOICES,
-        })
-        return context
+        if not self.request.user.has_perm('app_subject.can_manage_subject'):
+            queryset = queryset.filter(is_active=True, is_deleted=False)
+        return queryset
 
-class SubjectDetailView(BaseDetailView):
-    model = Subject
-    template_name = 'app_subject_fe/subject_detail.html'
-    context_object_name = 'subject'
-    
-    def get_queryset(self):
-        return Subject.objects.select_related(
-            'created_by'
-        ).prefetch_related('classes', 'teachers')
+    def create(self, request, *args, **kwargs):
+        """
+        Tạo mới một môn học.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({
+            'data': serializer.data,
+            'message': _('Tạo môn học thành công.')
+        }, status=status.HTTP_201_CREATED)
 
-class SubjectCreateView(BaseCreateView):
-    model = Subject
-    form_class = SubjectForm
-    template_name = 'app_subject_fe/subject_form.html'
-    success_url = 'subjects:subject_list'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Thêm môn học'
-        return context
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Lấy thông tin chi tiết của một môn học.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({
+            'data': serializer.data,
+            'message': _('Lấy thông tin môn học thành công.')
+        }, status=status.HTTP_200_OK)
 
-class SubjectUpdateView(BaseUpdateView):
-    model = Subject
-    form_class = SubjectForm
-    template_name = 'app_subject_fe/subject_form.html'
-    success_url = 'subjects:subject_list'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Cập nhật môn học'
-        return context
+    def update(self, request, *args, **kwargs):
+        """
+        Cập nhật thông tin môn học.
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({
+            'data': serializer.data,
+            'message': _('Cập nhật môn học thành công.')
+        }, status=status.HTTP_200_OK)
 
-class SubjectDeleteView(BaseDeleteView):
-    model = Subject
-    template_name = 'app_subject_fe/subject_confirm_delete.html'
-    success_url = 'subjects:subject_list'
-    
-    def delete(self, request, *args, **kwargs):
-        subject = self.get_object()
-        subject.is_deleted = True
-        subject.save()
-        messages.success(request, 'Môn học đã được xóa thành công.')
-        return redirect(self.success_url)
+    def destroy(self, request, *args, **kwargs):
+        """
+        Xóa mềm một môn học.
+        """
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({
+            'message': _('Xóa môn học thành công.')
+        }, status=status.HTTP_204_NO_CONTENT)
+
+    def perform_create(self, serializer):
+        """
+        Lưu thông tin người tạo và người cập nhật khi tạo mới môn học.
+        """
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+
+    def perform_update(self, serializer):
+        """
+        Cập nhật thông tin người cập nhật khi chỉnh sửa môn học.
+        """
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        """
+        Thực hiện xóa mềm bằng cách đánh dấu is_deleted và lưu thông tin người xóa.
+        """
+        instance.is_deleted = True
+        instance.deleted_by = self.request.user
+        instance.deleted_at = datetime.now()
+        instance.save()
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def restore(self, request, pk=None):
+        """
+        Khôi phục môn học đã bị xóa mềm.
+        """
+        try:
+            instance = self.get_object()
+            if not instance.is_deleted:
+                return Response({'error': _('Môn học chưa bị xóa.')}, status=status.HTTP_400_BAD_REQUEST)
+            instance.is_deleted = False
+            instance.deleted_by = None
+            instance.deleted_at = None
+            instance.updated_by = request.user
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response({
+                'data': serializer.data,
+                'message': _('Khôi phục môn học thành công.')
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def change_status(self, request, pk=None):
+        """
+        Thay đổi trạng thái của môn học.
+        """
+        try:
+            instance = self.get_object()
+            new_status = request.data.get('status')
+            if new_status not in dict(Subject.STATUS_CHOICES):
+                return Response({'error': _('Trạng thái không hợp lệ.')}, status=status.HTTP_400_BAD_REQUEST)
+            instance.status = new_status
+            instance.updated_by = request.user
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response({
+                'data': serializer.data,
+                'message': _('Cập nhật trạng thái thành công.')
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def export(self, request):
+        """
+        Xuất danh sách môn học ra file Excel.
+        """
+        if not request.user.has_perm('app_subject.can_manage_subject'):
+            return Response({'error': _('Không có quyền xuất dữ liệu.')}, status=status.HTTP_403_FORBIDDEN)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        data = []
+        for subject in queryset:
+            data.append({
+                'Mã Môn Học': subject.subject_id,
+                'Tên Môn Học': subject.name,
+                'Số Tín Chỉ': subject.credits,
+                'Học Kỳ': subject.semester.name if subject.semester else 'N/A',
+                'Khoa': subject.department.name if subject.department else 'N/A',
+                'Trạng Thái': dict(Subject.STATUS_CHOICES).get(subject.status, subject.status),
+                'Hoạt Động': 'Có' if subject.is_active else 'Không',
+                'Ngày Tạo': subject.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'Ngày Cập Nhật': subject.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+            })
+
+        df = pd.DataFrame(data)
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=subjects_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        df.to_excel(response, index=False)
+        return response

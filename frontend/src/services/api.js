@@ -1,313 +1,123 @@
-const API_URL = '/api'
+import axios from 'axios'
 
-const handleResponse = async (response) => {
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Something went wrong')
-  }
-  return response.json()
-}
+// Base URL từ biến môi trường hoặc mặc định localhost
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+// Tiền tố cho tất cả API REST, trừ Django Admin
+const API_PREFIX = '/api/v1'
 
-const getHeaders = () => {
-  const token = localStorage.getItem('token')
-  return {
+// Cấu hình instance axios
+const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  }
+    Accept: 'application/json',
+  },
+  timeout: 15000, // Tăng timeout lên 15s cho các request phức tạp
+})
+
+// Định nghĩa các endpoint
+export const endpoints = {
+  // Authentication
+  login: `${API_PREFIX}/auth/login/`,
+  logout: `${API_PREFIX}/auth/logout/`,
+  register: `${API_PREFIX}/auth/register/`,
+  refreshToken: `${API_PREFIX}/auth/token/refresh/`,
+  // User Management
+  userProfile: `${API_PREFIX}/users/profile/`,
+  users: `${API_PREFIX}/users/`,
+  changePassword: `${API_PREFIX}/users/change-password/`,
+  uploadAvatar: `${API_PREFIX}/users/upload-avatar/`,
+  // Django Admin
+  djangoAdmin: '/admin/',
+  // App-specific REST APIs
+  students: `${API_PREFIX}/students/`,
+  teachers: `${API_PREFIX}/teachers/`,
+  classes: `${API_PREFIX}/classes/`,
+  subjects: `${API_PREFIX}/subjects/`,
+  enrollments: `${API_PREFIX}/enrollments/`,
+  semesters: `${API_PREFIX}/semesters/`,
+  scores: `${API_PREFIX}/scores/`,
+  activities: `${API_PREFIX}/activities/`,
+  home: `${API_PREFIX}/home/`,
+  // API Documentation
+  apiSchema: '/api/schema/',
+  apiDocs: '/api/docs/',
+  apiRedoc: '/api/redoc/',
 }
 
-export const api = {
-  // Auth
-  login: async (credentials) => {
-    const response = await fetch(`${API_URL}/auth/login/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(credentials)
-    })
-    return handleResponse(response)
-  },
+// Interceptor cho request: Thêm token vào header, trừ endpoint Django Admin
+api.interceptors.request.use(
+  (config) => {
+    // Không thêm Authorization cho Django Admin
+    if (config.url === endpoints.djangoAdmin) {
+      return config
+    }
 
-  // Students
-  getStudents: async () => {
-    const response = await fetch(`${API_URL}/students/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
 
-  createStudent: async (data) => {
-    const response = await fetch(`${API_URL}/students/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
+    // Đảm bảo Content-Type phù hợp cho FormData
+    if (config.data instanceof FormData) {
+      config.headers['Content-Type'] = 'multipart/form-data'
+    }
 
-  updateStudent: async (id, data) => {
-    const response = await fetch(`${API_URL}/students/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
+    return config
   },
+  (error) => Promise.reject(error)
+)
 
-  deleteStudent: async (id) => {
-    const response = await fetch(`${API_URL}/students/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
+// Interceptor cho response: Xử lý lỗi 401 và làm mới token
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
 
-  // Teachers
-  getTeachers: async () => {
-    const response = await fetch(`${API_URL}/teachers/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
+    // Bỏ qua refresh token cho Django Admin và các request đã retry
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      originalRequest.url !== endpoints.djangoAdmin
+    ) {
+      originalRequest._retry = true
+      try {
+        const refreshToken = localStorage.getItem('refresh_token')
+        if (!refreshToken) {
+          throw new Error('No refresh token available')
+        }
 
-  createTeacher: async (data) => {
-    const response = await fetch(`${API_URL}/teachers/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
+        // Gọi API refresh token
+        const response = await axios.post(`${BASE_URL}${endpoints.refreshToken}`, {
+          refresh: refreshToken,
+        })
 
-  updateTeacher: async (id, data) => {
-    const response = await fetch(`${API_URL}/teachers/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
+        const { access, refresh } = response.data
+        localStorage.setItem('access_token', access)
+        if (refresh) {
+          localStorage.setItem('refresh_token', refresh)
+        }
 
-  deleteTeacher: async (id) => {
-    const response = await fetch(`${API_URL}/teachers/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
+        // Cập nhật header Authorization
+        api.defaults.headers.Authorization = `Bearer ${access}`
+        originalRequest.headers.Authorization = `Bearer ${access}`
 
-  // Classes
-  getClasses: async () => {
-    const response = await fetch(`${API_URL}/classes/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
+        // Thử lại request gốc
+        return api(originalRequest)
+      } catch (refreshError) {
+        // Xóa token và chuyển hướng về login nếu refresh thất bại
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        delete api.defaults.headers.Authorization
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshError)
+      }
+    }
 
-  createClass: async (data) => {
-    const response = await fetch(`${API_URL}/classes/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  updateClass: async (id, data) => {
-    const response = await fetch(`${API_URL}/classes/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  deleteClass: async (id) => {
-    const response = await fetch(`${API_URL}/classes/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  // Subjects
-  getSubjects: async () => {
-    const response = await fetch(`${API_URL}/subjects/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  createSubject: async (data) => {
-    const response = await fetch(`${API_URL}/subjects/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  updateSubject: async (id, data) => {
-    const response = await fetch(`${API_URL}/subjects/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  deleteSubject: async (id) => {
-    const response = await fetch(`${API_URL}/subjects/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  // Enrollments
-  getEnrollments: async () => {
-    const response = await fetch(`${API_URL}/enrollments/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  createEnrollment: async (data) => {
-    const response = await fetch(`${API_URL}/enrollments/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  updateEnrollment: async (id, data) => {
-    const response = await fetch(`${API_URL}/enrollments/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  deleteEnrollment: async (id) => {
-    const response = await fetch(`${API_URL}/enrollments/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  // Semesters
-  getSemesters: async () => {
-    const response = await fetch(`${API_URL}/semesters/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  createSemester: async (data) => {
-    const response = await fetch(`${API_URL}/semesters/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  updateSemester: async (id, data) => {
-    const response = await fetch(`${API_URL}/semesters/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  deleteSemester: async (id) => {
-    const response = await fetch(`${API_URL}/semesters/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  // Scores
-  getScores: async () => {
-    const response = await fetch(`${API_URL}/scores/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  getMyScores: async () => {
-    const response = await fetch(`${API_URL}/scores/my-scores/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  createScore: async (data) => {
-    const response = await fetch(`${API_URL}/scores/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  updateScore: async (id, data) => {
-    const response = await fetch(`${API_URL}/scores/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  deleteScore: async (id) => {
-    const response = await fetch(`${API_URL}/scores/${id}/`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  // Profile
-  getProfile: async () => {
-    const response = await fetch(`${API_URL}/profile/`, {
-      headers: getHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  updateProfile: async (data) => {
-    const response = await fetch(`${API_URL}/profile/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    })
-    return handleResponse(response)
-  },
-
-  uploadAvatar: async (formData) => {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`${API_URL}/profile/avatar/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    })
-    return handleResponse(response)
-  },
-
-  // Change Password
-  changePassword: async (passwords) => {
-    const response = await fetch(`${API_URL}/change-password/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(passwords)
-    })
-    return handleResponse(response)
+    return Promise.reject(error)
   }
-} 
+)
+
+export default api

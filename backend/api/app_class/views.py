@@ -1,118 +1,108 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages
-from django.core.paginator import Paginator
 from django.db.models import Q
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets, status
-from rest_framework.response import Response
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .models import Class
-from .serializers import ClassSerializer, ClassCreateSerializer, ClassDetailSerializer
-from .forms import ClassForm
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from ..student_be.mixins import SearchTermMixin
-from ..student_be.views import BaseListView, BaseDetailView, BaseCreateView, BaseUpdateView, BaseDeleteView
-from ..app_home.models import Department
+from .serializers import ClassSerializer
 
+class ClassPermission(permissions.BasePermission):
+    """Custom permission cho Class"""
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.has_perm('app_class.can_view_class_details')
+        return request.user.has_perm('app_class.can_manage_class')
 
-# Create your views here.
-
-@extend_schema_view(
-    list=extend_schema(tags=['Classes']),
-    retrieve=extend_schema(tags=['Classes']),
-    create=extend_schema(tags=['Classes']),
-    update=extend_schema(tags=['Classes']),
-    partial_update=extend_schema(tags=['Classes']),
-    destroy=extend_schema(tags=['Classes']),
-    active=extend_schema(tags=['Classes']),
-)
+@extend_schema(tags=['Classes'])
 class ClassViewSet(viewsets.ModelViewSet):
+    """API ViewSet cho quản lý lớp học"""
     queryset = Class.objects.filter(is_deleted=False)
     serializer_class = ClassSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return ClassCreateSerializer
-        elif self.action in ['retrieve', 'list']:
-            return ClassDetailSerializer
-        return ClassSerializer
-    
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.save()
-        
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        active_classes = Class.objects.filter(is_deleted=False)
-        serializer = self.get_serializer(active_classes, many=True)
-        return Response(serializer.data)
+    permission_classes = [permissions.IsAuthenticated, ClassPermission]
+    lookup_field = 'class_id'
 
-class ClassListView(BaseListView):
-    model = Class
-    context_object_name = 'classes'
-    search_fields = ['class_id', 'name', 'description']
-    
     def get_queryset(self):
+        """Lọc queryset dựa trên query params"""
         queryset = super().get_queryset()
-        department_filter = self.request.GET.get('department', '')
-        status_filter = self.request.GET.get('status', '')
-        semester_filter = self.request.GET.get('semester', '')
-        
-        if department_filter:
-            queryset = queryset.filter(department=department_filter)
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-        if semester_filter:
-            queryset = queryset.filter(semester=semester_filter)
-            
-        return queryset.select_related('created_by', 'semester').order_by('-created_at')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'department_filter': self.request.GET.get('department', ''),
-            'status_filter': self.request.GET.get('status', ''),
-            'semester_filter': self.request.GET.get('semester', ''),
-            'departments': Department.objects.filter(is_active=True),
-            'status_choices': Class.STATUS_CHOICES,
-        })
-        return context
+        status = self.request.query_params.get('status', None)
+        is_active = self.request.query_params.get('is_active', None)
+        search = self.request.query_params.get('search', None)
 
-class ClassDetailView(BaseDetailView):
-    model = Class
-    context_object_name = 'class'
-    
-    def get_queryset(self):
-        return Class.objects.select_related(
-            'created_by', 'semester'
-        ).prefetch_related('students', 'teachers', 'subjects')
+        if status:
+            queryset = queryset.filter(status=status)
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(class_id__icontains=search) |
+                Q(description__icontains=search)
+            )
+        return queryset
 
-class ClassCreateView(BaseCreateView):
-    model = Class
-    form_class = ClassForm
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Thêm lớp học'
-        return context
+    def perform_create(self, serializer):
+        """Lưu thông tin người tạo và người cập nhật khi tạo lớp"""
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
 
-class ClassUpdateView(BaseUpdateView):
-    model = Class
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Cập nhật lớp học'
-        return context
+    def perform_update(self, serializer):
+        """Lưu thông tin người cập nhật khi cập nhật lớp"""
+        serializer.save(updated_by=self.request.user)
 
-class ClassDeleteView(BaseDeleteView):
-    model = Class
+    def perform_destroy(self, instance):
+        """Thực hiện xóa mềm và lưu thông tin người cập nhật"""
+        instance.is_deleted = True
+        instance.updated_by = self.request.user
+        instance.save()
 
-    
-    def delete(self, request, *args, **kwargs):
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def active(self, request):
+        """Lấy danh sách lớp đang hoạt động"""
+        classes = self.get_queryset().filter(is_active=True)
+        serializer = self.get_serializer(classes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=['delete'],
+        permission_classes=[permissions.IsAuthenticated, ClassPermission],
+        url_path='hard-delete'
+    )
+    def hard_delete(self, request, class_id=None):
+        """Xóa cứng lớp học (xóa hoàn toàn khỏi database)"""
         class_obj = self.get_object()
-        class_obj.is_deleted = True
+        class_obj.delete()
+        return Response({'message': _('Lớp học đã được xóa hoàn toàn.')}, status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[permissions.IsAuthenticated, ClassPermission],
+        url_path='change-status',
+        parameters=[
+            OpenApiParameter(
+                name='status',
+                description='Trạng thái mới của lớp học (active, inactive, pending)',
+                required=True,
+                type=str,
+                enum=['active', 'inactive', 'pending']
+            )
+        ]
+    )
+    def change_status(self, request, class_id=None):
+        """Chuyển đổi trạng thái của lớp học"""
+        class_obj = self.get_object()
+        new_status = request.data.get('status')
+        if new_status not in dict(Class.STATUS_CHOICES).keys():
+            return Response(
+                {'error': _('Trạng thái không hợp lệ.')},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        class_obj.status = new_status
+        class_obj.updated_by = self.request.user
         class_obj.save()
-        messages.success(request, 'Lớp học đã được xóa thành công.')
-        return redirect(self.success_url)
+        serializer = self.get_serializer(class_obj)
+        return Response({
+            'message': _('Cập nhật trạng thái lớp học thành công.'),
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)

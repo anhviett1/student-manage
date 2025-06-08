@@ -39,24 +39,6 @@ class Semester(BaseModel):
     notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
 
-    # Thông tin hệ thống
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='created_semesters',
-        verbose_name='Người tạo'
-    )
-    updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='updated_semesters',
-        verbose_name='Người cập nhật'
-    )
-
     def __str__(self):
         return f"{self.name} - {self.academic_year}"
 
@@ -70,3 +52,12 @@ class Semester(BaseModel):
             ("can_view_semester_schedule", "Có thể xem lịch học kỳ"),
             ("can_manage_semester_registration", "Có thể quản lý đăng ký học kỳ"),
         ]
+    def save(self, *args, **kwargs):
+        # Validate dates
+        if self.start_date > self.end_date:
+            raise ValueError(_('Ngày bắt đầu phải trước ngày kết thúc.'))
+        if self.registration_start > self.registration_end:
+            raise ValueError(_('Ngày bắt đầu đăng ký phải trước ngày kết thúc đăng ký.'))
+        if self.tuition_deadline < self.late_fee_start:
+            raise ValueError(_('Hạn nộp học phí phải trước ngày bắt đầu tính phí trễ.'))
+        super().save(*args, **kwargs)

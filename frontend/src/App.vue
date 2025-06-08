@@ -1,19 +1,33 @@
 <script setup>
-import Toast from '@/components/Toast.vue'
+import { useAuthStore } from '@/stores/auth'
+import { onMounted } from 'vue'
 
+// Khởi tạo auth store để kiểm tra trạng thái đăng nhập
+const authStore = useAuthStore()
 
+onMounted(async () => {
+  // Tải thông tin người dùng nếu đã đăng nhập
+  if (authStore.isAuthenticated && !authStore.user) {
+    try {
+      await authStore.fetchCurrentUser()
+    } catch (error) {
+      authStore.logout()
+    }
+  }
+})
 </script>
 
 <template>
   <div class="app">
-    <Toast />
-    <router-view></router-view>
+    <router-view />
   </div>
 </template>
 
 <style>
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+/* Import font từ Google Fonts để đồng bộ typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* Reset CSS */
 * {
   margin: 0;
   padding: 0;
@@ -21,133 +35,172 @@ import Toast from '@/components/Toast.vue'
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
-  color: #2c3e50;
-  background: #f5f6fa;
+  color: #1f2937;
+  background: #f4f6f9;
 }
 
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Common styles */
+/* Button styles */
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: background-color 0.3s;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.1s;
 }
 
 .btn-primary {
-  background: #6ba0c4;
+  background: #3b82f6;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2980b9;
+  background: #2563eb;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: #95a5a6;
+  background: #6b7280;
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #7f8c8d;
+  background: #4b5563;
+  transform: translateY(-1px);
 }
 
 .btn-danger {
-  background: #e74c3c;
+  background: #ef4444;
   color: white;
 }
 
 .btn-danger:hover {
-  background: #c0392b;
+  background: #dc2626;
+  transform: translateY(-1px);
 }
 
 /* Form styles */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  color: #34495e;
+  font-size: 1rem;
 }
 
 .form-control {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.875rem;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Table styles */
 .table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #fff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .table th,
 .table td {
-  padding: 1rem;
+  padding: 1.25rem;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .table th {
-  background: #f8f9fa;
+  background: #f9fafb;
   font-weight: 600;
+  color: #1f2937;
 }
 
 /* Card styles */
 .card {
-  background: white;
+  background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
 }
 
 /* Badge styles */
 .badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
 .badge-primary {
-  background: #3498db;
+  background: #3b82f6;
   color: white;
 }
 
 .badge-success {
-  background: #2ecc71;
+  background: #10b981;
   color: white;
 }
 
 .badge-warning {
-  background: #f1c40f;
+  background: #f59e0b;
   color: white;
 }
 
 .badge-danger {
-  background: #e74c3c;
+  background: #ef4444;
   color: white;
+}
+
+/* PrimeVue overrides */
+:deep(.p-inputtext),
+:deep(.p-textarea),
+:deep(.p-dropdown),
+:deep(.p-calendar .p-inputtext) {
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+:deep(.p-inputtext:focus),
+:deep(.p-textarea:focus),
+:deep(.p-dropdown:focus),
+:deep(.p-calendar .p-inputtext:focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+:deep(.p-button) {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+:deep(.p-button:hover) {
+  transform: translateY(-1px);
 }
 </style>

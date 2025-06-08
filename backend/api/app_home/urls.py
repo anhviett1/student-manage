@@ -1,32 +1,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (
-    HomeAPIView,
-    home_view,
-    dashboard_view,
-    login_view,
-    logout_view,
-    profile_view,
-    change_password,
-    home_be_view,
-    UserViewSet
-)
-
-app_name = 'app_home'
+from .views import HomeAPIView, LoginAPIView, LogoutAPIView, ProfileAPIView, ChangePasswordAPIView, UserViewSet
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 
-urlpatterns = [ 
-    path('api/', HomeAPIView.as_view(), name='home_api'),
-    path('', home_view, name='home'),   
-    path('dashboard/', dashboard_view, name='dashboard'),
-    path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
-    path('profile/', profile_view, name='profile'),
-    path('change-password/', change_password, name='change_password'),
-    path('home-be/', home_be_view, name='home_be'),
-         
-    
-
-]  
+urlpatterns = [
+    path('', HomeAPIView.as_view(), name='home'),
+    path('login/', LoginAPIView.as_view(), name='login'),
+    path('logout/', LogoutAPIView.as_view(), name='logout'),
+    path('profile/', ProfileAPIView.as_view(), name='profile'),
+    path('change-password/', ChangePasswordAPIView.as_view(), name='change_password'),
+    path('', include(router.urls)),
+]

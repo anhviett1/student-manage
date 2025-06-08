@@ -1,126 +1,257 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import api, { endpoints } from '@/config/api'
+import { useToast } from '@/composables/useToast'
+import { useAuthStore } from './auth'
 
-export const useUserStore = defineStore('user', {
-  state: () => ({
-    users: [],
-    currentUser: null,
-    loading: false,
-    error: null
-  }),
+export const useUserStore = defineStore('user', () => {
+  const { addToast } = useToast()
+  const authStore = useAuthStore()
+  const users = ref([])
+  const currentUser = ref(null)
+  const isLoading = ref(false)
+  const errorMessage = ref(null)
 
-  actions: {
-    async fetchUsers() {
-      this.loading = true
-      try {
-        const response = await api.get(endpoints.users)
-        this.users = response.data
-        return this.users
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error fetching users'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
+  const isAdmin = computed(() => currentUser.value?.role === 'admin')
+  const isTeacher = computed(() => currentUser.value?.role === 'teacher')
+  const isStudent = computed(() => currentUser.value?.role === 'student')
 
-    async createUser(userData) {
-      this.loading = true
-      try {
-        const response = await api.post(endpoints.users, userData)
-        this.users.push(response.data)
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error creating user'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
+  const getUserById = computed(() => (userId) => {
+    return users.value.find((user) => user.id === userId)
+  })
 
-    async updateUser(userId, userData) {
-      this.loading = true
-      try {
-        const response = await api.put(`${endpoints.users}${userId}/`, userData)
-        const index = this.users.findIndex(user => user.id === userId)
-        if (index !== -1) {
-          this.users[index] = response.data
-        }
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error updating user'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async deleteUser(userId) {
-      this.loading = true
-      try {
-        await api.delete(`${endpoints.users}${userId}/`)
-        this.users = this.users.filter(user => user.id !== userId)
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error deleting user'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async getCurrentUser() {
-      this.loading = true
-      try {
-        const response = await api.get(endpoints.userProfile)
-        this.currentUser = response.data
-        return this.currentUser
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error fetching current user'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async updateProfile(userData) {
-      this.loading = true
-      try {
-        const response = await api.put(endpoints.userProfile, userData)
-        this.currentUser = response.data
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error updating profile'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async changePassword(passwordData) {
-      this.loading = true
-      try {
-        await api.post(endpoints.changePassword, passwordData)
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Error changing password'
-        throw error
-      } finally {
-        this.loading = false
-      }
+  async function fetchUsers(params = {}) {
+    if (!authStore.isAdmin) {
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Bạn không có quyền truy cập danh sách người dùng',
+        life: 3000,
+      })
+      return
     }
-  },
-
-  getters: {
-    getUserById: (state) => (userId) => {
-      return state.users.find(user => user.id === userId)
-    },
-    isAdmin: (state) => {
-      return state.currentUser?.role === 'admin'
-    },
-    isTeacher: (state) => {
-      return state.currentUser?.role === 'teacher'
-    },
-    isStudent: (state) => {
-      return state.currentUser?.role === 'student'
+    isLoading.value = true
+    errorMessage.value = null
+    try {
+      const response = await api.get(endpoints.users, { params })
+      users.value = response.data.results || response.data
+      return users.value
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể tải danh sách người dùng'
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value = false
     }
   }
-}) 
+
+  async function createUser(userData) {
+    if (!authStore.isAdmin) {
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Bạn không có quyền tạo người dùng',
+        life: 3000,
+      })
+      return
+    }
+    isLoading.value = true
+    errorMessage.value = null
+    try {
+      const response = await api.post(endpoints.users, userData)
+      users.value.push(response.data)
+      addToast({
+        severity: 'success',
+        summary: 'Thành Công',
+        detail: 'Tạo người dùng mới thành công',
+        life: 3000,
+      })
+      return response.data
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể tạo người dùng'
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updateUser(userId, userData) {
+    if (!authStore.isAdmin && currentUser.value?.id !== userId) {
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Bạn không có quyền cập nhật người dùng này',
+        life: 3000,
+      })
+      return
+    }
+    isLoading.value = true
+    errorMessage.value = null
+    try {
+      const response = await api.put(`${endpoints.users}${userId}/`, userData)
+      const index = users.value.findIndex((user) => user.id === userId)
+      if (index !== -1) {
+        users.value[index] = response.data
+      }
+      if (currentUser.value?.id === userId) {
+        currentUser.value = response.data
+      }
+      addToast({
+        severity: 'success',
+        summary: 'Thành Công',
+        detail: 'Cập nhật người dùng thành công',
+        life: 3000,
+      })
+      return response.data
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể cập nhật người dùng'
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function deleteUser(userId) {
+    if (!authStore.isAdmin) {
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Bạn không có quyền xóa người dùng',
+        life: 3000,
+      })
+      return
+    }
+    isLoading.value = true;
+    errorMessage.value = null;
+    try {
+      await api.delete(`${endpoints.users}${userId}/`)
+      users.value = users.value.filter((user) => user.id !== userId)
+      addToast({
+        severity: 'success',
+        summary: 'Thành Công',
+        detail: 'Xóa người dùng thành công',
+        life: 3000,
+      })
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể xóa người dùng';
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function getCurrentUser() {
+    if (!authStore.isAuthenticated) return null
+    isLoading.value = true;
+    errorMessage.value = null;
+    try {
+      const response = await api.get(endpoints.userProfile)
+      currentUser.value = response.data
+      return response.data;
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể tải hồ sơ người dùng';
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value == false;
+    }
+  }
+
+  async function updateProfile(userData) {
+    isLoading.value == true;
+    errorMessage.value = null;
+    try {
+      const response = await api.put(endpoints.userProfile, userData)
+      currentUser.value = response.data;
+      addToast({
+        severity: 'success',
+        summary: 'Thành Công',
+        detail: 'Cập nhật hồ sơ thành công',
+        life: 3000,
+      })
+      return response.data
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể cập nhật hồ sơ';
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value == false;
+    }
+  }
+
+  async function changePassword(passwordData) {
+    isLoading.value == true;
+    errorMessage.value = null;
+    try {
+      await api.post(endpoints.changePassword, passwordData)
+      addToast({
+        severity: 'success',
+        summary: 'Thành Công',
+        detail: 'Đổi mật khẩu thành công',
+        life: 3000,
+      })
+    } catch (error) {
+      errorMessage.value = error.response?.data?.detail || 'Không thể đổi mật khẩu';
+      addToast({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: errorMessage.value,
+        life: 3000,
+      })
+      throw error
+    } finally {
+      isLoading.value == false;
+    }
+  }
+
+  return {
+    users,
+    currentUser,
+    isLoading,
+    errorMessage,
+    isAdmin,
+    isTeacher,
+    isStudent,
+    getUserById,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getCurrentUser,
+    updateProfile,
+    changePassword,
+  }
+})
