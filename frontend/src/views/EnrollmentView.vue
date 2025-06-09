@@ -361,7 +361,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import api from '@/api' // Giả định api.js chứa cấu hình axios và endpoints
+import api from '@/services/api' // Giả định api.js chứa cấu hình axios và endpoints
 
 const toast = useToast()
 const isStudent = ref(false)

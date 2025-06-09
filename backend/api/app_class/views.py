@@ -3,7 +3,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema
 from .models import Class
 from .serializers import ClassSerializer
 
@@ -73,36 +73,3 @@ class ClassViewSet(viewsets.ModelViewSet):
         class_obj = self.get_object()
         class_obj.delete()
         return Response({'message': _('Lớp học đã được xóa hoàn toàn.')}, status=status.HTTP_204_NO_CONTENT)
-
-    @action(
-        detail=True,
-        methods=['post'],
-        permission_classes=[permissions.IsAuthenticated, ClassPermission],
-        url_path='change-status',
-        parameters=[
-            OpenApiParameter(
-                name='status',
-                description='Trạng thái mới của lớp học (active, inactive, pending)',
-                required=True,
-                type=str,
-                enum=['active', 'inactive', 'pending']
-            )
-        ]
-    )
-    def change_status(self, request, class_id=None):
-        """Chuyển đổi trạng thái của lớp học"""
-        class_obj = self.get_object()
-        new_status = request.data.get('status')
-        if new_status not in dict(Class.STATUS_CHOICES).keys():
-            return Response(
-                {'error': _('Trạng thái không hợp lệ.')},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        class_obj.status = new_status
-        class_obj.updated_by = self.request.user
-        class_obj.save()
-        serializer = self.get_serializer(class_obj)
-        return Response({
-            'message': _('Cập nhật trạng thái lớp học thành công.'),
-            'data': serializer.data
-        }, status=status.HTTP_200_OK)

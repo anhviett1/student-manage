@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
 import { useVuelidate } from '@vuelidate/core'
@@ -83,9 +83,13 @@ import { required, minLength, helpers } from '@vuelidate/validators'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const toast = useToast()
 const userStore = useUserStore()
+const router = useRouter()
+const authStore = useAuthStore()
 
 const formData = ref({
   current_password: '',
@@ -135,6 +139,7 @@ const changePassword = async () => {
       confirm_password: '',
     }
     v$.value.$reset()
+    router.push('/')
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -146,6 +151,16 @@ const changePassword = async () => {
     isLoading.value = false
   }
 }
+
+onMounted(async () => {
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  
+  // Load dữ liệu dashboard
+  await loadDashboardData()
+})
 </script>
 
 <style scoped>

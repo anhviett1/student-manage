@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api, { endpoints } from '@/config/api'
+import api, { endpoints } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from './auth'
 

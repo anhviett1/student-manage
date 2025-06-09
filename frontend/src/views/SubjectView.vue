@@ -233,7 +233,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import api from '@/api'
+import api from '@/services/api'
 
 const toast = useToast()
 const subjects = ref([])

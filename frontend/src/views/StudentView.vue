@@ -431,7 +431,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import api from '@/api'
+import api from '@/services/api'
 import { saveAs } from 'file-saver'
 
 const toast = useToast()

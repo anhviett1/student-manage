@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { endpoints } from '@/config/api'
+import { endpoints } from '@/services/api'
 
 // Tạo router với lịch sử trình duyệt
 const router = createRouter({
@@ -12,6 +12,13 @@ const router = createRouter({
       name: 'home',
       component: () => import('../views/HomeView.vue'),
       meta: { requiresAuth: true, title: 'Trang Chủ' },
+    },
+     // Trang chào mừng (không yêu cầu đăng nhập)
+    {
+      path: '/welcome',
+      name: 'welcome',
+      component: () => import('../views/WelcomeView.vue'),
+      meta: { title: 'Chào Mừng' },
     },
     // Đăng nhập
     {
@@ -94,16 +101,10 @@ const router = createRouter({
     {
       path: '/scores',
       name: 'scores',
-      component: () => import('../views/ScoreListView.vue'),
+      component: () => import('../views/ScoreView.vue'),
       meta: { requiresAuth: true, role: 'teacher', title: 'Quản Lý Điểm Số' },
     },
-    // Trang chào mừng (không yêu cầu đăng nhập)
-    {
-      path: '/welcome',
-      name: 'welcome',
-      component: () => import('../components/Index.vue'),
-      meta: { title: 'Chào Mừng' },
-    },
+   
     // Redirect các route không tồn tại về trang chủ
     {
       path: '/:pathMatch(.*)*',

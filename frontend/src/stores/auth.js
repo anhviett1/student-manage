@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api, { endpoints } from '@/config/api'
+import api, { endpoints } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 
 export const useAuthStore = defineStore('auth', () => {
   const { addToast } = useToast()
-  const token = ref(localStorage.getItem('access_token') || null)
-  const refreshTokenValue = ref(localStorage.getItem('refresh_token') || null)
   const user = ref(null)
+  const accessToken = ref(localStorage.getItem('access_token'))
+  const refreshToken = ref(localStorage.getItem('refresh_token'))
   const isLoading = ref(false)
   const errorMessage = ref(null)
 
-  const isAuthenticated = computed(() => !!token.value)
+  const isAuthenticated = computed(() => !!accessToken.value)
   const userRole = computed(() => user.value?.role || null)
   const isAdmin = computed(() => userRole.value === 'admin')
   const isTeacher = computed(() => userRole.value === 'teacher')
@@ -22,29 +22,31 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const setToken = (access, refresh) => {
-    token.value = access
-    refreshTokenValue.value = refresh
+    accessToken.value = access
+    refreshToken.value = refresh
     localStorage.setItem('access_token', access)
     localStorage.setItem('refresh_token', refresh)
     api.defaults.headers.common['Authorization'] = `Bearer ${access}`
   }
 
   const clearAuth = () => {
-    token.value = null
-    refreshTokenValue.value = null
     user.value = null
+    accessToken.value = null
+    refreshToken.value = null
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     delete api.defaults.headers.common['Authorization']
   }
 
-  async function login(credentials) {
+  const login = async (credentials) => {
     isLoading.value = true
     errorMessage.value = null
     try {
       const response = await api.post(endpoints.login, credentials)
       const { access, refresh } = response.data
+      
       setToken(access, refresh)
+      
       await fetchCurrentUser()
       addToast({
         severity: 'success',
@@ -52,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
         detail: 'Đăng nhập thành công',
         life: 3000,
       })
-      return response.data
+      return response
     } catch (error) {
       errorMessage.value = error.response?.data?.detail || 'Đăng nhập thất bại'
       addToast({
@@ -67,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(userData) {
+  const register = async (userData) => {
     isLoading.value = true
     errorMessage.value = null
     try {
@@ -93,11 +95,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function logout() {
+  const logout = async () => {
     isLoading.value = true
     errorMessage.value = null
     try {
-      await api.post(endpoints.logout, { refresh_token: refreshTokenValue.value })
+      await api.post(endpoints.logout)
       addToast({
         severity: 'success',
         summary: 'Đăng Xuất',
@@ -105,15 +107,15 @@ export const useAuthStore = defineStore('auth', () => {
         life: 3000,
       })
     } catch (error) {
-      console.warn('Logout error:', error)
+      console.error('Logout error:', error)
     } finally {
       clearAuth()
       isLoading.value = false
     }
   }
 
-  async function fetchCurrentUser() {
-    if (!token.value) return null
+  const fetchCurrentUser = async () => {
+    if (!accessToken.value) return null
     isLoading.value = true
     errorMessage.value = null
     try {
@@ -129,16 +131,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function refreshAccessToken() {
-    if (!refreshTokenValue.value) return null
+  const refreshAccessToken = async () => {
+    if (!refreshToken.value) return null
     isLoading.value = true
     errorMessage.value = null
     try {
       const response = await api.post(endpoints.refreshToken, {
-        refresh: refreshTokenValue.value,
+        refresh: refreshToken.value,
       })
       const { access, refresh } = response.data
-      setToken(access, refresh || refreshTokenValue.value)
+      setToken(access, refresh || refreshToken.value)
       return response.data
     } catch (error) {
       errorMessage.value = error.response?.data?.detail || 'Không thể làm mới token'
@@ -172,9 +174,9 @@ export const useAuthStore = defineStore('auth', () => {
   )
 
   return {
-    token,
-    refreshToken: refreshTokenValue,
     user,
+    accessToken,
+    refreshToken,
     isLoading,
     errorMessage,
     isAuthenticated,

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.utils import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from ..app_home.models import Department
 
 User = get_user_model()

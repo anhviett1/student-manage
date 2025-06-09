@@ -293,9 +293,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import api, { endpoints } from '@/api.js'
+import api from '@/services/api'
+import { saveAs } from 'file-saver'
 
 const toast = useToast()
 const classes = ref([])
@@ -337,7 +338,7 @@ onMounted(async () => {
 const loadClasses = async () => {
   try {
     loading.value = true
-    const response = await api.get(endpoints.classes)
+    const response = await api.get('/classes')
     classes.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách lớp học', life: 3000 })
@@ -348,7 +349,7 @@ const loadClasses = async () => {
 
 const loadSemesters = async () => {
   try {
-    const response = await api.get(endpoints.semesters)
+    const response = await api.get('/semesters')
     semesters.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
@@ -357,7 +358,7 @@ const loadSemesters = async () => {
 
 const loadSubjects = async () => {
   try {
-    const response = await api.get(endpoints.subjects)
+    const response = await api.get('/subjects')
     subjects.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách môn học', life: 3000 })
@@ -366,7 +367,7 @@ const loadSubjects = async () => {
 
 const loadTeachers = async () => {
   try {
-    const response = await api.get(endpoints.teachers)
+    const response = await api.get('/teachers')
     teachers.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách giảng viên', life: 3000 })
@@ -375,7 +376,7 @@ const loadTeachers = async () => {
 
 const loadDepartments = async () => {
   try {
-    const response = await api.get(endpoints.departments)
+    const response = await api.get('/departments')
     departments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
@@ -385,7 +386,7 @@ const loadDepartments = async () => {
 const loadActiveClasses = async () => {
   try {
     loading.value = true
-    const response = await api.get(`${endpoints.classes}active/`)
+    const response = await api.get('/classes/active/')
     classes.value = response.data
     toast.add({ severity: 'info', summary: 'Thành công', detail: 'Hiển thị các lớp đang hoạt động', life: 3000 })
   } catch (error) {
@@ -464,11 +465,11 @@ const saveClass = async () => {
       subjects: classObj.value.subjects || []
     }
     if (classObj.value.class_id) {
-      const updatedClass = (await api.patch(endpoints.classDetail(classObj.value.class_id), payload)).data
+      const updatedClass = (await api.patch(`/classes/${classObj.value.class_id}/`, payload)).data
       classes.value = classes.value.map(c => c.class_id === updatedClass.class_id ? updatedClass : c)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật lớp học thành công', life: 3000 })
     } else {
-      const newClass = (await api.post(endpoints.classes, payload)).data
+      const newClass = (await api.post('/classes/', payload)).data
       classes.value.push(newClass)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm lớp học thành công', life: 3000 })
     }
@@ -482,7 +483,7 @@ const saveClass = async () => {
 
 const deleteClass = async () => {
   try {
-    await api.delete(endpoints.classDetail(classObj.value.class_id))
+    await api.delete(`/classes/${classObj.value.class_id}/`)
     classes.value = classes.value.filter(c => c.class_id !== classObj.value.class_id)
     deleteClassDialog.value = false
     classObj.value = {}
@@ -494,7 +495,7 @@ const deleteClass = async () => {
 
 const hardDeleteClass = async () => {
   try {
-    await api.delete(`${endpoints.classDetail(classObj.value.class_id)}hard-delete/`)
+    await api.delete(`/classes/${classObj.value.class_id}/hard-delete/`)
     classes.value = classes.value.filter(c => c.class_id !== classObj.value.class_id)
     hardDeleteClassDialog.value = false
     classObj.value = {}
@@ -510,7 +511,7 @@ const changeStatus = async () => {
     return
   }
   try {
-    const updatedClass = (await api.post(`${endpoints.classDetail(classObj.value.class_id)}change-status/`, { status: newStatus.value })).data
+    const updatedClass = (await api.post(`/classes/${classObj.value.class_id}/change-status/`, { status: newStatus.value })).data
     classes.value = classes.value.map(c => c.class_id === updatedClass.class_id ? updatedClass : c)
     changeStatusDialog.value = false
     classObj.value = {}

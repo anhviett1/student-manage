@@ -387,7 +387,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import api from '@/api' // Giả định api.js chứa cấu hình axios và endpoints
+import api from '@/services/api'
+import { saveAs } from 'file-saver'
 
 const toast = useToast()
 const isStudent = ref(false) // Giả định lấy từ user role

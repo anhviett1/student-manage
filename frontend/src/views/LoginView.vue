@@ -3,88 +3,79 @@
     <Toast />
     <div class="login-card">
       <h1>Đăng Nhập</h1>
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleSubmit" class="login-form">
         <div class="form-group">
-          <label for="username">Tên Người Dùng</label>
-          <InputText
+          <label for="username">Tên đăng nhập</label>
+          <input
+            type="text"
             id="username"
-            v-model="v$.username.$model"
-            :class="{ 'p-invalid': v$.username.$error }"
-            @input="v$.username.$touch()"
-            autofocus
+            v-model="form.username"
+            class="form-control"
+            :class="{ 'is-invalid': v$.username.$error }"
           />
-          <small class="p-error" v-if="v$.username.required.$invalid && v$.username.$dirty">
-            Tên người dùng là bắt buộc.
-          </small>
+          <div class="invalid-feedback" v-if="v$.username.$error">
+            {{ v$.username.$errors[0].$message }}
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="password">Mật Khẩu</label>
-          <Password
+          <label for="password">Mật khẩu</label>
+          <input
+            type="password"
             id="password"
-            v-model="v$.password.$model"
-            :feedback="false"
-            toggleMask
-            :class="{ 'p-invalid': v$.password.$error }"
-            @input="v$.password.$touch()"
+            v-model="form.password"
+            class="form-control"
+            :class="{ 'is-invalid': v$.password.$error }"
           />
-          <small class="p-error" v-if="v$.password.required.$invalid && v$.password.$dirty">
-            Mật khẩu là bắt buộc.
-          </small>
+          <div class="invalid-feedback" v-if="v$.password.$error">
+            {{ v$.password.$errors[0].$message }}
+          </div>
         </div>
 
-        <div class="form-actions">
-          <Button
-            type="submit"
-            label="Đăng Nhập"
-            icon="pi pi-sign-in"
-            :loading="isLoading"
-            class="login-button"
-          />
-        </div>
+        <button type="submit" class="btn btn-primary" :disabled="isLoading">
+          {{ isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập' }}
+        </button>
       </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
 import { useVuelidate } from '@vuelidate/core'
-import { required } from '@vuelidate/validators'
-import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
-import Button from 'primevue/button'
+import { required, minLength } from '@vuelidate/validators'
 import Toast from 'primevue/toast'
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 const authStore = useAuthStore()
+const isLoading = ref(false)
 
-const formData = ref({
+const form = reactive({
   username: '',
   password: '',
 })
 
-const isLoading = ref(false)
+const rules = {
+  username: { required, minLength: minLength(3) },
+  password: { required, minLength: minLength(6) },
+}
 
-const rules = computed(() => ({
-  username: { required },
-  password: { required },
-}))
+const v$ = useVuelidate(rules, form)
 
-const v$ = useVuelidate(rules, formData)
+const handleSubmit = async () => {
+  const isFormCorrect = await v$.value.$validate()
+  if (!isFormCorrect) return
 
-const handleLogin = async () => {
-  v$.value.$touch()
-  if (v$.value.$invalid) return
-
-  isLoading.value = true
   try {
-    await authStore.login(formData.value)
-    router.push('/home')
+    isLoading.value = true
+    await authStore.login(form)
+    const redirectPath = route.query.redirect || '/'
+    router.push(redirectPath)
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -138,63 +129,65 @@ const handleLogin = async () => {
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.form-group label {
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
   font-weight: 500;
-  color: #34495e;
-  text-align: left;
 }
 
-:deep(.p-inputtext),
-:deep(.p-password-input) {
+.form-control {
   width: 100%;
-  height: 48px;
   padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
   font-size: 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s ease;
 }
 
-:deep(.p-inputtext:focus),
-:deep(.p-password-input:focus) {
+.form-control:focus {
+  outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-:deep(.p-password) {
-  width: 100%;
+.form-control.is-invalid {
+  border-color: #ef4444;
 }
 
-:deep(.p-invalid) {
-  border-color: #ef4444 !important;
-}
-
-.p-error {
+.invalid-feedback {
   color: #ef4444;
   font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 
-.form-actions {
-  margin-top: 1.5rem;
-}
-
-.login-button {
+.btn {
   width: 100%;
-  height: 48px;
-  font-size: 1rem;
-  background: #3b82f6;
+  padding: 0.75rem;
   border: none;
-  border-radius: 6px;
-  transition: background 0.3s;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.login-button:hover {
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
   background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 @media (max-width: 480px) {
@@ -206,13 +199,12 @@ const handleLogin = async () => {
     font-size: 1.5rem;
   }
 
-  :deep(.p-inputtext),
-  :deep(.p-password-input) {
+  .form-control {
     height: 44px;
     font-size: 0.9375rem;
   }
 
-  .login-button {
+  .btn {
     height: 44px;
     font-size: 0.9375rem;
   }

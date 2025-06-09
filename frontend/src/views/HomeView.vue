@@ -7,7 +7,7 @@
       </div>
       <div class="content">
         <div class="welcome-section">
-          <img src="@/assets/welcome-image.svg" alt="Welcome Illustration" class="welcome-image" />
+          <img src="@/assets/images/login.png" alt="Welcome Illustration" class="welcome-image" />
           <div class="welcome-text">
             <h3>Bắt Đầu Ngay</h3>
             <p>Sử dụng menu điều hướng bên trái để truy cập các chức năng như quản lý sinh viên, giảng viên, môn học, điểm số và nhiều hơn nữa.</p>
@@ -104,8 +104,9 @@ const navigateToDashboard = () => {
 }
 
 .welcome-image {
-  width: 300px;
+  width: 400px;
   height: auto;
+  object-fit: contain;
 }
 
 .welcome-text {

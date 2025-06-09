@@ -18,10 +18,10 @@ const api = axios.create({
 // Định nghĩa các endpoint
 export const endpoints = {
   // Authentication
-  login: `${API_PREFIX}/auth/login/`,
+  login: `${API_PREFIX}/token/`,
   logout: `${API_PREFIX}/auth/logout/`,
   register: `${API_PREFIX}/auth/register/`,
-  refreshToken: `${API_PREFIX}/auth/token/refresh/`,
+  refreshToken: `${API_PREFIX}/token/refresh/`,
   // User Management
   userProfile: `${API_PREFIX}/users/profile/`,
   users: `${API_PREFIX}/users/`,
