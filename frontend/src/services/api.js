@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Base URL từ biến môi trường hoặc mặc định localhost
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 // Tiền tố cho tất cả API REST, trừ Django Admin
 const API_PREFIX = '/api/v1'
 
@@ -54,10 +54,10 @@ api.interceptors.request.use(
       return config
     }
 
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    // const token = localStorage.getItem('access_token')
+    // if (token) {
+    //   config.headers.Authorization = `Bearer ${token}`
+    // }
 
     // Đảm bảo Content-Type phù hợp cho FormData
     if (config.data instanceof FormData) {

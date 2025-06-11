@@ -70,6 +70,7 @@ const v$ = useVuelidate(rules, form)
 const handleSubmit = async () => {
   const isFormCorrect = await v$.value.$validate()
   if (!isFormCorrect) return
+  
 
   try {
     isLoading.value = true
