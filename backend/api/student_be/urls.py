@@ -13,7 +13,9 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
+    path('', include('api.app_home.urls')),  # Home app for basic views and authentication
     # Admin and Authentication
+ 
     path('admin/', admin.site.urls),
     path('auth/login/', include('rest_framework.urls')),
     path('accounts/', include('allauth.urls')),

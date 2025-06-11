@@ -10,7 +10,9 @@ from datetime import datetime
 import pandas as pd
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import extend_schema
 
+@extend_schema(tags=['Subjects'])
 class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer

@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from django.http import HttpResponse
+from ..app_student.models import Student
 
 class BaseListView(LoginRequiredMixin, StaffRequiredMixin, ListView, SearchTermMixin):
     template_name = None
@@ -114,4 +115,5 @@ def index(request):
     """
     Index page.
     """
-    return HttpResponse("Welcome to Student Management System API") 
+    return HttpResponse("Welcome to Student Management System API")
+

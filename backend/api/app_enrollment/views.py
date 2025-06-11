@@ -9,8 +9,10 @@ from ..app_enrollment.serializers import EnrollmentSerializer
 from django.db.models import Q
 import pandas as pd
 from django.http import HttpResponse
+from drf_spectacular.utils import extend_schema
 from datetime import datetime
 
+@extend_schema(tags=['Enrollments'])
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer

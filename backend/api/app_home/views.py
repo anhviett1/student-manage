@@ -1,9 +1,8 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
@@ -12,8 +11,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status, serializers, viewsets, permissions
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.contrib import messages
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
 from ..app_student.models import Student
@@ -23,22 +20,16 @@ from ..app_class.models import Class
 from ..app_activity.models import Activity
 from .forms import ChangePasswordForm, UserProfileForm
 from .models import Department
-from .serializers import UserSerializer, DepartmentSerializer, ChangePasswordSerializer,UserProfileSerializer
-from .permissions import (
-    IsAdmin,
-    IsAdminOrReadOnly, 
-    IsOwnerOrAdmin
-)
+from .serializers import UserSerializer, DepartmentSerializer, ChangePasswordSerializer, UserProfileSerializer
+from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwnerOrAdmin
+from rest_framework.permissions import IsAuthenticated
 
 User = get_user_model()
 
-#Signal handler được vô hiệu hóa - Admin sẽ tạo Student/Teacher từ trang admin
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
-    # Bỏ qua tự động tạo profile nếu là superuser
     if instance.is_superuser:
         return
-
     if created:
         if hasattr(instance, 'role') and instance.role == 'student':
             Student.objects.create(
@@ -46,8 +37,8 @@ def create_user_profile(sender, instance, created, **kwargs):
                 first_name=instance.first_name if hasattr(instance, 'first_name') else instance.username,
                 last_name=instance.last_name if hasattr(instance, 'last_name') else '',
                 email=instance.email,
-                phone_number='',  # Default empty phone
-                date_of_birth='2000-01-01',  # Default date
+                phone_number='',
+                date_of_birth='2000-01-01',
                 address='',
                 city='',
                 state=''
@@ -58,8 +49,8 @@ def create_user_profile(sender, instance, created, **kwargs):
                 first_name=instance.first_name if hasattr(instance, 'first_name') else instance.username,
                 last_name=instance.last_name if hasattr(instance, 'last_name') else '',
                 email=instance.email,
-                phone_number='',  # Default empty phone
-                date_of_birth='2000-01-01',  # Default date
+                phone_number='',
+                date_of_birth='2000-01-01',
                 address='',
                 city='',
                 state='',
@@ -67,7 +58,6 @@ def create_user_profile(sender, instance, created, **kwargs):
                 salary=0
             )
         elif hasattr(instance, 'role') and instance.role == 'admin':
-            # Admin profile creation logic if needed
             pass
     else:
         if hasattr(instance, 'role') and instance.role == 'student':
@@ -83,54 +73,7 @@ def create_user_profile(sender, instance, created, **kwargs):
             except Teacher.DoesNotExist:
                 pass
         elif hasattr(instance, 'role') and instance.role == 'admin':
-            # Admin profile update logic if needed
             pass
-
-class HomeApiEndpointSerializer(serializers.Serializer):
-    """Serializer cho API endpoints"""
-    message = serializers.CharField()
-    api_endpoints = serializers.DictField(child=serializers.CharField())
-
-@extend_schema(tags=['app_home'])
-class HomeAPIView(APIView):
-    """API View cho trang chủ"""
-    permission_classes = [AllowAny]
-    serializer_class = HomeApiEndpointSerializer
-    
-    def get(self, request, format=None):
-        """Lấy danh sách API endpoints"""
-        api_endpoints = {
-            'api_gateway': '/api-gateway/',
-            'api_docs': '/api-gateway/docs/',
-            'api_schema': '/api-gateway/schema/',
-            'api_redoc': '/api-gateway/redoc/',
-            'token_obtain': '/api/token/',
-            'token_refresh': '/api/token/refresh/',
-            'token_verify': '/api/token/verify/',
-            'login': '/api/login/',
-            'logout': '/api/logout/',
-            'profile': '/api/profile/',
-            'change_password': '/api/change-password/',
-        }
-        dashboard_data = get_dashboard_context()
-        api_endpoints.update({
-            'dashboard': '/api/dashboard/',
-            'students': '/api/students/',
-            'teachers': '/api/teachers/',
-            'subjects': '/api/subjects/',
-            'classes': '/api/classes/',
-            'scores': '/api/scores/',
-            'enrollments': '/api/enrollments/',
-            'activities': '/api/activities/',
-            'semesters': '/api/semesters/',
-        })
-        data = {
-            'message': 'Welcome to Student Management API',
-            'api_endpoints': api_endpoints
-        }
-        
-        serializer = self.serializer_class(data)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 def get_dashboard_context():
     """Lấy context chung cho dashboard"""
@@ -139,12 +82,20 @@ def get_dashboard_context():
         'total_teachers': Teacher.objects.filter(is_active=True).count(),
         'total_subjects': Subject.objects.filter(is_active=True).count(),
         'total_classes': Class.objects.filter(is_active=True).count(),
-
         'subjects_by_semester': Subject.objects.filter(is_active=True).values('semester').annotate(
             count=Count('subject_id')
         ),
         'recent_activities': Activity.objects.select_related('user').order_by('-created_at')[:10],
     }
+@extend_schema(tags=['Home'])
+class HomeAPIView(APIView):
+    """View cho trang chủ"""
+    permission_classes = [AllowAny]
+    template_name = 'home_be.html'
+
+    def get(self, request, format=None):
+        context = get_dashboard_context()
+        return render(request, self.template_name, context)
 
 @extend_schema(tags=['Authentication'])
 class LoginAPIView(APIView):

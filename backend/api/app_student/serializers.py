@@ -42,6 +42,7 @@ class StudentSerializer(serializers.ModelSerializer):
             'allergies', 'created_at', 'updated_at', 'deleted_at', 'deleted_by',
             'is_deleted', 'department', 'department_id', 'class_assigned', 'class_assigned_ids',
             'subjects', 'subject_ids', 'scores', 'score_ids', 'full_name',
+            'created_by', 'updated_by', 'deleted_by' ,
         ]
         read_only_fields = [
             'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'is_deleted',

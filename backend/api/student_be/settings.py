@@ -6,28 +6,15 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-kssc-dummykey-p+jx_h8-dt-nu-7@u=0-3cr5x0-fhsrp5takc')
 
+DEBUG = True  # Đảm bảo True để gỡ lỗi
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# Allow localhost and 127.0.0.1 for development
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-
-# Application definition
 INSTALLED_APPS = [
-    # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,8 +22,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    
-    # Third party apps
     'allauth',
     'allauth.account',
     'rest_framework',
@@ -44,9 +29,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'drf_spectacular',
     'corsheaders',
-    
-    # Local apps
-   
     'api.app_student',
     'api.app_teacher',
     'api.app_home',
@@ -73,11 +55,10 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'api.student_be.urls'
 WSGI_APPLICATION = 'api.student_be.wsgi.application'
 
-# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "static"],
+        'DIRS': [],  # Chỉ dùng template trong ứng dụng
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -90,7 +71,6 @@ TEMPLATES = [
     },
 ]
 
-# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -102,7 +82,6 @@ DATABASES = {
     }
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -118,19 +97,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Authentication backends
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Internationalization
+SITE_ID = 1
+
 LANGUAGE_CODE = 'vi-vn'
 TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -140,17 +118,13 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom User Model
 AUTH_USER_MODEL = 'app_home.User'
 
-# REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -163,7 +137,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# Simple JWT settings
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -179,7 +152,6 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
-# DRF Spectacular settings
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Student Management API',
     'DESCRIPTION': 'API for managing students, teachers, classes, subjects, scores, and enrollments',
@@ -198,21 +170,20 @@ SPECTACULAR_SETTINGS = {
         'defaultModelExpandDepth': 1,
     },
     'TAGS': [
+        {'name': 'Home', 'description': 'Quản lý người dùng và trang chủ', 'x-displayName': '🏠 Trang chủ'},
         {'name': 'Students', 'description': 'Quản lý sinh viên', 'x-displayName': '📚 Quản lý sinh viên'},
         {'name': 'Teachers', 'description': 'Quản lý giáo viên', 'x-displayName': '👨‍🏫 Quản lý giáo viên'},
         {'name': 'Subjects', 'description': 'Quản lý môn học', 'x-displayName': '📝 Quản lý môn học'},
         {'name': 'Classes', 'description': 'Quản lý lớp học', 'x-displayName': '🏫 Quản lý lớp học'},
-        {'name': 'Scores', 'description': 'Quản lý điểm số', 'x-displayName': '📊 Quản lý điểm số'},
-        {'name': 'Enrollments', 'description': 'Quản lý đăng ký học', 'x-displayName': '📋 Quản lý đăng ký học'},
         {'name': 'Semesters', 'description': 'Quản lý học kỳ', 'x-displayName': '🗓️ Quản lý học kỳ'},
+        {'name': 'Enrollments', 'description': 'Quản lý đăng ký học', 'x-displayName': '📋 Quản lý đăng ký học'},
+        {'name': 'Scores', 'description': 'Quản lý điểm số', 'x-displayName': '📊 Quản lý điểm số'},
         {'name': 'Activities', 'description': 'Quản lý hoạt động', 'x-displayName': '📆 Quản lý hoạt động'},
-        {'name': 'Home', 'description': 'Quản lý người dùng và trang chủ', 'x-displayName': '🏠 Trang chủ'},
     ],
     'TAG_NAMESPACES': True,
     'ENUM_NAME_OVERRIDES': {},
 }
 
-# Cache settings
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -220,20 +191,31 @@ CACHES = {
     }
 }
 
-# Session settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_AGE = 1209600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Security settings
+SECURE_SSL_REDIRECT = False
+SECURE_HSTS_SECONDS = 0
+
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-CSRF_COOKIE_SECURE = False  # Set to False for development
-SESSION_COOKIE_SECURE = False  # Set to False for development
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8088', 'http://127.0.0.1:8088', 'http://localhost:8000', 'http://127.0.0.1:8000']
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8088',
+    'http://127.0.0.1:8088',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
-# Logging Configuration
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8088',
+    'http://127.0.0.1:8088',
+    'http://localhost:3000',
+]
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -255,14 +237,11 @@ LOGGING = {
     },
 }
 
-# Admin settings
 ADMIN_URL = 'admin/'
 ADMIN_SITE_HEADER = "Hệ thống Quản lý Sinh viên"
 ADMIN_SITE_TITLE = "Quản lý Sinh viên"
 ADMIN_INDEX_TITLE = "Trang quản trị"
 
-# Login settings
 LOGIN_URL = 'admin:login'
 LOGIN_REDIRECT_URL = 'admin:index'
 LOGOUT_REDIRECT_URL = 'admin:login'
-

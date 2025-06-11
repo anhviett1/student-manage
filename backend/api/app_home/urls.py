@@ -11,5 +11,7 @@ urlpatterns = [
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     path('profile/', ProfileAPIView.as_view(), name='profile'),
     path('change-password/', ChangePasswordAPIView.as_view(), name='change_password'),
-    path('', include(router.urls)),
+    #path('api/', include(router.urls)),
 ]
+
+urlpatterns += router.urls

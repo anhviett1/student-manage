@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
     list=extend_schema(tags=['Activities']),
     retrieve=extend_schema(tags=['Activities']),
 )
+
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Activity.objects.all().order_by('-created_at')
     serializer_class = ActivitySerializer

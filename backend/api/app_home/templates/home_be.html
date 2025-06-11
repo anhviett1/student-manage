@@ -1,0 +1,269 @@
+
+{% extends "admin/base_site.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "Bảng Điều Khiển" %}{% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">
+<style>
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0;
+        padding-right: 2rem;
+    }
+
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        padding: 2.25rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.25s ease, box-shadow ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .stat-card h3 {
+        margin: 0 0 0.5rem;
+        color: #4a5568;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1a202c;
+    }
+
+    .quick-links, .api-docs, .recent-activities {
+        background: none;
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: -0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .quick-links h2, .api-docs h2, .recent-activities h2 {
+        margin: 0 0 1.25px;
+        color: #1a202c;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .quick-links-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .quick-link-item {
+        background: #f7fafc;
+        padding: 2rem;
+        border-radius: 6px;
+        text-align: center;
+        transition: background 0.2s ease;
+    }
+
+    .quick-link-item:hover {
+        background: #edf2f7;
+    }
+
+    .quick-links-item a {
+        color: #3182ce;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.875rem;
+        display: block;
+    }
+
+    .quick-link-item a:hover {
+        color: #2b6cb0;
+    }
+
+    .api-docs ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .api-docs li {
+        margin: 0.5rem 0;
+    }
+
+    .api-docs a {
+        color: #3182ce;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border-radius: 5px;
+        transition: background 0.2s ease;
+    }
+
+    .api-docs a:hover {
+        background: #f7fafc;
+        color: #2b6cb0;
+    }
+
+    .api-docs i {
+        font-size: 1rem;
+    }
+
+    .recent-activities {
+        background: #ffffff;
+        padding: 2.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .activity-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-item span {
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+
+        .stat-card .number {
+            font-size: 1.5rem;
+        }
+
+        .quick-links-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>{% trans "Tổng Số Sinh Viên" %}</h3>
+            <div class="number">{{ total_students }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>{% trans "Tổng Số Giảng Viên" %}</h3>
+            <div class="number">{{ total_teachers }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>{% trans "Tổng Số Môn Học" %}</h3>
+            <div class="number">{{ total_subjects }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>{% trans "Tổng Số Lớp Học" %}</h3>
+            <div class="number">{{ total_classes }}</div>
+        </div>
+    </div>
+
+    <div class="quick-links">
+        <h2>{% trans "Truy Cập Nhanh" %}</h2>
+        <div class="quick-links-grid">
+            <div class="quick-link-item">
+                <a href="{% url 'admin:app_student_student_changelist' %}">{% trans "Quản Lý Sinh Viên" %}</a>
+            </div>
+            <div class="quick-link-item">
+                <a href="{% url 'admin:app_teacher_teacher_changelist' %}">{% trans "Quản Lý Giảng Viên" %}</a>
+            </div>
+            <div class="quick-link-item">
+                <a href="{% url 'admin:app_subject_subject_changelist' %}">{% trans "Quản Lý Môn Học" %}</a>
+            </div>
+            <div class="quick-link-item">
+                <a href="{% url 'admin:app_class_class_changelist' %}">{% trans "Quản Lý Lớp Học" %}</a>
+            </div>
+            <div class="quick-link-item">
+                <a href="{% url 'admin:app_score_score_changelist' %}">{% trans "Quản Lý Điểm Số" %}</a>
+            </div>
+            <div class="quick-link-item">
+                <a href="{% url 'admin:app_semester_semester_changelist' %}">{% trans "Quản Lý Học Kỳ" %}</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="recent-activities">
+        <h2>{% trans "Hoạt Động Gần Đây" %}</h2>
+        {% for activity in recent_activities %}
+            <div class="activity-item">
+                <span>{{ activity.user.username }} {{ activity.action }} vào {{ activity.created_at|date:"SHORT_DATETIME_FORMAT" }}</span>
+            </div>
+        {% empty %}
+            <div class="activity-item">
+                <span>{% trans "Không có hoạt động gần đây" %}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="api-docs">
+        <h2>{% trans "Tài Liệu API" %}</h2>
+        <ul>
+            <li>
+                <a href="{% url 'swagger-ui' %}" target="_blank">
+                    <i class="fas fa-book"></i>
+                    {% trans "Swagger UI" %}
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'redoc' %}" target="_blank">
+                    <i class="fas fa-file-alt"></i>
+                    {% trans "ReDoc" %}
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'schema' %}" target="_blank">
+                    <i class="fas fa-code"></i>
+                    {% trans "OpenAPI Schema" %}
+                </a>
+            </li>
+            <li>
+                <a href="/api/v1/home/users/" target="_blank">
+                    <i class="fas fa-users"></i>
+                    {% trans "API Người Dùng" %}
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'profile' %}" target="_blank">
+                    <i class="fas fa-user"></i>
+                    {% trans "API Hồ Sơ" %}
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'change_password' %}" target="_blank">
+                    <i class="fas fa-key"></i>
+                    {% trans "API Đổi Mật Khẩu" %}
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script>
+{% endblock %}
