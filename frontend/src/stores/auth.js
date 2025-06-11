@@ -38,36 +38,52 @@ export const useAuthStore = defineStore('auth', () => {
     delete api.defaults.headers.common['Authorization']
   }
 
-  const login = async (credentials) => {
-    isLoading.value = true
-    errorMessage.value = null
-    try {
-      const response = await api.post(endpoints.login, credentials)
-      const { access, refresh } = response.data
-      
-      setToken(access, refresh)
-      
-      await fetchCurrentUser()
-      addToast({
-        severity: 'success',
-        summary: 'Đăng Nhập',
-        detail: 'Đăng nhập thành công',
-        life: 3000,
-      })
-      return response
-    } catch (error) {
-      errorMessage.value = error.response?.data?.detail || 'Đăng nhập thất bại'
-      addToast({
-        severity: 'error',
-        summary: 'Lỗi',
-        detail: errorMessage.value,
-        life: 3000,
-      })
-      throw error
-    } finally {
-      isLoading.value = false
+const login = async (credentials) => {
+  isLoading.value = true
+  errorMessage.value = null
+  try {
+    if (!credentials.username || !credentials.password) {
+      throw new Error('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu')
     }
+    const response = await api.post(endpoints.login, credentials, {
+      withCredentials: true,
+    })
+    // Nếu dùng HttpOnly cookies, bỏ setToken
+    await fetchCurrentUser()
+    addToast({
+      severity: 'success',
+      summary: 'Đăng Nhập',
+      detail: 'Đăng nhập thành công',
+      life: 3000,
+    })
+    return response
+  } catch (error) {
+    console.error('Login error:', error.response?.status, error.response?.data, error.message)
+    const status = error.response?.status
+    let message = 'Đăng nhập thất bại'
+    if (status === 400) {
+      message = 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại'
+    } else if (status === 401) {
+      message = 'Tên đăng nhập hoặc mật khẩu không đúng'
+    } else if (status === 403) {
+      message = 'Bạn không có quyền truy cập'
+    } else if (!error.response) {
+      message = 'Không thể kết nối đến server. Kiểm tra CORS hoặc server.'
+    } else {
+      message = error.response?.data?.detail || 'Đã có lỗi xảy ra'
+    }
+    errorMessage.value = message
+    addToast({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: message,
+      life: 3000,
+    })
+    throw error
+  } finally {
+    isLoading.value = false
   }
+}
 
   const register = async (userData) => {
     isLoading.value = true

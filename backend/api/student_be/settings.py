@@ -1,6 +1,4 @@
-"""
-Django settings for student_be project.
-"""
+
 from pathlib import Path
 from datetime import timedelta
 import os
@@ -10,7 +8,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-kssc-dummykey-p+jx_h8-dt-nu-7@u=0-3cr5x0-fhsrp5takc')
 
-DEBUG = True  # Đảm bảo True để gỡ lỗi
+DEBUG = True  
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -203,16 +201,18 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
+
+CORS_ALLOW_CREDENTIALS = True
+
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8088',
-    'http://127.0.0.1:8088',
+    'http://127.0.0.1:3000',
+    'http://localhost:3000',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8088',
-    'http://127.0.0.1:8088',
+    'http://127.0.0.1:3000',
     'http://localhost:3000',
 ]
 

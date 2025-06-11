@@ -13,7 +13,8 @@ const api = axios.create({
     Accept: 'application/json',
   },
   timeout: 15000, // Tăng timeout lên 15s cho các request phức tạp
-})
+  withCredentials: true, // Cho phép cookie từ server
+  })
 
 // Định nghĩa các endpoint
 export const endpoints = {
