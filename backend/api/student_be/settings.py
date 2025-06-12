@@ -212,7 +212,7 @@ SPECTACULAR_SETTINGS = {
         'defaultModelExpandDepth': 1,
     },
     'TAGS': [
-        {'name': 'Home', 'description': 'Quản lý người dùng và trang chủ', 'x-displayName': '🏠 Trang chủ'},
+        
         {'name': 'Students', 'description': 'Quản lý sinh viên', 'x-displayName': '📚 Quản lý sinh viên'},
         {'name': 'Teachers', 'description': 'Quản lý giáo viên', 'x-displayName': '👨‍🏫 Quản lý giáo viên'},
         {'name': 'Subjects', 'description': 'Quản lý môn học', 'x-displayName': '📝 Quản lý môn học'},

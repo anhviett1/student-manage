@@ -27,10 +27,8 @@ export const endpoints = {
   userProfile: `${API_PREFIX}/users/profile/`,
   users: `${API_PREFIX}/users/`,
   changePassword: `${API_PREFIX}/users/change-password/`,
-  uploadAvatar: `${API_PREFIX}/users/upload-avatar/`,
-  // Django Admin
-  djangoAdmin: '/admin/',
-  // App-specific REST APIs
+  // uploadAvatar: `${API_PREFIX}/home/upload-avatar/`,
+
   students: `${API_PREFIX}/students/`,
   teachers: `${API_PREFIX}/teachers/`,
   classes: `${API_PREFIX}/classes/`,
@@ -39,11 +37,7 @@ export const endpoints = {
   semesters: `${API_PREFIX}/semesters/`,
   scores: `${API_PREFIX}/scores/`,
   activities: `${API_PREFIX}/activities/`,
-  home: `${API_PREFIX}/home/`,
-  // API Documentation
-  apiSchema: '/api/schema/',
-  apiDocs: '/api/docs/',
-  apiRedoc: '/api/redoc/',
+
 }
 
 // Interceptor cho request: Thêm token vào header, trừ endpoint Django Admin
@@ -54,10 +48,10 @@ api.interceptors.request.use(
       return config
     }
 
-    // const token = localStorage.getItem('access_token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
 
     // Đảm bảo Content-Type phù hợp cho FormData
     if (config.data instanceof FormData) {

@@ -2,7 +2,7 @@
   <div class="card">
     <Toast />
     <div class="header">
-      <h2>Quản Lý Học Kỳ</h2>
+      <h2 @click="navigateToHome">Quản Lý Học Kỳ</h2>
       <div class="action-buttons">
         <Button
           icon="pi pi-filter"
@@ -424,6 +424,10 @@ const filters = ref({
   status: null,
   global: ''
 })
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const statusOptions = [
   { label: 'Sắp tới', value: 'upcoming' },

@@ -8,14 +8,11 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-
-
-
-
 urlpatterns = [
-    path('', include('api.app_home.urls')),
+    
     path('admin/', admin.site.urls),
     path('auth/login/', include('rest_framework.urls')),
+    path('auth/logout/', include('rest_framework.urls')),
     path('accounts/', include('allauth.urls')),
     
     path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -29,7 +26,7 @@ urlpatterns = [
     
     path('api/v1/students/', include('api.app_student.urls')),
     path('api/v1/teachers/', include('api.app_teacher.urls')),
-    path('api/v1/home/', include('api.app_home.urls')),
+    path('api/v1/users/', include('api.app_home.urls')),
     path('api/v1/classes/', include('api.app_class.urls')),
     path('api/v1/scores/', include('api.app_score.urls')),
     path('api/v1/subjects/', include('api.app_subject.urls')),

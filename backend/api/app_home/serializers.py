@@ -1,38 +1,54 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext_lazy as _
-from ..app_home.models import Department
+from .models import Department
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    """Serializer for User model."""
+    password = serializers.CharField(write_only=True, required=False)  # Optional for updates
+    role = serializers.ChoiceField(choices=['student', 'teacher', 'admin'], required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'first_name', 'last_name', 'password']
+        read_only_fields = ['id']
+
+    def validate_role(self, value):
+        """Restrict role changes to valid choices."""
+        if self.context['request'].user.role != 'admin' and value != self.instance.role:
+            raise serializers.ValidationError("Chỉ admin có thể thay đổi vai trò.")
+        return value
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer for user profile updates."""
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'username', 'role']
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
-        read_only_fields = ['id', 'username']
+    def to_representation(self, instance):
+        """Override to ensure superuser role is 'admin' for frontend."""
+        ret = super().to_representation(instance)
+        if instance.is_superuser:
+            ret['role'] = 'admin'
+        return ret
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
+    """Serializer for changing user password."""
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
 
-    def validate_old_password(self, value):
+    def validate(self, data):
         user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError(_('Mật khẩu cũ không đúng'))
-        return value
-    
-    def validate_new_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError(_('Mật khẩu mới phải có ít nhất 8 ký tự'))
-        return value
+        if not user.check_password(data['old_password']):
+            raise serializers.ValidationError({'old_password': 'Mật khẩu cũ không đúng'})
+        if data['old_password'] == data['new_password']:
+            raise serializers.ValidationError({'new_password': 'Mật khẩu mới phải khác mật khẩu cũ'})
+        return data
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    """Serializer for Department model."""
     class Meta:
         model = Department
-        fields = '__all__'
+        fields = ['id', 'name', 'description']

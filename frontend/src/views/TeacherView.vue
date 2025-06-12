@@ -6,7 +6,7 @@
       <TabPanel header="Thông Tin Cá Nhân" v-if="isTeacher">
         <div class="profile-section">
           <div class="profile-header">
-            <h2>Thông Tin Giảng Viên</h2>
+            <h2 @click="navigateToHome">Thông Tin Giảng Viên</h2>
             <Button
               icon="pi pi-pencil"
               label="Chỉnh Sửa"
@@ -414,6 +414,10 @@ const filters = ref({
   department: null,
   global: '',
 })
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const genderOptions = [
   { label: 'Nam', value: 'M' },

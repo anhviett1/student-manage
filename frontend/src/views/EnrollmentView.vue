@@ -6,7 +6,7 @@
       <TabPanel header="Đăng Ký Của Tôi" v-if="isStudent">
         <div class="filter-bar">
           <div class="filter-group">
-            <label for="semesterFilter">Học Kỳ</label>
+            <label for="semesterFilter" @click="navigateToHome">Học Kỳ</label>
             <Dropdown
               id="semesterFilter"
               v-model="selectedSemester"
@@ -387,6 +387,10 @@ const filters = ref({
   semester: null,
   global: ''
 })
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const statusOptions = [
   { label: 'Chờ xử lý', value: 'pending' },

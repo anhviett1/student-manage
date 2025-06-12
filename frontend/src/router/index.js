@@ -13,13 +13,6 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
       meta: { requiresAuth: true, title: 'Trang Chủ' },
     },
-     // Trang chào mừng (không yêu cầu đăng nhập)
-    {
-      path: '/welcome',
-      name: 'welcome',
-      component: () => import('../views/WelcomeView.vue'),
-      meta: { title: 'Chào Mừng' },
-    },
     // Đăng nhập
     {
       path: '/login',
@@ -128,6 +121,15 @@ router.beforeEach(async (to, from, next) => {
 
   const isAuthenticated = authStore.isAuthenticated
   const requiredRole = to.meta.role
+
+  // Thêm logs để debug
+  console.log('Navigating to:', to.path);
+  console.log('Requires Auth:', to.meta.requiresAuth);
+  console.log('Is Authenticated:', isAuthenticated);
+  console.log('Required Role:', requiredRole);
+  if (requiredRole) {
+    console.log('User Has Required Role (authStore.hasRole):', authStore.hasRole(requiredRole));
+  }
 
   // Kiểm tra quyền truy cập
   if (to.meta.requiresAuth && !isAuthenticated) {

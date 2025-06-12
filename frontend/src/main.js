@@ -5,6 +5,7 @@ import App from './App.vue'
 import router from './router'
 import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
+import Tooltip from 'primevue/tooltip'
 
 // PrimeVue components
 import Button from 'primevue/button'
@@ -30,6 +31,8 @@ app.use(router)
 app.use(PrimeVue, { ripple: true })
 app.use(ToastService)
 app.use(ConfirmationService)
+
+app.directive('tooltip', Tooltip)
 
 // Register PrimeVue components
 app.component('Button', Button)

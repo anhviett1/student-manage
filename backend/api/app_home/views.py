@@ -1,112 +1,86 @@
-from django.shortcuts import render
+from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.shortcuts import render
 from django.conf import settings
-from django.contrib.auth import get_user_model, authenticate, login, logout
-from django.contrib.auth.forms import AuthenticationForm
-from django.db.models import Count
-from django.utils.translation import gettext_lazy as _
-from rest_framework.views import APIView, Response
-from rest_framework.permissions import AllowAny
-from rest_framework import status, serializers, viewsets, permissions
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from django.contrib import messages
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema
 from ..app_student.models import Student
 from ..app_teacher.models import Teacher
 from ..app_subject.models import Subject
 from ..app_class.models import Class
 from ..app_activity.models import Activity
-from .forms import ChangePasswordForm, UserProfileForm
 from .models import Department
 from .serializers import UserSerializer, DepartmentSerializer, ChangePasswordSerializer, UserProfileSerializer
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwnerOrAdmin
-from rest_framework.permissions import IsAuthenticated
 
 User = get_user_model()
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
-    if instance.is_superuser:
+    """Create or update user profile based on role."""
+    if instance.is_superuser or not hasattr(instance, 'role'):
         return
+
+    profile_data = {
+        'user': instance,
+        'first_name': getattr(instance, 'first_name', instance.username),
+        'last_name': getattr(instance, 'last_name', ''),
+        'email': instance.email,
+        'phone_number': '',
+        'date_of_birth': '2000-01-01',
+        'address': '',
+        'city': '',
+        'state': '',
+    }
+
     if created:
-        if hasattr(instance, 'role') and instance.role == 'student':
-            Student.objects.create(
-                user=instance,
-                first_name=instance.first_name if hasattr(instance, 'first_name') else instance.username,
-                last_name=instance.last_name if hasattr(instance, 'last_name') else '',
-                email=instance.email,
-                phone_number='',
-                date_of_birth='2000-01-01',
-                address='',
-                city='',
-                state=''
-            )
-        elif hasattr(instance, 'role') and instance.role == 'teacher':
-            Teacher.objects.create(
-                user=instance,
-                first_name=instance.first_name if hasattr(instance, 'first_name') else instance.username,
-                last_name=instance.last_name if hasattr(instance, 'last_name') else '',
-                email=instance.email,
-                phone_number='',
-                date_of_birth='2000-01-01',
-                address='',
-                city='',
-                state='',
-                subject='',
-                salary=0
-            )
-        elif hasattr(instance, 'role') and instance.role == 'admin':
-            pass
+        if instance.role == 'student':
+            Student.objects.create(**profile_data)
+        elif instance.role == 'teacher':
+            profile_data['subject'] = ''
+            profile_data['salary'] = 0
+            Teacher.objects.create(**profile_data)
     else:
-        if hasattr(instance, 'role') and instance.role == 'student':
-            try:
-                student_profile = Student.objects.get(user=instance)
-                student_profile.save()
-            except Student.DoesNotExist:
-                pass
-        elif hasattr(instance, 'role') and instance.role == 'teacher':
-            try:
-                teacher_profile = Teacher.objects.get(user=instance)
-                teacher_profile.save()
-            except Teacher.DoesNotExist:
-                pass
-        elif hasattr(instance, 'role') and instance.role == 'admin':
-            pass
+        if instance.role == 'student':
+            Student.objects.filter(user=instance).update(**profile_data)
+        elif instance.role == 'teacher':
+            profile_data['subject'] = ''
+            profile_data['salary'] = 0
+            Teacher.objects.filter(user=instance).update(**profile_data)
 
 def get_dashboard_context():
-    """Lấy context chung cho dashboard"""
+    """Retrieve dashboard context data."""
     return {
         'total_students': Student.objects.filter(is_active=True).count(),
         'total_teachers': Teacher.objects.filter(is_active=True).count(),
         'total_subjects': Subject.objects.filter(is_active=True).count(),
         'total_classes': Class.objects.filter(is_active=True).count(),
-        'subjects_by_semester': Subject.objects.filter(is_active=True).values('semester').annotate(
-            count=Count('subject_id')
-        ),
-        'recent_activities': Activity.objects.select_related('user').order_by('-created_at')[:10],
+        'subjects_by_semester': Subject.objects.filter(is_active=True)
+            .values('semester')
+            .annotate(count=Count('subject_id'))
+            .order_by('semester'),
+        'recent_activities': Activity.objects.select_related('user')
+            .order_by('-created_at')[:10],
     }
-@extend_schema(tags=['Home'])
-class HomeAPIView(APIView):
-    """View cho trang chủ"""
-    permission_classes = [AllowAny]
-    template_name = 'home_be.html'
 
-    def get(self, request, format=None):
-        context = get_dashboard_context()
-        return render(request, self.template_name, context)
-
-@extend_schema(tags=['Authentication'])
+@extend_schema(tags=['Users'])
 class LoginAPIView(APIView):
-    """API View cho đăng nhập"""
+    """API view for user login."""
     permission_classes = [AllowAny]
+    serializer_class = UserSerializer
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
-        if user is not None:
+        if user:
             login(request, user)
             refresh = RefreshToken.for_user(user)
             return Response({
@@ -116,89 +90,97 @@ class LoginAPIView(APIView):
                 'user': {
                     'id': user.id,
                     'username': user.username,
-                    'role': user.role if hasattr(user, 'role') else None
+                    'role': getattr(user, 'role', None),
                 }
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Thông tin đăng nhập không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
 
-@extend_schema(tags=['Authentication'])
+@extend_schema(tags=['Users'])
 class LogoutAPIView(APIView):
-    """API View cho đăng xuất"""
+    """API view for user logout."""
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         try:
-            refresh_token = request.data.get('refresh')
-            token = RefreshToken(refresh_token)
+            token = RefreshToken(request.data.get('refresh'))
             token.blacklist()
             logout(request)
             return Response({'message': 'Đăng xuất thành công'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-@extend_schema(tags=['Profile'])
+@extend_schema(tags=['Users'])
 class ProfileAPIView(APIView):
-    """API View cho hồ sơ người dùng"""
-    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
-
-    def get(self, request):
-        user = request.user
-        serializer = UserProfileSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request):
-        user = request.user
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Cập nhật hồ sơ thành công', 'data': serializer.data}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@extend_schema(tags=['Profile'])
-class ChangePasswordAPIView(APIView):
-    """API View cho đổi mật khẩu"""
+    """API view for user profile management."""
+    serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+    def get(self, request, *args, **kwargs):
+        serializer = self.serializer_class(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, *args, **kwargs):
+        serializer = self.serializer_class(request.user, data=request.data, partial=True)
         if serializer.is_valid():
-            user = request.user
-            user.set_password(serializer.validated_data['new_password'])
-            user.save()
+            serializer.save()
+            return Response({
+                'message': 'Cập nhật hồ sơ thành công',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(tags=['Users'])
+class ChangePasswordAPIView(APIView):
+    """API view for changing user password."""
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            request.user.set_password(serializer.validated_data['new_password'])
+            request.user.save()
             return Response({'message': 'Đổi mật khẩu thành công'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(tags=['Users'])
 class UserViewSet(viewsets.ModelViewSet):
-    """API endpoint cho quản lý người dùng"""
-    queryset = User.objects.all()
+    """API endpoint for managing users."""
+    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrReadOnly]
 
     def get_permissions(self):
-        if self.action == 'create':
-            permission_classes = [AllowAny]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsAdmin]
-        elif self.action == 'me':
-            permission_classes = [IsAuthenticated]
-        else:
-            permission_classes = [IsAdminOrReadOnly]
+        """Dynamic permission assignment based on action."""
+        permission_classes = {
+            'create': [IsAdmin],  # Only admins can create users
+            'update': [IsAdmin],
+            'partial_update': [IsAdmin],
+            'destroy': [IsAdmin],
+            'me': [IsAuthenticated],
+            'list': [IsAdmin],  # Restrict list to admins
+            'retrieve': [IsAdmin],  # Restrict retrieve to admins
+        }.get(self.action, [IsAdminOrReadOnly])
         return [permission() for permission in permission_classes]
+
+    def perform_create(self, serializer):
+        """Set password and role during user creation."""
+        user = serializer.save()
+        user.set_password(serializer.validated_data.get('password', 'default_password123'))  # Default password
+        user.save()
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """Lấy thông tin người dùng hiện tại"""
-        serializer = self.get_serializer(request.user)
+        """Retrieve current user's profile."""
+        serializer = self.serializer_class(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
-        """Đổi mật khẩu người dùng"""
+        """Change user password via custom action."""
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            user = request.user
-            user.set_password(serializer.validated_data['new_password'])
-            user.save()
+            request.user.set_password(serializer.validated_data['new_password'])
+            request.user.save()
             return Response({'message': 'Đổi mật khẩu thành công'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

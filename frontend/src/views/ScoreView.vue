@@ -6,7 +6,7 @@
       <TabPanel header="Điểm Của Tôi" v-if="isStudent">
         <div class="filter-bar">
           <div class="filter-group">
-            <label for="semesterFilter">Học Kỳ</label>
+            <label for="semesterFilter" @click="navigateToHome">Học Kỳ</label>
             <Dropdown
               id="semesterFilter"
               v-model="selectedSemester"
@@ -411,6 +411,10 @@ const filters = ref({
   status: null,
   global: ''
 })
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const statusOptions = [
   { label: 'Đang hoạt động', value: 'active' },

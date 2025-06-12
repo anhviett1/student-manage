@@ -48,7 +48,8 @@ const login = async (credentials) => {
     const response = await api.post(endpoints.login, credentials, {
       withCredentials: true,
     })
-    // Nếu dùng HttpOnly cookies, bỏ setToken
+    const { access, refresh } = response.data
+    setToken(access, refresh)
     await fetchCurrentUser()
     addToast({
       severity: 'success',
@@ -136,11 +137,12 @@ const login = async (credentials) => {
     errorMessage.value = null
     try {
       const response = await api.get(endpoints.userProfile)
+      console.log('User profile data from backend:', response.data)
       user.value = response.data
       return response.data
     } catch (error) {
       errorMessage.value = error.response?.data?.detail || 'Không thể tải thông tin người dùng'
-      clearAuth()
+      
       throw error
     } finally {
       isLoading.value = false
@@ -172,22 +174,6 @@ const login = async (credentials) => {
       isLoading.value = false
     }
   }
-
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      if (error.response?.status === 401 && !error.config._retry) {
-        error.config._retry = true
-        try {
-          await refreshAccessToken()
-          return api(error.config)
-        } catch (refreshError) {
-          return Promise.reject(refreshError)
-        }
-      }
-      return Promise.reject(error)
-    }
-  )
 
   return {
     user,

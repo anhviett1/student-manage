@@ -3,7 +3,7 @@
     <div class="profile-container card">
       <Toast />
       <div class="card-header">
-        <h2>Thông Tin Cá Nhân</h2>
+        <h2 @click="navigateToHome">Thông Tin Cá Nhân</h2>
       </div>
       <div class="grid">
         <!-- Thông Tin Cơ Bản -->
@@ -168,6 +168,10 @@ import BaseLayout from '@/components/BaseLayout.vue'
 const toast = useToast()
 const userStore = useUserStore()
 const isLoading = ref(false)
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const formData = ref({
   username: '',

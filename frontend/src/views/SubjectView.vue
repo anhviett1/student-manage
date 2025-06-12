@@ -2,7 +2,7 @@
   <div class="card">
     <Toast />
     <div class="header">
-      <h2>Quản Lý Môn Học</h2>
+      <h2 @click="navigateToHome">Quản Lý Môn Học</h2>
       <div class="action-buttons">
         <Button
           icon="pi pi-plus"
@@ -252,6 +252,10 @@ const filters = ref({
   department: null,
   global: '',
 })
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const statusOptions = [
   { label: 'Đang hoạt động', value: 'active' },

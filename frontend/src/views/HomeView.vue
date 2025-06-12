@@ -15,7 +15,7 @@
               label="Khám Phá Chức Năng"
               icon="pi pi-arrow-right"
               severity="primary"
-              @click="navigateToDashboard"
+              @click="navigateToStudents"
               class="explore-button"
             />
           </div>
@@ -27,21 +27,43 @@
               <i class="pi pi-users icon" />
               <h4>Quản Lý Sinh Viên</h4>
               <p>Theo dõi thông tin, điểm số và trạng thái của sinh viên.</p>
+              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToStudents" />
             </div>
             <div class="card-item">
               <i class="pi pi-briefcase icon" />
               <h4>Quản Lý Giảng Viên</h4>
               <p>Quản lý thông tin và lịch giảng dạy của giảng viên.</p>
+              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToTeachers" />
             </div>
             <div class="card-item">
               <i class="pi pi-book icon" />
               <h4>Quản Lý Môn Học</h4>
               <p>Tổ chức và theo dõi các môn học trong hệ thống.</p>
+              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToSubjects" />
+            </div>
+            <div class="card-item">
+               <i class="pi pi-book icon" />
+               <h4>Quản Lý Học Kì</h4>
+               <p>Tổ chức và theo dõi các học kì trong hệ thống.</p>
+               <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToSemesters" />
+             </div>
+             <div class="card-item">
+               <i class="pi pi-book icon" />
+               <h4>Đăng kí</h4>
+               <p>Theo dõi đăng kí trong hệ thống.</p>
+               <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToEnrollments" />
+             </div>
+             <div class="card-item">
+               <i class="pi pi-chart-bar icon" />
+               <h4>Quản lí điểm</h4>
+               <p>Theo dõi, báo cáo và dữ liệu học tập.</p>
+               <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToScores" />
             </div>
             <div class="card-item">
               <i class="pi pi-chart-bar icon" />
-              <h4>Báo Cáo & Thống Kê</h4>
-              <p>Xuất báo cáo và phân tích dữ liệu học tập.</p>
+              <h4>Django Admin</h4>
+              <p>Trang quản trị Django.</p>
+              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToAdmin" />
             </div>
           </div>
         </div>
@@ -57,8 +79,32 @@ import Button from 'primevue/button'
 
 const router = useRouter()
 
-const navigateToDashboard = () => {
-  router.push('/dashboard')
+const navigateToStudents = () => {
+  router.push('/students')
+}
+
+const navigateToTeachers = () => {
+  router.push('/teachers')
+}
+
+const navigateToSubjects = () => {
+  router.push('/subjects')
+}
+
+const navigateToScores = () => {
+  router.push('/scores')
+}
+
+const navigateToSemesters = () => {
+  router.push('/semesters')
+}
+
+const navigateToEnrollments = () => {
+  router.push('/enrollments')
+}
+
+const navigateToAdmin = () => {
+  router.push('/admin')
 }
 </script>
 

@@ -4,51 +4,39 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 
-class IsAdmin(permissions.BasePermission):
-    """
-    Custom permission to only allow admin users to access the view.
-    """
+class IsAdmin(BasePermission):
+    """Allow access only to admin users."""
     def has_permission(self, request, view):
-        return request.user and request.user.is_staff
+        return request.user.is_authenticated and getattr(request.user, 'role', None) == 'admin'
 
-class IsTeacher(permissions.BasePermission):
+class IsTeacher(BasePermission):
     """
     Custom permission to only allow teachers to access the view.
     """
     def has_permission(self, request, view):
         return request.user and hasattr(request.user, 'teacher') 
 
-class IsStudent(permissions.BasePermission):
+class IsStudent(BasePermission):
     """
     Custom permission to only allow students to access the view.
     """
     def has_permission(self, request, view):
         return request.user and hasattr(request.user, 'student')
 
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """
-    Custom permission to only allow admin users to edit objects.
-    """
+class IsAdminOrReadOnly(BasePermission):
+    """Allow read-only access for all, write access for admins."""
     def has_permission(self, request, view):
-        # Read permissions are allowed to any request,
-        # so we'll always allow GET, HEAD or OPTIONS requests.
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
             return True
-        # Write permissions are only allowed to admin users
-        return request.user and request.user.is_staff
+        return request.user.is_authenticated and getattr(request.user, 'role', None) == 'admin'
 
-class IsOwnerOrAdmin(permissions.BasePermission):
-    """
-    Custom permission to only allow owners of an object or admins to edit it.
-    """
+class IsOwnerOrAdmin(BasePermission):
+    """Allow access to owners or admins."""
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request,
-        # so we'll always allow GET, HEAD or OPTIONS requests.
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # Write permissions are only allowed to the owner or admin
-        return obj.user == request.user or request.user.is_staff
+        return (
+            request.user.is_authenticated and
+            (obj == request.user or getattr(request.user, 'role', None) == 'admin')
+        )
 
 class IsAdminOrTeacher(BasePermission):
     """

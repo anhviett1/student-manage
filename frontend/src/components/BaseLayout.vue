@@ -2,14 +2,23 @@
   <div class="layout-wrapper">
     <Toast />
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ 'sidebar-collapsed': isSidebarCollapsed }">
       <div class="sidebar-header">
-        <router-link to="/" class="logo">
-          <img :src="logo" alt="Logo" />
-          Student Management
-        </router-link>
+        <div class="logo-container">
+          <router-link to="/" class="logo">
+            <img :src="logo" alt="Logo" class="logo-image" />
+            <span v-if="!isSidebarCollapsed">Student Management</span>
+          </router-link>
+          <Button
+            icon="pi pi-bars"
+            class="menu-toggle"
+            text
+            @click="toggleSidebar"
+            v-if="isMobile"
+          />
+        </div>
       </div>
-      <div class="sidebar-menu" v-if="authStore.isAuthenticated()">
+      <div class="sidebar-menu" v-if="authStore.isAuthenticated && !isSidebarCollapsed">
         <PanelMenu :model="menuItems" class="menu" v-model:expandedKeys="expandedKeys">
           <template #item="{ item }">
             <router-link
@@ -23,7 +32,7 @@
           </template>
         </PanelMenu>
       </div>
-      <div class="sidebar-footer" v-if="authStore.isAuthenticated()">
+      <div class="sidebar-footer" v-if="authStore.isAuthenticated && !isSidebarCollapsed">
         <div class="user-profile">
           <router-link to="/profile" class="profile-link">
             <i class="pi pi-user mr-2"></i>
@@ -42,7 +51,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" :class="{ 'main-content-full': isSidebarCollapsed }">
       <div class="topbar">
         <div class="topbar-title">
           <h2>{{ currentRouteName }}</h2>
@@ -65,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
@@ -75,55 +84,57 @@ import Toast from 'primevue/toast'
 import logo from '@/assets/images/logo_min.png'
 
 const authStore = useAuthStore()
+console.log('authStore:', authStore)
+console.log('authStore.isAuthenticated:', authStore.isAuthenticated)
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 const expandedKeys = ref({})
-
-
+const isSidebarCollapsed = ref(false)
+const isMobile = ref(window.innerWidth <= 768)
 
 const menuItems = computed(() => [
   {
     label: 'Sinh Viên',
     icon: 'pi pi-users',
     to: '/students',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
   {
     label: 'Giảng Viên',
     icon: 'pi pi-briefcase',
     to: '/teachers',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
   {
     label: 'Lớp Học',
     icon: 'pi pi-building',
     to: '/classes',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
   {
     label: 'Môn Học',
     icon: 'pi pi-book',
     to: '/subjects',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
   {
     label: 'Ghi Danh',
     icon: 'pi pi-check-square',
     to: '/enrollments',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
   {
     label: 'Học Kỳ',
     icon: 'pi pi-calendar',
     to: '/semesters',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
   {
     label: 'Điểm Số',
     icon: 'pi pi-chart-bar',
     to: '/scores',
-    visible: authStore.isAuthenticated(),
+    visible: authStore.isAuthenticated,
   },
 ].filter(item => item.visible))
 
@@ -139,6 +150,27 @@ const handleLogout = async () => {
 const toggleNotifications = () => {
   toast.add({ severity: 'info', summary: 'Thông Báo', detail: 'Chức năng thông báo đang được phát triển', life: 3000 })
 }
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+// Handle window resize for responsiveness
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768
+  if (isMobile.value) {
+    isSidebarCollapsed.value = true
+  } else {
+    isSidebarCollapsed.value = false
+  }
+}
+
+window.addEventListener('resize', handleResize)
+
+// Cleanup event listener on component unmount
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
@@ -157,20 +189,46 @@ const toggleNotifications = () => {
   position: fixed;
   top: 0;
   left: 0;
+  transition: width 0.3s ease;
+}
+
+.sidebar-collapsed {
+  width: 60px;
 }
 
 .sidebar-header {
-  padding: 1.5rem;
+  padding: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .logo {
   color: #fff;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
   text-decoration: none;
   display: flex;
   align-items: center;
+}
+
+.logo-image {
+  width: 32px;
+  height: 32px;
+  margin-right: 0.5rem;
+}
+
+.menu-toggle {
+  color: #fff;
+  font-size: 1.2rem;
 }
 
 .sidebar-menu {
@@ -236,6 +294,11 @@ const toggleNotifications = () => {
   margin-left: 250px;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content-full {
+  margin-left: 60px;
 }
 
 .topbar {
@@ -270,5 +333,21 @@ const toggleNotifications = () => {
   padding: 2rem;
   background: #f4f6f9;
   flex: 1;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px;
+  }
+  .main-content {
+    margin-left: 60px;
+  }
+  .sidebar-collapsed {
+    width: 0;
+    overflow: hidden;
+  }
+  .main-content-full {
+    margin-left: 0;
+  }
 }
 </style>

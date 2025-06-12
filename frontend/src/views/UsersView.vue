@@ -1,7 +1,7 @@
 <template>
   <div class="users-view">
     <div class="header">
-      <h1>User Management</h1>
+      <h1 @click="navigateToHome">User Management</h1>
       <button @click="openCreateModal" class="btn-primary">
         <i class="fas fa-plus"></i> Add User
       </button>
@@ -128,6 +128,10 @@ const form = ref({
   password: '',
   is_active: true
 })
+
+const navigateToHome = () => {
+  router.push('/')
+}
 
 const filteredUsers = computed(() => {
   return users.value.filter(user => {

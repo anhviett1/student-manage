@@ -31,8 +31,12 @@
             {{ v$.password.$errors[0].$message }}
           </div>
         </div>
-
+        <div class="form-group">
+          <input type="checkbox" id="rememberMe" v-model="form.rememberMe" />
+          <label for="rememberMe">Ghi nhớ tôi</label>
+        </div>
         <button type="submit" class="btn btn-primary" :disabled="isLoading">
+          <span v-if="isLoading" class="spinner"></span>
           {{ isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập' }}
         </button>
       </form>
@@ -70,11 +74,11 @@ const v$ = useVuelidate(rules, form)
 const handleSubmit = async () => {
   const isFormCorrect = await v$.value.$validate()
   if (!isFormCorrect) return
-  
 
   try {
     isLoading.value = true
     await authStore.login(form)
+    form.password = '' 
     const redirectPath = route.query.redirect || '/'
     router.push(redirectPath)
   } catch (error) {
@@ -86,6 +90,9 @@ const handleSubmit = async () => {
     })
   } finally {
     isLoading.value = false
+  }
+  if (form.rememberMe) {
+    localStorage.setItem('rememberedUsername', form.username);
   }
 }
 </script>
@@ -190,8 +197,23 @@ label {
   opacity: 0.7;
   cursor: not-allowed;
 }
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
 
-@media (max-width: 480px) {
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 400px) {
   .login-card {
     padding: 1.5rem;
   }
