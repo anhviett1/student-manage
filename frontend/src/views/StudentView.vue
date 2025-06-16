@@ -725,12 +725,77 @@ const getStatusSeverity = (status) => {
 </script>
 
 <style scoped>
-.card {
-  padding: 1rem;
+/* Style chung cho card, header, action-buttons, filter-bar */
+.card, .content {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  padding: 2rem;
+  margin-bottom: 2rem;
 }
+
+.header, .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header h2, .card-header h3 {
+  font-size: 1.6rem;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 700;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.filter-dropdown {
+  width: 200px;
+}
+
+.filter-search {
+  width: 250px;
+}
+
+.empty-message, .loading-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .card, .content {
+    padding: 1rem;
+  }
+  .header h2, .card-header h3 {
+    font-size: 1.2rem;
+  }
+  .filter-search, .filter-dropdown {
+    width: 100%;
+  }
+}
+
 .profile-section {
   max-width: 800px;
   margin: 0 auto;
@@ -765,42 +830,6 @@ const getStatusSeverity = (status) => {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-.filter-bar {
-  margin-bottom: 1rem;
-}
-.filter-group {
-  display: flex;
-  gap: 1rem;
-}
-.filter-dropdown {
-  width: 200px;
-}
-.filter-search {
-  width: 300px;
-}
-.empty-message, .loading-message {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-}
-.empty-message i, .loading-message i {
-  margin-right: 0.5rem;
-}
-.form-section h4 {
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-  color: #333;
 }
 .confirmation-content {
   display: flex;

@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <div class="card-header">
-      <h3 @click="navigateToHome">Lớp Học</h3>
+      <h3>Lớp Học</h3>
       <div>
         <Button @click="loadActiveClasses" severity="primary" icon="pi pi-filter" label="Lớp Active" class="mr-2" />
         <Button @click="openNew" severity="success" icon="pi pi-plus" label="Thêm Lớp" />
@@ -11,7 +11,7 @@
     <DataTable
       :value="classes"
       :paginator="true"
-      :rows="auto"
+      :rows="10"
       :loading="loading"
       dataKey="class_id"
       :filters="filters"
@@ -296,7 +296,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
-import { saveAs } from 'file-saver'
+
 
 const toast = useToast()
 const classes = ref([])
@@ -318,10 +318,6 @@ const filters = ref({
   name: { value: null, matchMode: 'contains' },
   status: { value: null, matchMode: 'equals' }
 })
-
-const navigateToHome = () => {
-  router.push('/')
-}
     
 const statusOptions = [
   { label: 'Đang hoạt động', value: 'active' },

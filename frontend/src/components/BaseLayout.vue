@@ -67,7 +67,7 @@
         </div>
       </div>
       <div class="content">
-        <slot></slot>
+        <router-view></router-view> 
       </div>
     </main>
   </div>
