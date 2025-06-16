@@ -179,3 +179,20 @@ class TeacherViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename=teachers_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         df.to_excel(response, index=False)
         return response
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """
+        Lấy thông tin của giảng viên hiện tại.
+        """
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+            serializer = self.get_serializer(teacher)
+            return Response({
+                'data': serializer.data,
+                'message': _('Lấy thông tin giảng viên thành công.')
+            }, status=status.HTTP_200_OK)
+        except Teacher.DoesNotExist:
+            return Response({
+                'error': _('Không tìm thấy thông tin giảng viên.')
+            }, status=status.HTTP_404_NOT_FOUND)

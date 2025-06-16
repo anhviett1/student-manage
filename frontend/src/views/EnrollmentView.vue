@@ -26,6 +26,7 @@
           />
         </div>
         <DataTable
+          v-if="canViewOwnEnrollments"
           :value="myEnrollments"
           :loading="loading"
           dataKey="id"
@@ -70,6 +71,7 @@
           <h2>Quản Lý Đăng Ký</h2>
           <div class="action-buttons">
             <Button
+              v-if="canEditEnrollments"
               icon="pi pi-plus"
               label="Thêm Đăng Ký"
               severity="primary"
@@ -78,6 +80,7 @@
               v-tooltip="'Thêm đăng ký mới'"
             />
             <Button
+              v-if="canExportData"
               icon="pi pi-download"
               label="Export"
               severity="success"
@@ -117,6 +120,7 @@
         </div>
 
         <DataTable
+          v-if="canViewEnrollments"
           :value="enrollments"
           :loading="loading"
           dataKey="id"
@@ -164,32 +168,32 @@
           <Column header="Hành Động" style="width: 12%" align="center">
             <template #body="{ data }">
               <Button
+                v-if="canEditEnrollments && !data.is_deleted"
                 icon="pi pi-pencil"
                 outlined
                 rounded
                 class="mr-2"
                 severity="info"
                 @click="editEnrollment(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Sửa đăng ký'"
               />
               <Button
+                v-if="canDeleteEnrollments && !data.is_deleted"
                 icon="pi pi-trash"
                 outlined
                 rounded
                 severity="danger"
                 class="mr-2"
                 @click="confirmDelete(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Xóa mềm'"
               />
               <Button
+                v-if="canDeleteEnrollments && data.is_deleted"
                 icon="pi pi-undo"
                 outlined
                 rounded
                 severity="success"
                 @click="restoreEnrollment(data)"
-                v-if="data.is_deleted"
                 v-tooltip="'Khôi phục'"
               />
               <Button
@@ -361,11 +365,22 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/api' // Giả định api.js chứa cấu hình axios và endpoints
+import { usePermissions } from '@/composables/usePermissions'
+import api from '@/services/api' 
 
 const toast = useToast()
-const isStudent = ref(false)
-const isAdminOrTeacher = ref(true) // Giả định từ user role
+const {
+  isAdmin,
+  isTeacher,
+  isStudent,
+  isAdminOrTeacher,
+  canViewEnrollments,
+  canEditEnrollments,
+  canDeleteEnrollments,
+  canExportData,
+  canViewOwnEnrollments
+} = usePermissions()
+
 const myEnrollments = ref([])
 const enrollments = ref([])
 const semesters = ref([])

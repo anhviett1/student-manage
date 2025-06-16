@@ -2,9 +2,10 @@
   <div class="card">
     <Toast />
     <div class="header">
-      <h2 @click="navigateToHome">Quản Lý Môn Học</h2>
+      <h2>Quản Lý Môn Học</h2>
       <div class="action-buttons">
         <Button
+          v-if="canEditSubjects"
           icon="pi pi-plus"
           label="Thêm Môn Học"
           severity="primary"
@@ -13,6 +14,7 @@
           v-tooltip="'Thêm môn học mới'"
         />
         <Button
+          v-if="canExportData"
           icon="pi pi-download"
           label="Export"
           severity="success"
@@ -52,6 +54,7 @@
     </div>
 
     <DataTable
+      v-if="canViewSubjects"
       :value="subjects"
       :loading="loading"
       dataKey="subject_id"
@@ -91,32 +94,32 @@
       <Column header="Hành Động" style="width: 15%" align="center">
         <template #body="{ data }">
           <Button
+            v-if="canEditSubjects && !data.is_deleted"
             icon="pi pi-pencil"
             outlined
             rounded
             class="mr-2"
             severity="info"
             @click="editSubject(data)"
-            v-if="!data.is_deleted"
             v-tooltip="'Sửa thông tin'"
           />
           <Button
+            v-if="canDeleteSubjects && !data.is_deleted"
             icon="pi pi-trash"
             outlined
             rounded
             severity="danger"
             class="mr-2"
             @click="confirmDelete(data)"
-            v-if="!data.is_deleted"
             v-tooltip="'Xóa mềm'"
           />
           <Button
+            v-if="canDeleteSubjects && data.is_deleted"
             icon="pi pi-undo"
             outlined
             rounded
             severity="success"
             @click="restoreSubject(data)"
-            v-if="data.is_deleted"
             v-tooltip="'Khôi phục'"
           />
           <Button
@@ -233,9 +236,19 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
 import api from '@/services/api'
 
 const toast = useToast()
+const {
+  isAdmin,
+  isTeacher,
+  canViewSubjects,
+  canEditSubjects,
+  canDeleteSubjects,
+  canExportData
+} = usePermissions()
+
 const subjects = ref([])
 const departments = ref([])
 const semesters = ref([])
@@ -253,9 +266,6 @@ const filters = ref({
   global: '',
 })
 
-const navigateToHome = () => {
-  router.push('/')
-}
 
 const statusOptions = [
   { label: 'Đang hoạt động', value: 'active' },

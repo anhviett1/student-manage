@@ -3,7 +3,21 @@
     <div class="profile-container card">
       <Toast />
       <div class="card-header">
-        <h2 @click="navigateToHome">Thông Tin Cá Nhân</h2>
+        <h2>Thông Tin Cá Nhân</h2>
+        <div class="action-buttons">
+          <Button
+            v-if="isStudent && canEditStudentProfile"
+            icon="pi pi-pencil"
+            label="Chỉnh sửa"
+            @click="openEdit"
+          />
+          <Button
+            v-if="isTeacher && canEditTeacherProfile"
+            icon="pi pi-pencil"
+            label="Chỉnh sửa"
+            @click="openEdit"
+          />
+        </div>
       </div>
       <div class="grid">
         <!-- Thông Tin Cơ Bản -->
@@ -164,14 +178,26 @@ import FileUpload from 'primevue/fileupload'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
 import BaseLayout from '@/components/BaseLayout.vue'
+import { usePermissions } from '@/composables/usePermissions'
+import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+import axios from 'axios'
 
 const toast = useToast()
 const userStore = useUserStore()
+const authStore = useAuthStore()
 const isLoading = ref(false)
-
-const navigateToHome = () => {
-  router.push('/')
-}
+const {
+  isAdmin,
+  isTeacher,
+  isStudent,
+  canViewStudentProfile,
+  canEditStudentProfile,
+  canEditTeacherProfile,
+  canUploadStudentAvatar,
+  canUploadTeacherAvatar,
+  canUploadAdminAvatar
+} = usePermissions()
 
 const formData = ref({
   username: '',
@@ -207,31 +233,28 @@ const rules = computed(() => ({
 const v$ = useVuelidate(rules, formData)
 
 onMounted(async () => {
-  await loadProfile()
+  await fetchProfile()
 })
 
-const loadProfile = async () => {
+const fetchProfile = async () => {
   try {
-    const user = await userStore.fetchCurrentUserProfile()
-    if (user) {
-      formData.value = {
-        username: user.username || '',
-        email: user.email || '',
-        full_name: user.full_name || '',
-        phone: user.phone || '',
-        role: user.role || '',
-        address: user.address || '',
-        birth_date: user.birth_date ? new Date(user.birth_date) : null,
-        gender: user.gender || null,
-        avatar: user.avatar || null,
-      }
+    const userProfile = await authStore.fetchUserProfile()
+    if (userProfile.role === 'student') {
+      const response = await axios.get('/api/v1/students/me/')
+      formData.value = response.data
+    } else if (userProfile.role === 'teacher') {
+      const response = await axios.get('/api/v1/teachers/me/')
+      formData.value = response.data
+    } else {
+      formData.value = userProfile
     }
   } catch (error) {
+    console.error('Error fetching profile:', error)
     toast.addToast({
       severity: 'error',
       summary: 'Lỗi',
-      detail: 'Không thể tải thông tin cá nhân',
-      life: 3000,
+      detail: 'Không thể tải thông tin hồ sơ',
+      life: 3000
     })
   }
 }

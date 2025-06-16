@@ -112,6 +112,7 @@
           <h2>Quản Lý Giảng Viên</h2>
           <div class="action-buttons">
             <Button
+              v-if="canEditTeachers"
               icon="pi pi-plus"
               label="Thêm Giảng Viên"
               severity="primary"
@@ -120,6 +121,7 @@
               v-tooltip="'Thêm giảng viên mới'"
             />
             <Button
+              v-if="canExportData"
               icon="pi pi-download"
               label="Export"
               severity="success"
@@ -159,6 +161,7 @@
         </div>
 
         <DataTable
+          v-if="canViewTeachers"
           :value="teachers"
           :loading="loading"
           dataKey="teacher_id"
@@ -202,32 +205,31 @@
           <Column header="Hành Động" style="width: 15%" align="center">
             <template #body="{ data }">
               <Button
+                v-if="canEditTeachers && !data.is_deleted"
                 icon="pi pi-pencil"
                 outlined
                 rounded
-                class="mr-2"
                 severity="info"
                 @click="editTeacher(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Sửa thông tin'"
               />
               <Button
+                v-if="canDeleteTeachers && !data.is_deleted"
                 icon="pi pi-trash"
                 outlined
                 rounded
                 severity="danger"
                 class="mr-2"
                 @click="confirmDelete(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Xóa mềm'"
               />
               <Button
+                v-if="canDeleteTeachers && data.is_deleted"
                 icon="pi pi-undo"
                 outlined
                 rounded
                 severity="success"
                 @click="restoreTeacher(data)"
-                v-if="data.is_deleted"
                 v-tooltip="'Khôi phục'"
               />
               <Button
@@ -392,13 +394,20 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
 import api from '@/services/api'
 import { saveAs } from 'file-saver'
 
 const toast = useToast()
-const isTeacher = ref(false)
-const isAdmin = ref(false)
-const teacher = ref({})
+const {
+  isAdmin,
+  isTeacher,
+  canViewTeachers,
+  canEditTeachers,
+  canDeleteTeachers,
+  canExportData
+} = usePermissions()
+
 const teachers = ref([])
 const departments = ref([])
 const loading = ref(false)

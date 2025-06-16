@@ -86,7 +86,7 @@ class APIGatewayView(APIView):
             'app_business': {
                 'api/enrollments': '/api/v1/enrollments/',
             },
-            'app_home': '/api/v1/home/',
+            'app_home': '/api/v1/users/',
         }
         
         return Response({
@@ -116,4 +116,5 @@ def index(request):
     Index page.
     """
     return HttpResponse("Welcome to Student Management System API")
+
 

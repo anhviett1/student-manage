@@ -26,6 +26,7 @@
           />
         </div>
         <DataTable
+          v-if="canViewOwnScores"
           :value="myScores"
           :loading="loading"
           dataKey="id"
@@ -73,6 +74,7 @@
         <div class="action-bar">
           <div class="action-buttons">
             <Button
+              v-if="canEditScores"
               icon="pi pi-plus"
               label="Thêm Điểm"
               severity="primary"
@@ -81,6 +83,7 @@
               v-tooltip.top="'Thêm điểm số mới'"
             />
             <Button
+              v-if="canUploadScores"
               icon="pi pi-upload"
               label="Upload Sinh Viên"
               severity="info"
@@ -89,6 +92,7 @@
               v-tooltip="'Tải lên danh sách sinh viên từ Excel'"
             />
             <Button
+              v-if="canUploadScores"
               icon="pi pi-upload"
               label="Upload Điểm"
               severity="info"
@@ -97,6 +101,7 @@
               v-tooltip="'Tải lên điểm số từ Excel'"
             />
             <Button
+              v-if="canExportData"
               icon="pi pi-download"
               label="Export Điểm"
               severity="success"
@@ -131,6 +136,7 @@
           </div>
         </div>
         <DataTable
+          v-if="canViewScores"
           :value="scores"
           :loading="loading"
           dataKey="id"
@@ -183,32 +189,32 @@
           <Column header="Hành Động" style="width: 10%" align="center">
             <template #body="{ data }">
               <Button
+                v-if="canEditScores && !data.is_deleted"
                 icon="pi pi-pencil"
                 outlined
                 rounded
                 class="mr-2"
                 severity="info"
                 @click="editScore(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Sửa điểm'"
               />
               <Button
+                v-if="canDeleteScores && !data.is_deleted"
                 icon="pi pi-trash"
                 outlined
                 rounded
                 severity="danger"
                 class="mr-2"
                 @click="confirmDelete(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Xóa mềm'"
               />
               <Button
+                v-if="canDeleteScores && data.is_deleted"
                 icon="pi pi-undo"
                 outlined
                 rounded
                 severity="success"
                 @click="restoreScore(data)"
-                v-if="data.is_deleted"
                 v-tooltip="'Khôi phục'"
               />
             </template>
@@ -387,12 +393,25 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
 import api from '@/services/api'
 import { saveAs } from 'file-saver'
+import { useAuthStore } from '@/stores/auth'
 
 const toast = useToast()
-const isStudent = ref(false) // Giả định lấy từ user role
-const isTeacher = ref(true) // Giả định lấy từ user role
+const authStore = useAuthStore()
+const {
+  isAdmin,
+  isTeacher,
+  isStudent,
+  isAdminOrTeacher,
+  canViewScores,
+  canEditScores,
+  canDeleteScores,
+  canUploadScores,
+  canExportData,
+  canViewOwnScores
+} = usePermissions()
 const myScores = ref([])
 const scores = ref([])
 const semesters = ref([])
@@ -412,10 +431,6 @@ const filters = ref({
   global: ''
 })
 
-const navigateToHome = () => {
-  router.push('/')
-}
-
 const statusOptions = [
   { label: 'Đang hoạt động', value: 'active' },
   { label: 'Không hoạt động', value: 'inactive' },
@@ -423,12 +438,10 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  // Kiểm tra role người dùng (giả định từ API hoặc store)
   const user = await fetchUserRole()
   isStudent.value = user.role === 'student'
   isTeacher.value = user.role === 'teacher'
 
-  // Tải dữ liệu ban đầu
   await loadSemesters()
   await loadStudents()
   await loadSubjects()
@@ -441,8 +454,8 @@ onMounted(async () => {
 })
 
 const fetchUserRole = async () => {
-  // Giả định gọi API để lấy thông tin user
-  return { role: 'teacher' } // Thay bằng API thực tế
+  const response = await api.get('/api/v1/users/role/')
+  return response.data
 }
 
 const loadSemesters = async () => {

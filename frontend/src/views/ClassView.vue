@@ -92,10 +92,34 @@
 
       <Column :exportable="false" style="min-width: 12rem">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editClass(data)" v-tooltip="'Chỉnh sửa lớp'" />
-          <Button icon="pi pi-trash" outlined rounded severity="danger" @click="confirmDeleteClass(data)" v-tooltip="'Xóa mềm lớp'" />
-          <Button icon="pi pi-eraser" outlined rounded severity="warning" @click="confirmHardDeleteClass(data)" v-tooltip="'Xóa hoàn toàn lớp'" />
-          <Button icon="pi pi-refresh" outlined rounded @click="openChangeStatus(data)" v-tooltip="'Thay đổi trạng thái'" />
+          <Button
+            v-if="canEditClasses && !data.is_deleted"
+            icon="pi pi-pencil"
+            outlined
+            rounded
+            severity="info"
+            @click="editClass(data)"
+            v-tooltip="'Sửa thông tin'"
+          />
+          <Button
+            v-if="canDeleteClasses && !data.is_deleted"
+            icon="pi pi-trash"
+            outlined
+            rounded
+            severity="danger"
+            class="mr-2"
+            @click="confirmDelete(data)"
+            v-tooltip="'Xóa mềm'"
+          />
+          <Button
+            v-if="canDeleteClasses && data.is_deleted"
+            icon="pi pi-undo"
+            outlined
+            rounded
+            severity="success"
+            @click="restoreClass(data)"
+            v-tooltip="'Khôi phục'"
+          />
         </template>
       </Column>
     </DataTable>
@@ -295,10 +319,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
 import api from '@/services/api'
 
-
 const toast = useToast()
+const {
+  isAdmin,
+  isTeacher,
+  canViewClasses,
+  canEditClasses,
+  canDeleteClasses,
+  canExportData
+} = usePermissions()
+
 const classes = ref([])
 const semesters = ref([])
 const subjects = ref([])
@@ -420,12 +453,12 @@ const editClass = (data) => {
   classDialog.value = true
 }
 
-const confirmDeleteClass = (data) => {
+const confirmDelete = (data) => {
   classObj.value = data
   deleteClassDialog.value = true
 }
 
-const confirmHardDeleteClass = (data) => {
+const confirmHardDelete = (data) => {
   classObj.value = data
   hardDeleteClassDialog.value = true
 }

@@ -1,3 +1,5 @@
+from datetime import datetime
+import os
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.db.models import Count
 from django.db.models.signals import post_save
@@ -19,6 +21,8 @@ from ..app_activity.models import Activity
 from .models import Department
 from .serializers import UserSerializer, DepartmentSerializer, ChangePasswordSerializer, UserProfileSerializer
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwnerOrAdmin
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
 User = get_user_model()
 
@@ -153,20 +157,20 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Dynamic permission assignment based on action."""
         permission_classes = {
-            'create': [IsAdmin],  # Only admins can create users
+            'create': [IsAdmin],
             'update': [IsAdmin],
             'partial_update': [IsAdmin],
             'destroy': [IsAdmin],
             'me': [IsAuthenticated],
-            'list': [IsAdmin],  # Restrict list to admins
-            'retrieve': [IsAdmin],  # Restrict retrieve to admins
+            'list': [IsAdmin],
+            'retrieve': [IsAdmin],
         }.get(self.action, [IsAdminOrReadOnly])
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
         """Set password and role during user creation."""
         user = serializer.save()
-        user.set_password(serializer.validated_data.get('password', 'default_password123'))  # Default password
+        user.set_password(serializer.validated_data.get('password', 'default_password123'))
         user.save()
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
@@ -184,3 +188,104 @@ class UserViewSet(viewsets.ModelViewSet):
             request.user.save()
             return Response({'message': 'Đổi mật khẩu thành công'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(tags=['Users'])
+class AvatarUploadView(APIView):
+    """API view for uploading user avatar."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        if 'avatar' not in request.FILES:
+            return Response(
+                {'error': 'No avatar file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        avatar_file = request.FILES['avatar']
+        
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif']
+        if avatar_file.content_type not in allowed_types:
+            return Response(
+                {'error': 'Invalid file type. Only JPEG, PNG and GIF are allowed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate file size (max 1MB)
+        if avatar_file.size > 1024 * 1024:
+            return Response(
+                {'error': 'File size too large. Maximum size is 1MB'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Generate unique filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            ext = os.path.splitext(avatar_file.name)[1]
+            filename = f'avatars/{request.user.id}_{timestamp}{ext}'
+
+            # Delete old avatar if exists
+            if request.user.avatar:
+                old_path = request.user.avatar.path
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+
+            # Save new avatar
+            path = default_storage.save(filename, ContentFile(avatar_file.read()))
+            request.user.avatar = path
+            request.user.save()
+
+            return Response({
+                'avatar_url': request.user.avatar.url,
+                'message': 'Avatar uploaded successfully'
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+@extend_schema(tags=['Users'])
+class UserRoleAPIView(APIView):
+    """API view for getting user role and permissions."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        permissions = []
+        
+        # Add role-based permissions
+        if user.is_superuser:
+            permissions = ['*']  # Superuser has all permissions
+        elif user.role == 'admin':
+            permissions = [
+                'student:view', 'student:edit', 'student:delete',
+                'teacher:view', 'teacher:edit', 'teacher:delete',
+                'class:view', 'class:edit', 'class:delete',
+                'subject:view', 'subject:edit', 'subject:delete',
+                'enrollment:view', 'enrollment:edit', 'enrollment:delete',
+                'score:view', 'score:edit', 'score:delete', 'score:upload',
+                'semester:view', 'semester:edit', 'semester:delete'
+            ]
+        elif user.role == 'teacher':
+            permissions = [
+                'student:view',
+                'class:view',
+                'subject:view',
+                'enrollment:view',
+                'score:view', 'score:edit', 'score:upload',
+                'semester:view'
+            ]
+        elif user.role == 'student':
+            permissions = [
+                'subject:view',
+                'enrollment:view',
+                'score:view'
+            ]
+
+        return Response({
+            'role': user.role,
+            'is_superuser': user.is_superuser,
+            'permissions': permissions
+        }, status=status.HTTP_200_OK)

@@ -6,7 +6,7 @@
       <TabPanel header="Thông Tin Cá Nhân" v-if="isStudent">
         <div class="profile-section">
           <div class="profile-header">
-            <h2 @click="navigateToHome">Thông Tin Sinh Viên</h2>
+            <h2>Thông Tin Sinh Viên</h2>
             <Button
               icon="pi pi-pencil"
               label="Chỉnh Sửa"
@@ -127,6 +127,7 @@
           <h2>Quản Lý Sinh Viên</h2>
           <div class="action-buttons">
             <Button
+              v-if="canEditStudents"
               icon="pi pi-plus"
               label="Thêm Sinh Viên"
               severity="primary"
@@ -135,6 +136,7 @@
               v-tooltip="'Thêm sinh viên mới'"
             />
             <Button
+              v-if="canExportData"
               icon="pi pi-download"
               label="Export"
               severity="success"
@@ -174,6 +176,7 @@
         </div>
 
         <DataTable
+          v-if="canViewStudents"
           :value="students"
           :loading="loading"
           dataKey="id"
@@ -213,32 +216,32 @@
           <Column header="Hành Động" style="width: 15%" align="center">
             <template #body="{ data }">
               <Button
+                v-if="canEditStudents && !data.is_deleted"
                 icon="pi pi-pencil"
                 outlined
                 rounded
                 class="mr-2"
                 severity="info"
                 @click="editStudent(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Sửa thông tin'"
               />
               <Button
+                v-if="canDeleteStudents && !data.is_deleted"
                 icon="pi pi-trash"
                 outlined
                 rounded
                 severity="danger"
                 class="mr-2"
                 @click="confirmDelete(data)"
-                v-if="!data.is_deleted"
                 v-tooltip="'Xóa mềm'"
               />
               <Button
+                v-if="canDeleteStudents && data.is_deleted"
                 icon="pi pi-undo"
                 outlined
                 rounded
                 severity="success"
                 @click="restoreStudent(data)"
-                v-if="data.is_deleted"
                 v-tooltip="'Khôi phục'"
               />
               <Button
@@ -431,10 +434,20 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
 import api from '@/services/api'
 import { saveAs } from 'file-saver'
 
 const toast = useToast()
+const {
+  isAdmin,
+  isTeacher,
+  canViewStudents,
+  canEditStudents,
+  canDeleteStudents,
+  canExportData
+} = usePermissions()
+
 const isStudent = ref(false)
 const isAdminOrTeacher = ref(false)
 const student = ref({})
@@ -454,9 +467,6 @@ const filters = ref({
   global: '',
 })
 
-const navigateToHome = () => {
-  router.push('/')
-}
 
 const genderOptions = [
   { label: 'Nam', value: 'M' },
