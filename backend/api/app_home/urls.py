@@ -9,11 +9,12 @@ from .views import (
     UserViewSet,
     UserRoleAPIView,
     AvatarUploadView,
+    DepartmentViewSet
 )
 
 router = DefaultRouter()
 router.register(r"", UserViewSet, basename="users")
-
+router.register(r"", DepartmentViewSet, basename="departments")
 urlpatterns = [
     path("", include(router.urls)),
     path("login/", LoginAPIView.as_view(), name="login"),

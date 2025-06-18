@@ -27,7 +27,7 @@ export const endpoints = {
   userProfile: `${API_PREFIX}/users/profile/`,
   users: `${API_PREFIX}/users/`,
   changePassword: `${API_PREFIX}/users/change-password/`,
-  // uploadAvatar: `${API_PREFIX}/home/upload-avatar/`,
+  uploadAvatar: `${API_PREFIX}/users/avatar-upload/`,
 
   students: `${API_PREFIX}/students/`,
   teachers: `${API_PREFIX}/teachers/`,
@@ -37,6 +37,7 @@ export const endpoints = {
   semesters: `${API_PREFIX}/semesters/`,
   scores: `${API_PREFIX}/scores/`,
   activities: `${API_PREFIX}/activities/`,
+  departments: `${API_PREFIX}/departments/`,
 
 }
 

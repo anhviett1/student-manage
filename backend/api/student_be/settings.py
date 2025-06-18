@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework.authtoken",
     "drf_spectacular",
+    
     "api.app_student",
     "api.app_teacher",
     "api.app_home",
@@ -81,6 +82,7 @@ INSTALLED_APPS = [
     "api.app_enrollment",
     "api.app_activity",
     "api.app_semester",
+    "api.app_schedule",
 ]
 
 MIDDLEWARE = [
@@ -233,6 +235,12 @@ SPECTACULAR_SETTINGS = {
             "name": "Classes",
             "description": "Quản lý lớp học",
             "x-displayName": "🏫 Quản lý lớp học",
+        },
+        {
+            "name": "Schedule",
+            "description": "Quản lý thời khóa biểu",
+            "x-displayName": "🗓️ Quản lý thời khóa biểu",
+
         },
         {"name": "Semesters", "description": "Quản lý học kỳ", "x-displayName": "🗓️ Quản lý học kỳ"},
         {

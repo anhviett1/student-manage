@@ -1,13 +1,11 @@
 <template>
-  <div class="card">
+  <div>
     <div class="card-header">
-      <h3>Lớp Học</h3>
       <div>
         <Button @click="loadActiveClasses" severity="primary" icon="pi pi-filter" label="Lớp Active" class="mr-2" />
         <Button @click="openNew" severity="success" icon="pi pi-plus" label="Thêm Lớp" />
       </div>
     </div>
-
     <DataTable
       :value="classes"
       :paginator="true"
@@ -577,15 +575,12 @@ const getStatusSeverity = (status) => {
 <style scoped>
 .card-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 1rem;
 }
-
 .card-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: inherit;
+  display: none;
 }
 
 .form-section {
