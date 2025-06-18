@@ -3,9 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import ScoreViewSet
 
 router = DefaultRouter()
-router.register(r'', ScoreViewSet, basename='score')
+router.register(r"", ScoreViewSet, basename="score")
 
 urlpatterns = [
-    path('', include(router.urls)),
-    
+    path("", include(router.urls)),
 ]

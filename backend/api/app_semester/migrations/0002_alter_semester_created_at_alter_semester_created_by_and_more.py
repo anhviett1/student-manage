@@ -9,28 +9,40 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('app_semester', '0001_initial'),
+        ("app_semester", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='semester',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Ngày tạo'),
+            model_name="semester",
+            name="created_at",
+            field=models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Ngày tạo"),
         ),
         migrations.AlterField(
-            model_name='semester',
-            name='created_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_created', to=settings.AUTH_USER_MODEL, verbose_name='Người tạo'),
+            model_name="semester",
+            name="created_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="%(class)s_created",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Người tạo",
+            ),
         ),
         migrations.AlterField(
-            model_name='semester',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True, db_index=True, verbose_name='Ngày cập nhật'),
+            model_name="semester",
+            name="updated_at",
+            field=models.DateTimeField(auto_now=True, db_index=True, verbose_name="Ngày cập nhật"),
         ),
         migrations.AlterField(
-            model_name='semester',
-            name='updated_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_updated', to=settings.AUTH_USER_MODEL, verbose_name='Người cập nhật'),
+            model_name="semester",
+            name="updated_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="%(class)s_updated",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Người cập nhật",
+            ),
         ),
     ]

@@ -12,40 +12,135 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('app_semester', '0001_initial'),
-        ('app_class', '0001_initial'),
-        ('app_subject', '0001_initial'),
+        ("app_semester", "0001_initial"),
+        ("app_class", "0001_initial"),
+        ("app_subject", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('app_student', '0001_initial'),
+        ("app_student", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Enrollment',
+            name="Enrollment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_deleted', models.BooleanField(db_index=True, default=False, verbose_name='Đã xóa')),
-                ('deleted_at', models.DateTimeField(blank=True, null=True, verbose_name='Ngày xóa')),
-                ('enrollment_date', models.DateField(default=datetime.date.today, verbose_name='Ngày đăng ký')),
-                ('status', models.CharField(choices=[('pending', 'Chờ xử lý'), ('approved', 'Đã duyệt'), ('rejected', 'Từ chối')], default='pending', max_length=20)),
-                ('is_active', models.BooleanField(default=True, verbose_name='Đang hoạt động')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Ghi chú')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')),
-                ('class_obj', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='class_enrollments', to='app_class.class')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_enrollments', to=settings.AUTH_USER_MODEL)),
-                ('deleted_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_deleted', to=settings.AUTH_USER_MODEL, verbose_name='Người xóa')),
-                ('semester', models.ForeignKey(blank=True, default=api.app_enrollment.models.get_default_semester, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='semester_enrollments', to='app_semester.semester', verbose_name='Học kỳ')),
-                ('student', models.ForeignKey(blank=True, default=api.app_enrollment.models.get_default_student, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='student_enrollments', to='app_student.student', verbose_name='Sinh viên')),
-                ('subject', models.ForeignKey(blank=True, default=api.app_enrollment.models.get_default_subject, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='subject_enrollments', to='app_subject.subject', verbose_name='Môn học')),
-                ('updated_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='updated_enrollments', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "is_deleted",
+                    models.BooleanField(db_index=True, default=False, verbose_name="Đã xóa"),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, null=True, verbose_name="Ngày xóa"),
+                ),
+                (
+                    "enrollment_date",
+                    models.DateField(default=datetime.date.today, verbose_name="Ngày đăng ký"),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Chờ xử lý"),
+                            ("approved", "Đã duyệt"),
+                            ("rejected", "Từ chối"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True, verbose_name="Đang hoạt động")),
+                ("notes", models.TextField(blank=True, null=True, verbose_name="Ghi chú")),
+                ("created_at", models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")),
+                ("updated_at", models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")),
+                (
+                    "class_obj",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="class_enrollments",
+                        to="app_class.class",
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_enrollments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_deleted",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Người xóa",
+                    ),
+                ),
+                (
+                    "semester",
+                    models.ForeignKey(
+                        blank=True,
+                        default=api.app_enrollment.models.get_default_semester,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="semester_enrollments",
+                        to="app_semester.semester",
+                        verbose_name="Học kỳ",
+                    ),
+                ),
+                (
+                    "student",
+                    models.ForeignKey(
+                        blank=True,
+                        default=api.app_enrollment.models.get_default_student,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="student_enrollments",
+                        to="app_student.student",
+                        verbose_name="Sinh viên",
+                    ),
+                ),
+                (
+                    "subject",
+                    models.ForeignKey(
+                        blank=True,
+                        default=api.app_enrollment.models.get_default_subject,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subject_enrollments",
+                        to="app_subject.subject",
+                        verbose_name="Môn học",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="updated_enrollments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'enrollment',
-                'verbose_name_plural': 'enrollments',
-                'ordering': ['-created_at'],
-                'permissions': [('can_view_enrollment_details', 'Có thể xem thông tin đăng ký'), ('can_manage_enrollment', 'Có thể quản lý đăng ký'), ('can_view_enrollment_statistics', 'Có thể xem thống kê đăng ký'), ('can_export_enrollment', 'Có thể xuất đăng ký')],
-                'unique_together': {('student', 'subject', 'semester')},
+                "verbose_name": "enrollment",
+                "verbose_name_plural": "enrollments",
+                "ordering": ["-created_at"],
+                "permissions": [
+                    ("can_view_enrollment_details", "Có thể xem thông tin đăng ký"),
+                    ("can_manage_enrollment", "Có thể quản lý đăng ký"),
+                    ("can_view_enrollment_statistics", "Có thể xem thống kê đăng ký"),
+                    ("can_export_enrollment", "Có thể xuất đăng ký"),
+                ],
+                "unique_together": {("student", "subject", "semester")},
             },
         ),
     ]

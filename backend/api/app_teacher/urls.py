@@ -3,8 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import TeacherViewSet
 
 router = DefaultRouter()
-router.register(r'', TeacherViewSet, basename='teacher')
+router.register(r"", TeacherViewSet, basename="teacher")
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

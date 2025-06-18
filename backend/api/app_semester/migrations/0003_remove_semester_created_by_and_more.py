@@ -6,39 +6,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('app_semester', '0002_alter_semester_created_at_alter_semester_created_by_and_more'),
+        ("app_semester", "0002_alter_semester_created_at_alter_semester_created_by_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='semester',
-            name='created_by',
+            model_name="semester",
+            name="created_by",
         ),
         migrations.RemoveField(
-            model_name='semester',
-            name='deleted_at',
+            model_name="semester",
+            name="deleted_at",
         ),
         migrations.RemoveField(
-            model_name='semester',
-            name='deleted_by',
+            model_name="semester",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='semester',
-            name='updated_by',
+            model_name="semester",
+            name="updated_by",
         ),
         migrations.AlterField(
-            model_name='semester',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo'),
+            model_name="semester",
+            name="created_at",
+            field=models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo"),
         ),
         migrations.AlterField(
-            model_name='semester',
-            name='is_deleted',
-            field=models.BooleanField(default=False, verbose_name='Đã xóa'),
+            model_name="semester",
+            name="is_deleted",
+            field=models.BooleanField(default=False, verbose_name="Đã xóa"),
         ),
         migrations.AlterField(
-            model_name='semester',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật'),
+            model_name="semester",
+            name="updated_at",
+            field=models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật"),
         ),
     ]

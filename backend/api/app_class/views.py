@@ -1,75 +1,61 @@
+from rest_framework import viewsets
 from django.db.models import Q
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import extend_schema
 from .models import Class
 from .serializers import ClassSerializer
+from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema
 
-class ClassPermission(permissions.BasePermission):
-    """Custom permission cho Class"""
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user.has_perm('app_class.can_view_class_details')
-        return request.user.has_perm('app_class.can_manage_class')
 
-@extend_schema(tags=['Classes'])
+@extend_schema(tags=["Classes"])
 class ClassViewSet(viewsets.ModelViewSet):
-    """API ViewSet cho quản lý lớp học"""
-    queryset = Class.objects.filter(is_active=True)
     serializer_class = ClassSerializer
-    permission_classes = [permissions.IsAuthenticated, ClassPermission]
-    lookup_field = 'class_id'
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Lọc queryset dựa trên query params"""
-        queryset = super().get_queryset()
-        status = self.request.query_params.get('status', None)
-        is_active = self.request.query_params.get('is_active', None)
-        search = self.request.query_params.get('search', None)
+        queryset = Class.objects.none()  # Empty default queryset
 
-        if status:
-            queryset = queryset.filter(status=status)
-        if is_active is not None:
-            queryset = queryset.filter(is_active=is_active.lower() == 'true')
-        if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(class_id__icontains=search) |
-                Q(description__icontains=search)
-            )
+        if self.request.user.is_authenticated:
+            # Base filter without any condition
+            filters = Q()
+
+            # Get request parameters for filtering
+            search_term = self.request.query_params.get("searchTerm", "")
+            status_filter = self.request.query_params.get("status", "")
+            department_filter = self.request.query_params.get("department", "")
+            semester_filter = self.request.query_params.get("semester", "")
+            subject_filter = self.request.query_params.get("subject", "")
+            teacher_filter = self.request.query_params.get("teacher", "")
+
+            # Split comma-separated values into lists (if applicable)
+            status_list = status_filter.split(",") if status_filter else ["active", "pending"]
+            department_list = [int(id) for id in department_filter.split(",") if id.isdigit()]
+            semester_list = semester_filter.split(",") if semester_filter else []
+            subject_list = subject_filter.split(",") if subject_filter else []
+            teacher_list = [int(id) for id in teacher_filter.split(",") if id.isdigit()]
+
+            # Apply filters using Q objects
+            filters &= Q(status__in=status_list)
+
+            if search_term:
+                filters &= (
+                    Q(name__icontains=search_term)
+                    | Q(description__icontains=search_term)
+                    | Q(class_id__icontains=search_term)
+                )
+
+            if department_list:
+                filters &= Q(department__id__in=department_list)
+
+            if semester_list:
+                filters &= Q(semester__semester_id__in=semester_list)
+
+            if subject_list:
+                filters &= Q(subject__subject_id__in=subject_list)
+
+            if teacher_list:
+                filters &= Q(teacher__id__in=teacher_list)
+
+            # Return the filtered queryset
+            queryset = Class.objects.filter(filters).distinct().order_by("name")
+
         return queryset
-
-    def perform_create(self, serializer):
-        """Lưu thông tin người tạo và người cập nhật khi tạo lớp"""
-        serializer.save(created_by=self.request.user, updated_by=self.request.user)
-
-    def perform_update(self, serializer):
-        """Lưu thông tin người cập nhật khi cập nhật lớp"""
-        serializer.save(updated_by=self.request.user)
-
-    def perform_destroy(self, instance):
-        """Thực hiện xóa mềm và lưu thông tin người cập nhật"""
-        instance.is_active = False
-        instance.updated_by = self.request.user
-        instance.save()
-
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def active(self, request):
-        """Lấy danh sách lớp đang hoạt động"""
-        classes = self.get_queryset().filter(is_active=True)
-        serializer = self.get_serializer(classes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=['delete'],
-        permission_classes=[permissions.IsAuthenticated, ClassPermission],
-        url_path='hard-delete'
-    )
-    def hard_delete(self, request, class_id=None):
-        """Xóa cứng lớp học (xóa hoàn toàn khỏi database)"""
-        class_obj = self.get_object()
-        class_obj.delete()
-        return Response({'message': _('Lớp học đã được xóa hoàn toàn.')}, status=status.HTTP_204_NO_CONTENT)

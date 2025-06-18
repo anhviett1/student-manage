@@ -1,39 +1,23 @@
 from rest_framework import serializers
 from .models import Class
-from django.contrib.auth import get_user_model
-from django.utils.translation import gettext_lazy as _
 
-User = get_user_model()
+
 class ClassSerializer(serializers.ModelSerializer):
-    """Serializer cho model Class"""
-    created_by = serializers.SlugRelatedField(
-        slug_field='username',
-        queryset=User.objects.all(),
-        allow_null=True,
-        required=False
-    )
-    updated_by = serializers.SlugRelatedField(
-        slug_field='username',
-        queryset=User.objects.all(),
-        allow_null=True,
-        required=False
-    )
+    department_name = serializers.ReadOnlyField(source="department.name")
+    semester_name = serializers.ReadOnlyField(source="semester.name")
+    subject_name = serializers.ReadOnlyField(source="subject.name")
+    teacher_name = serializers.ReadOnlyField(source="teacher.full_name")
+    teacher_ids = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="teachers")
+    subject_ids = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="subjects")
 
     class Meta:
         model = Class
-        fields = [
-            'class_id', 'name', 'subject', 'semester', 'teacher', 
-            'status', 'created_at', 'updated_at',
+        fields = [f.name for f in Class._meta.fields] + [
+            "department_name",
+            "semester_name",
+            "subject_name",
+            "teacher_name",
+            "teacher_ids",
+            "subject_ids",
         ]
-        read_only_fields = ['created_at', 'updated_at']
-
-    def validate(self, data):
-        """Kiểm tra logic hợp lệ của các trường"""
-        max_students = data.get('max_students')
-        current_students = data.get('current_students')
-
-        if max_students is not None and current_students is not None:
-            if current_students > max_students:
-                raise serializers.ValidationError(_('Số học sinh hiện tại không thể lớn hơn số học sinh tối đa.'))
-
-        return data      
+        read_only_fields = ["class_id", "created_at", "updated_at"]

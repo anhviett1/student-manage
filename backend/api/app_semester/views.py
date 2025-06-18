@@ -1,100 +1,52 @@
-from django.db import models
+from rest_framework import viewsets
 from django.db.models import Q
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.utils.translation import gettext_lazy as _
+from .models import Semester
+from .serializers import SemesterSerializer
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
-from ..app_semester.models import Semester
-from ..app_semester.serializers import SemesterSerializer
 
-class SemesterPermission(permissions.BasePermission):
-    """Custom permission cho Semester"""
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user.has_perm('app_semester.can_view_semester_details')
-        return request.user.has_perm('app_semester.can_manage_semester')
 
-@extend_schema(tags=['Semesters'])
+@extend_schema(tags=["Teachers"])
 class SemesterViewSet(viewsets.ModelViewSet):
-    """API ViewSet cho quản lý học kỳ"""
-    queryset = Semester.objects.filter(is_active=True)
     serializer_class = SemesterSerializer
-    permission_classes = [permissions.IsAuthenticated, SemesterPermission]
-    lookup_field = 'semester_id'
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Lọc queryset dựa trên query params"""
-        queryset = super().get_queryset()
-        status = self.request.query_params.get('status', None)
-        is_active = self.request.query_params.get('is_active', None)
-        search = self.request.query_params.get('search', None)
+        queryset = Semester.objects.none()
 
-        if status:
-            queryset = queryset.filter(status=status)
-        if is_active is not None:
-            queryset = queryset.filter(is_active=is_active.lower() == 'true')
-        if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(semester_id__icontains=search) |
-                Q(description__icontains=search)
-            )
+        if self.request.user.is_authenticated:
+            filters = Q()
+
+            search_term = self.request.query_params.get("searchTerm", "")
+            status_filter = self.request.query_params.get("status", "")
+            academic_year_filter = self.request.query_params.get("academic_year", "")
+            start_date = self.request.query_params.get("startDate")
+            end_date = self.request.query_params.get("endDate")
+
+            status_list = status_filter.split(",") if status_filter else ["upcoming", "current"]
+            academic_year_list = academic_year_filter.split(",") if academic_year_filter else []
+
+            filters &= Q(status__in=status_list)
+
+            if search_term:
+                filters &= (
+                    Q(name__icontains=search_term)
+                    | Q(academic_year__icontains=search_term)
+                    | Q(description__icontains=search_term)
+                    | Q(notes__icontains=search_term)
+                )
+
+            if start_date and end_date:
+                filters &= Q(start_date__gte=start_date) & Q(end_date__lte=end_date)
+
+            if academic_year_list:
+                filters &= Q(academic_year__in=academic_year_list)
+
+            queryset = Semester.objects.filter(filters).distinct().order_by("-start_date")
+
         return queryset
 
-    def perform_create(self, serializer):
-        """Lưu thông tin người tạo và người cập nhật khi tạo học kỳ"""
-        serializer.save(created_by=self.request.user, updated_by=self.request.user)
-
-    def perform_update(self, serializer):
-        """Lưu thông tin người cập nhật khi cập nhật học kỳ"""
-        serializer.save(updated_by=self.request.user)
-
     def perform_destroy(self, instance):
-        """Thực hiện xóa mềm và lưu thông tin người cập nhật"""
+        instance.is_deleted = True
         instance.is_active = False
-        instance.updated_by = self.request.user
-        instance.save()
-
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def active(self, request):
-        """Lấy danh sách học kỳ đang hoạt động"""
-        semesters = self.get_queryset().filter(is_active=True)
-        serializer = self.get_serializer(semesters, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=['delete'],
-        permission_classes=[permissions.IsAuthenticated, SemesterPermission],
-        url_path='hard-delete'
-    )
-    def hard_delete(self, request, semester_id=None):
-        """Xóa cứng học kỳ (xóa hoàn toàn khỏi database)"""
-        semester_obj = self.get_object()
-        semester_obj.delete()
-        return Response({'message': _('Học kỳ đã được xóa hoàn toàn.')}, status=status.HTTP_204_NO_CONTENT)
-
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, SemesterPermission], url_path='restore')
-    def restore(self, request, semester_id=None):
-        try:
-            semester = Semester.objects.get(semester_id=semester_id)
-            if not semester.is_active:
-                return Response({'error': _('Học kỳ này chưa bị xóa mềm.')}, status=status.HTTP_400_BAD_REQUEST)
-            semester.restore(user=self.request.user)
-            serializer = self.get_serializer(semester)
-            return Response({'message': _('Khôi phục học kỳ thành công.'), 'data': serializer.data}, status=status.HTTP_200_OK)
-        except Semester.DoesNotExist:
-            return Response({'error': _('Học kỳ không tồn tại.')}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, SemesterPermission], url_path='change-status')
-    def change_status(self, request, semester_id=None):
-        semester = self.get_object()
-        new_status = request.data.get('status')
-        if new_status not in dict(Semester.STATUS_CHOICES).keys():
-            return Response({'error': _('Trạng thái không hợp lệ.')}, status=status.HTTP_400_BAD_REQUEST)
-        semester.status = new_status
-        semester.updated_by = self.request.user
-        semester.save()
-        serializer = self.get_serializer(semester)
-        return Response({'message': _('Cập nhật trạng thái thành công.'), 'data': serializer.data}, status=status.HTTP_200_OK)
+        instance.save(update_fields=["is_deleted", "is_active"])

@@ -10,36 +10,118 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('app_home', '0001_initial'),
-        ('app_semester', '0001_initial'),
+        ("app_home", "0001_initial"),
+        ("app_semester", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Subject',
+            name="Subject",
             fields=[
-                ('is_deleted', models.BooleanField(db_index=True, default=False, verbose_name='Đã xóa')),
-                ('deleted_at', models.DateTimeField(blank=True, null=True, verbose_name='Ngày xóa')),
-                ('subject_id', models.CharField(default='MH001', max_length=20, primary_key=True, serialize=False, unique=True, verbose_name='Mã môn học')),
-                ('name', models.CharField(default='Môn học mặc định', max_length=200, verbose_name='Tên môn học')),
-                ('description', models.TextField(blank=True, null=True, verbose_name='Mô tả')),
-                ('credits', models.PositiveIntegerField(default=3, verbose_name='Số tín chỉ')),
-                ('status', models.CharField(choices=[('active', 'Đang hoạt động'), ('inactive', 'Không hoạt động'), ('pending', 'Đang chờ duyệt')], default='active', max_length=20, verbose_name='Trạng thái')),
-                ('is_active', models.BooleanField(default=True, verbose_name='Đang hoạt động')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_subjects', to=settings.AUTH_USER_MODEL)),
-                ('deleted_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_deleted', to=settings.AUTH_USER_MODEL, verbose_name='Người xóa')),
-                ('department', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='subject_departments', to='app_home.department', verbose_name='Khoa')),
-                ('semester', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='subject_semesters', to='app_semester.semester', verbose_name='Học kỳ')),
-                ('updated_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='updated_subjects', to=settings.AUTH_USER_MODEL)),
+                (
+                    "is_deleted",
+                    models.BooleanField(db_index=True, default=False, verbose_name="Đã xóa"),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, null=True, verbose_name="Ngày xóa"),
+                ),
+                (
+                    "subject_id",
+                    models.CharField(
+                        default="MH001",
+                        max_length=20,
+                        primary_key=True,
+                        serialize=False,
+                        unique=True,
+                        verbose_name="Mã môn học",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        default="Môn học mặc định", max_length=200, verbose_name="Tên môn học"
+                    ),
+                ),
+                ("description", models.TextField(blank=True, null=True, verbose_name="Mô tả")),
+                ("credits", models.PositiveIntegerField(default=3, verbose_name="Số tín chỉ")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("active", "Đang hoạt động"),
+                            ("inactive", "Không hoạt động"),
+                            ("pending", "Đang chờ duyệt"),
+                        ],
+                        default="active",
+                        max_length=20,
+                        verbose_name="Trạng thái",
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True, verbose_name="Đang hoạt động")),
+                ("created_at", models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")),
+                ("updated_at", models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_subjects",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_deleted",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Người xóa",
+                    ),
+                ),
+                (
+                    "department",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="subject_departments",
+                        to="app_home.department",
+                        verbose_name="Khoa",
+                    ),
+                ),
+                (
+                    "semester",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subject_semesters",
+                        to="app_semester.semester",
+                        verbose_name="Học kỳ",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="updated_subjects",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'subject',
-                'verbose_name_plural': 'subjects',
-                'ordering': ['name'],
-                'permissions': [('can_view_subject_details', 'Có thể xem thông tin môn học'), ('can_manage_subject', 'Có thể quản lý môn học'), ('can_view_subject_scores', 'Có thể xem điểm môn học'), ('can_manage_subject_scores', 'Có thể quản lý điểm môn học')],
+                "verbose_name": "subject",
+                "verbose_name_plural": "subjects",
+                "ordering": ["name"],
+                "permissions": [
+                    ("can_view_subject_details", "Có thể xem thông tin môn học"),
+                    ("can_manage_subject", "Có thể quản lý môn học"),
+                    ("can_view_subject_scores", "Có thể xem điểm môn học"),
+                    ("can_manage_subject_scores", "Có thể quản lý điểm môn học"),
+                ],
             },
         ),
     ]

@@ -6,29 +6,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('app_class', '0001_initial'),
+        ("app_class", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='class',
-            name='created_by',
+            model_name="class",
+            name="created_by",
         ),
         migrations.RemoveField(
-            model_name='class',
-            name='deleted_at',
+            model_name="class",
+            name="deleted_at",
         ),
         migrations.RemoveField(
-            model_name='class',
-            name='deleted_by',
+            model_name="class",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='class',
-            name='updated_by',
+            model_name="class",
+            name="updated_by",
         ),
         migrations.AlterField(
-            model_name='class',
-            name='is_deleted',
-            field=models.BooleanField(default=False, verbose_name='Đã xóa'),
+            model_name="class",
+            name="is_deleted",
+            field=models.BooleanField(default=False, verbose_name="Đã xóa"),
         ),
     ]

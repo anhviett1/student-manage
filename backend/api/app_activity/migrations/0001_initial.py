@@ -15,22 +15,47 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Activity',
+            name="Activity",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('activity_type', models.CharField(choices=[('login', 'Đăng nhập'), ('logout', 'Đăng xuất'), ('create', 'Tạo mới'), ('update', 'Cập nhật'), ('delete', 'Xóa'), ('view', 'Xem')], max_length=10)),
-                ('content_type', models.CharField(blank=True, max_length=100)),
-                ('object_id', models.PositiveIntegerField(blank=True, null=True)),
-                ('description', models.TextField(blank=True)),
-                ('ip_address', models.GenericIPAddressField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='activities', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "activity_type",
+                    models.CharField(
+                        choices=[
+                            ("login", "Đăng nhập"),
+                            ("logout", "Đăng xuất"),
+                            ("create", "Tạo mới"),
+                            ("update", "Cập nhật"),
+                            ("delete", "Xóa"),
+                            ("view", "Xem"),
+                        ],
+                        max_length=10,
+                    ),
+                ),
+                ("content_type", models.CharField(blank=True, max_length=100)),
+                ("object_id", models.PositiveIntegerField(blank=True, null=True)),
+                ("description", models.TextField(blank=True)),
+                ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")),
+                ("updated_at", models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="activities",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Hoạt động',
-                'verbose_name_plural': 'Hoạt động',
-                'ordering': ['-created_at'],
+                "verbose_name": "Hoạt động",
+                "verbose_name_plural": "Hoạt động",
+                "ordering": ["-created_at"],
             },
         ),
     ]

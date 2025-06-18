@@ -1,102 +1,68 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
-from ..app_enrollment.models import Enrollment
-from ..app_enrollment.serializers import EnrollmentSerializer
+from rest_framework import viewsets
 from django.db.models import Q
-import pandas as pd
-from django.http import HttpResponse
+from .models import Enrollment
+from .serializers import EnrollmentSerializer
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
-from datetime import datetime
 
-@extend_schema(tags=['Enrollments'])
+
+@extend_schema(tags=["Enrollment"])
 class EnrollmentViewSet(viewsets.ModelViewSet):
-    queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['status', 'is_active', 'semester__semester_id', 'student__student_id', 'subject__subject_id']
-    search_fields = ['student__name', 'subject__name', 'semester__name', 'notes']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        if not self.request.user.has_perm('app_enrollment.can_manage_enrollment'):
-            # Non-managers only see their own enrollments
-            if hasattr(self.request.user, 'student'):
-                queryset = queryset.filter(student=self.request.user.student)
-            else:
-                queryset = queryset.none()
+        queryset = Enrollment.objects.none()  # Empty default queryset
+
+        if self.request.user.is_authenticated:
+            # Base filter without any condition
+            filters = Q()
+
+            # Get request parameters for filtering
+            search_term = self.request.query_params.get("searchTerm", "")
+            status_filter = self.request.query_params.get("status", "")
+            student_filter = self.request.query_params.get("student", "")
+            subject_filter = self.request.query_params.get("subject", "")
+            semester_filter = self.request.query_params.get("semester", "")
+            class_filter = self.request.query_params.get("class", "")
+            start_date = self.request.query_params.get("startDate")
+            end_date = self.request.query_params.get("endDate")
+
+            # Split comma-separated values into lists (if applicable)
+            status_list = status_filter.split(",") if status_filter else ["pending", "approved"]
+            student_list = [int(id) for id in student_filter.split(",") if id.isdigit()]
+            subject_list = subject_filter.split(",") if subject_filter else []
+            semester_list = semester_filter.split(",") if semester_filter else []
+            class_list = [int(id) for id in class_filter.split(",") if id.isdigit()]
+
+            # Apply filters using Q objects
+            filters &= Q(status__in=status_list)
+
+            if search_term:
+                filters &= (
+                    Q(notes__icontains=search_term)
+                    | Q(student__full_name__icontains=search_term)
+                    | Q(subject__name__icontains=search_term)
+                    | Q(semester__name__icontains=search_term)
+                    | Q(class_obj__name__icontains=search_term)
+                )
+
+            if start_date and end_date:
+                filters &= Q(enrollment_date__range=[start_date, end_date])
+
+            if student_list:
+                filters &= Q(student__id__in=student_list)
+
+            if subject_list:
+                filters &= Q(subject__subject_id__in=subject_list)
+
+            if semester_list:
+                filters &= Q(semester__semester_id__in=semester_list)
+
+            if class_list:
+                filters &= Q(class_obj__id__in=class_list)
+
+            # Return the filtered queryset
+            queryset = Enrollment.objects.filter(filters).distinct().order_by("-created_at")
+
         return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, updated_by=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.updated_by = self.request.user
-        instance.save()
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def restore(self, request, pk=None):
-        try:
-            instance = self.get_object()
-            if not instance.is_deleted:
-                return Response({'error': 'Đăng ký chưa bị xóa.'}, status=status.HTTP_400_BAD_REQUEST)
-            instance.is_deleted = False
-            instance.updated_by = request.user
-            instance.save()
-            serializer = self.get_serializer(instance)
-            return Response({'data': serializer.data, 'message': 'Khôi phục đăng ký thành công.'})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def change_status(self, request, pk=None):
-        try:
-            instance = self.get_object()
-            new_status = request.data.get('status')
-            if new_status not in dict(Enrollment.STATUS_CHOICES):
-                return Response({'error': 'Trạng thái không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
-            instance.status = new_status
-            instance.updated_by = request.user
-            instance.save()
-            serializer = self.get_serializer(instance)
-            return Response({'data': serializer.data, 'message': 'Cập nhật trạng thái thành công.'})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def export(self, request):
-        if not request.user.has_perm('app_enrollment.can_export_enrollment'):
-            return Response({'error': 'Không có quyền xuất dữ liệu.'}, status=status.HTTP_403_FORBIDDEN)
-
-        queryset = self.filter_queryset(self.get_queryset())
-        data = []
-        for enrollment in queryset:
-            data.append({
-                'Student ID': enrollment.student.student_id,
-                'Student Name': enrollment.student.name,
-                'Subject ID': enrollment.subject.subject_id,
-                'Subject Name': enrollment.subject.name,
-                'Semester ID': enrollment.semester.semester_id,
-                'Semester Name': enrollment.semester.name,
-                'Class ID': enrollment.class_obj.class_id,
-                'Enrollment Date': enrollment.enrollment_date,
-                'Status': enrollment.status,
-                'Is Active': enrollment.is_active,
-                'Notes': enrollment.notes,
-                'Created At': enrollment.created_at,
-                'Updated At': enrollment.updated_at
-            })
-
-        df = pd.DataFrame(data)
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = f'attachment; filename=enrollments_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        df.to_excel(response, index=False)
-        return response

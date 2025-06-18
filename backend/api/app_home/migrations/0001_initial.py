@@ -12,67 +12,216 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Department',
+            name="Department",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200, verbose_name='Tên khoa')),
-                ('code', models.CharField(max_length=20, unique=True, verbose_name='Mã khoa')),
-                ('description', models.TextField(blank=True, null=True, verbose_name='Mô tả')),
-                ('is_active', models.BooleanField(default=True, verbose_name='Đang hoạt động')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')),
-                ('is_deleted', models.BooleanField(default=False, verbose_name='Đã xóa')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=200, verbose_name="Tên khoa")),
+                ("code", models.CharField(max_length=20, unique=True, verbose_name="Mã khoa")),
+                ("description", models.TextField(blank=True, null=True, verbose_name="Mô tả")),
+                ("is_active", models.BooleanField(default=True, verbose_name="Đang hoạt động")),
+                ("created_at", models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")),
+                ("updated_at", models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")),
+                ("is_deleted", models.BooleanField(default=False, verbose_name="Đã xóa")),
             ],
             options={
-                'verbose_name': 'department',
-                'verbose_name_plural': 'departments',
-                'db_table': 'app_home_department',
-                'ordering': ['name'],
-                'permissions': [('can_manage_department', 'Có thể quản lý khoa'), ('can_view_department', 'Có thể xem thông tin khoa')],
+                "verbose_name": "department",
+                "verbose_name_plural": "departments",
+                "db_table": "app_home_department",
+                "ordering": ["name"],
+                "permissions": [
+                    ("can_manage_department", "Có thể quản lý khoa"),
+                    ("can_view_department", "Có thể xem thông tin khoa"),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
-                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.', max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()], verbose_name='username')),
-                ('first_name', models.CharField(blank=True, max_length=150, verbose_name='first name')),
-                ('last_name', models.CharField(blank=True, max_length=150, verbose_name='last name')),
-                ('email', models.EmailField(blank=True, max_length=254, verbose_name='email address')),
-                ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
-                ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('role', models.CharField(choices=[('student', 'Sinh viên'), ('teacher', 'Giảng viên'), ('admin', 'Quản trị viên'), ('staff', 'Nhân viên'), ('parent', 'Phụ huynh'), ('department_head', 'Trưởng khoa')], db_index=True, default='student', max_length=20, verbose_name='Vai trò')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Ngày tạo')),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True, verbose_name='Ngày cập nhật')),
-                ('is_active', models.BooleanField(db_index=True, default=True, verbose_name='Đang hoạt động')),
-                ('is_deleted', models.BooleanField(db_index=True, default=False, verbose_name='Đã xóa')),
-                ('last_login_ip', models.GenericIPAddressField(blank=True, null=True, verbose_name='IP đăng nhập cuối')),
-                ('profile_picture', models.ImageField(blank=True, null=True, upload_to='profile_pictures/', verbose_name='Ảnh đại diện')),
-                ('phone_number', models.CharField(blank=True, max_length=15, null=True, verbose_name='Số điện thoại')),
-                ('emergency_contact', models.CharField(blank=True, max_length=100, null=True, verbose_name='Liên hệ khẩn cấp')),
-                ('emergency_phone', models.CharField(blank=True, max_length=15, null=True, verbose_name='Số điện thoại khẩn cấp')),
-                ('phone', models.CharField(blank=True, max_length=15, null=True, verbose_name='Số điện thoại')),
-                ('address', models.TextField(blank=True, null=True, verbose_name='Địa chỉ')),
-                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='app_home.department', verbose_name='Khoa')),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("password", models.CharField(max_length=128, verbose_name="password")),
+                (
+                    "last_login",
+                    models.DateTimeField(blank=True, null=True, verbose_name="last login"),
+                ),
+                (
+                    "is_superuser",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates that this user has all permissions without explicitly assigning them.",
+                        verbose_name="superuser status",
+                    ),
+                ),
+                (
+                    "username",
+                    models.CharField(
+                        error_messages={"unique": "A user with that username already exists."},
+                        help_text="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                        max_length=150,
+                        unique=True,
+                        validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
+                        verbose_name="username",
+                    ),
+                ),
+                (
+                    "first_name",
+                    models.CharField(blank=True, max_length=150, verbose_name="first name"),
+                ),
+                (
+                    "last_name",
+                    models.CharField(blank=True, max_length=150, verbose_name="last name"),
+                ),
+                (
+                    "email",
+                    models.EmailField(blank=True, max_length=254, verbose_name="email address"),
+                ),
+                (
+                    "is_staff",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates whether the user can log into this admin site.",
+                        verbose_name="staff status",
+                    ),
+                ),
+                (
+                    "date_joined",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="date joined"
+                    ),
+                ),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("student", "Sinh viên"),
+                            ("teacher", "Giảng viên"),
+                            ("admin", "Quản trị viên"),
+                            ("staff", "Nhân viên"),
+                            ("parent", "Phụ huynh"),
+                            ("department_head", "Trưởng khoa"),
+                        ],
+                        db_index=True,
+                        default="student",
+                        max_length=20,
+                        verbose_name="Vai trò",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Ngày tạo"),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True, db_index=True, verbose_name="Ngày cập nhật"
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(db_index=True, default=True, verbose_name="Đang hoạt động"),
+                ),
+                (
+                    "is_deleted",
+                    models.BooleanField(db_index=True, default=False, verbose_name="Đã xóa"),
+                ),
+                (
+                    "last_login_ip",
+                    models.GenericIPAddressField(
+                        blank=True, null=True, verbose_name="IP đăng nhập cuối"
+                    ),
+                ),
+                (
+                    "profile_picture",
+                    models.ImageField(
+                        blank=True,
+                        null=True,
+                        upload_to="profile_pictures/",
+                        verbose_name="Ảnh đại diện",
+                    ),
+                ),
+                (
+                    "phone_number",
+                    models.CharField(
+                        blank=True, max_length=15, null=True, verbose_name="Số điện thoại"
+                    ),
+                ),
+                (
+                    "emergency_contact",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="Liên hệ khẩn cấp"
+                    ),
+                ),
+                (
+                    "emergency_phone",
+                    models.CharField(
+                        blank=True, max_length=15, null=True, verbose_name="Số điện thoại khẩn cấp"
+                    ),
+                ),
+                (
+                    "phone",
+                    models.CharField(
+                        blank=True, max_length=15, null=True, verbose_name="Số điện thoại"
+                    ),
+                ),
+                ("address", models.TextField(blank=True, null=True, verbose_name="Địa chỉ")),
+                (
+                    "department",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="app_home.department",
+                        verbose_name="Khoa",
+                    ),
+                ),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this user.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'user',
-                'verbose_name_plural': 'users',
-                'ordering': ['-date_joined'],
-                'permissions': [('can_view_dashboard', 'Có thể xem bảng điều khiển'), ('can_manage_students', 'Có thể quản lý sinh viên')],
+                "verbose_name": "user",
+                "verbose_name_plural": "users",
+                "ordering": ["-date_joined"],
+                "permissions": [
+                    ("can_view_dashboard", "Có thể xem bảng điều khiển"),
+                    ("can_manage_students", "Có thể quản lý sinh viên"),
+                ],
             },
             managers=[
-                ('objects', django.contrib.auth.models.UserManager()),
+                ("objects", django.contrib.auth.models.UserManager()),
             ],
         ),
     ]
