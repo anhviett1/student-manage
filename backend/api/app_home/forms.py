@@ -140,3 +140,28 @@ class ChangePasswordForm(PasswordChangeForm):
         if commit:
             self.user.save()
         return self.user
+
+class DepartmentForm(forms.ModelForm):
+    """Form cho Department"""
+    class Meta:
+        model = User.department.model
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'data-placeholder': _('Nhập tên khoa'),
+                'required': True,
+            }),
+        }
+        labels = {
+            'name': _('Tên khoa'),
+        }
+        error_messages = {
+            'name': {'required': _('Vui lòng nhập tên khoa.')},
+        }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        return instance

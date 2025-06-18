@@ -3,11 +3,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from ..app_home.models import BaseModel, Department
+from ..app_home.models import Department
 
 User = get_user_model()
 
-class Teacher(BaseModel):
+class Teacher(models.Model):
     GENDER_CHOICES = [
         ('M', 'Nam'),
         ('F', 'Nữ'),
@@ -53,9 +53,8 @@ class Teacher(BaseModel):
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo', null=False, blank=False)
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_teachers')
-    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='updated_teachers')
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, related_name='teacher_departments')
+    is_deleted = models.BooleanField(default=False, verbose_name='Đã xóa')
     
     def __str__(self):
         return f"{self.teacher_id} - {self.get_full_name()}"

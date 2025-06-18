@@ -21,7 +21,7 @@ class ScorePermission(permissions.BasePermission):
 
 @extend_schema(tags=['Scores'])
 class ScoreViewSet(viewsets.ModelViewSet):
-    queryset = Score.get_active_objects()
+    queryset = Score.objects.all()
     serializer_class = ScoreSerializer
     permission_classes = [permissions.IsAuthenticated, ScorePermission]
     parser_classes = [MultiPartParser]
@@ -69,7 +69,7 @@ class ScoreViewSet(viewsets.ModelViewSet):
     def restore(self, request, pk=None):
         try:
             score = Score.objects.get(id=pk)
-            if not score.is_deleted:
+            if not score.is_active:
                 return Response({'error': _('Điểm số này chưa bị xóa mềm.')}, status=status.HTTP_400_BAD_REQUEST)
             score.restore(user=self.request.user)
             serializer = self.get_serializer(score)
@@ -136,8 +136,6 @@ class ScoreViewSet(viewsets.ModelViewSet):
                             'midterm_score': row['midterm_score'],
                             'final_score': row['final_score'],
                             'status': 'active',
-                            'created_by': request.user,
-                            'updated_by': request.user
                         }
                     )
                 except Exception as e:

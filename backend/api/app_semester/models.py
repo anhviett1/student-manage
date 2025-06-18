@@ -2,9 +2,8 @@ from django.db import models
 from django.conf import settings
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from ..app_home.models import BaseModel
 
-class Semester(BaseModel):
+class Semester(models.Model):
     STATUS_CHOICES = [
         ('upcoming', 'Sắp tới'),
         ('current', 'Đang diễn ra'),
@@ -38,6 +37,11 @@ class Semester(BaseModel):
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
     notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    is_deleted = models.BooleanField(default=False, verbose_name='Đã xóa')
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo', null=False, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
 
     def __str__(self):
         return f"{self.name} - {self.academic_year}"

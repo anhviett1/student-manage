@@ -5,7 +5,7 @@ from ..app_semester.models import Semester
 from ..app_subject.models import Subject
 from ..app_teacher.models import Teacher
 from django.utils.translation import gettext_lazy as _
-from ..app_home.models import BaseModel, Department
+from ..app_home.models import Department
 
 User = get_user_model()
 
@@ -15,7 +15,7 @@ def get_default_semester():
 def get_default_subject():
     return Subject.objects.first().subject_id if Subject.objects.exists() else 'MH001'
 
-class Class(BaseModel):
+class Class(models.Model):
     STATUS_CHOICES = [
         ('active', 'Đang hoạt động'),
         ('inactive', 'Không hoạt động'),
@@ -30,6 +30,7 @@ class Class(BaseModel):
     credits = models.PositiveIntegerField(verbose_name='Số tín chỉ', default=3, null=False, blank=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Trạng thái')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    is_deleted = models.BooleanField(default=False, verbose_name='Đã xóa')
     
     # Quan hệ
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='class_semesters', verbose_name='Học kỳ', default=get_default_semester, to_field='semester_id')
@@ -41,8 +42,6 @@ class Class(BaseModel):
     # Thông tin hệ thống
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo', null=False, blank=False)
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật', null=False, blank=False)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_classes')
-    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='updated_classes')
     
     def __str__(self):
         return f"{self.name} ({self.class_id})"

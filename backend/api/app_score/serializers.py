@@ -18,7 +18,7 @@ class ScoreSerializer(serializers.ModelSerializer):
     )
     semester = serializers.SlugRelatedField(
         slug_field='semester_id',
-        queryset=Semester.objects.filter(is_deleted=False),
+        queryset=Semester.objects.filter(is_active=True),
         required=True
     )
     created_by = serializers.SlugRelatedField(
@@ -34,9 +34,9 @@ class ScoreSerializer(serializers.ModelSerializer):
         model = Score
         fields = [
             'id', 'student', 'subject', 'semester', 'midterm_score', 'final_score', 'total_score',
-            'notes', 'status', 'is_active', 'created_at', 'updated_at', 'created_by', 'updated_by'
+            'notes', 'status', 'is_active', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'total_score', 'created_at', 'updated_at', 'created_by', 'updated_by']
+        read_only_fields = ['id', 'total_score', 'created_at', 'updated_at' ]
 
     def validate_midterm_score(self, value):
         if value is not None and (value < 0 or value > 10):

@@ -21,12 +21,10 @@ class TeacherSerializer(serializers.ModelSerializer):
             'teacher_id', 'user', 'first_name', 'last_name', 'email', 'phone',
             'date_of_birth', 'gender', 'address', 'degree', 'specialization',
             'years_of_experience', 'profile_picture', 'bio', 'status', 'is_active',
-            'created_at', 'updated_at', 'created_by', 'updated_by', 'is_deleted',
-            'deleted_at', 'deleted_by', 'department', 'department_id', 'full_name',
+            'created_at', 'updated_at', 'is_deleted', 'deleted_at', 'department', 'department_id', 'full_name',
         ]
         read_only_fields = [
-            'created_at', 'updated_at', 'created_by', 'updated_by', 'is_deleted',
-            'deleted_at', 'deleted_by'
+            'created_at', 'updated_at', 'is_deleted', 'deleted_at'
         ]
 
     def validate_teacher_id(self, value):

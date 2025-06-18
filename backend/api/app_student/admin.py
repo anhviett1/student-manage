@@ -6,9 +6,9 @@ from .models import Student
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = (
-        'student_id', 'full_name', 'email', 'phone', 'department', 'status', 'is_active', 'is_deleted', 'created_at', 'updated_at'
+        'student_id', 'full_name', 'email', 'phone', 'department', 'status', 'is_active', 'created_at', 'updated_at', 'is_deleted'
     )
-    list_filter = ('status', 'is_active', 'is_deleted', 'department', 'gender')
+    list_filter = ('status', 'is_active', 'department', 'gender', 'is_deleted')
     search_fields = ('student_id', 'first_name', 'last_name', 'email', 'phone')
     ordering = ('student_id',)
 
@@ -29,21 +29,19 @@ class StudentAdmin(admin.ModelAdmin):
             'fields': ('emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship')
         }),
         (_('Metadata'), {
-            'fields': ('is_active', 'is_deleted', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_by')
+            'fields': ('is_active', 'created_at', 'updated_at', 'deleted_at')
         }),
     )
 
-    readonly_fields = ('created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_by')
+    readonly_fields = ('created_at', 'updated_at', 'deleted_at')
 
     def get_queryset(self, request):
         return self.model.objects.all()
 
     def soft_delete(self, request, queryset):
-        for student in queryset:
-            student.soft_delete(user=request.user)
-            student.user.soft_delete()
-        self.message_user(request, _("Selected students have been soft deleted."))
-    soft_delete.short_description = _("Soft delete selected students")
+        queryset.update(is_deleted=True)
+        self.message_user(request, 'Đã xóa mềm các sinh viên được chọn.')
+    soft_delete.short_description = 'Xóa mềm các sinh viên được chọn'
 
     def restore(self, request, queryset):
         for student in queryset:

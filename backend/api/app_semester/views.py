@@ -18,7 +18,7 @@ class SemesterPermission(permissions.BasePermission):
 @extend_schema(tags=['Semesters'])
 class SemesterViewSet(viewsets.ModelViewSet):
     """API ViewSet cho quản lý học kỳ"""
-    queryset = Semester.objects.filter(is_deleted=False)
+    queryset = Semester.objects.filter(is_active=True)
     serializer_class = SemesterSerializer
     permission_classes = [permissions.IsAuthenticated, SemesterPermission]
     lookup_field = 'semester_id'
@@ -52,7 +52,7 @@ class SemesterViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """Thực hiện xóa mềm và lưu thông tin người cập nhật"""
-        instance.is_deleted = True
+        instance.is_active = False
         instance.updated_by = self.request.user
         instance.save()
 
@@ -79,7 +79,7 @@ class SemesterViewSet(viewsets.ModelViewSet):
     def restore(self, request, semester_id=None):
         try:
             semester = Semester.objects.get(semester_id=semester_id)
-            if not semester.is_deleted:
+            if not semester.is_active:
                 return Response({'error': _('Học kỳ này chưa bị xóa mềm.')}, status=status.HTTP_400_BAD_REQUEST)
             semester.restore(user=self.request.user)
             serializer = self.get_serializer(semester)

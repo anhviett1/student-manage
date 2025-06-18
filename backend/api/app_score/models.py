@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from ..app_home.models import BaseModel
+from ..app_home.models import User
 from ..app_student.models import Student
 from ..app_subject.models import Subject
 from ..app_semester.models import Semester
@@ -16,7 +16,7 @@ def get_default_subject():
 def get_default_semester():
     return Semester.objects.first().semester_id if Semester.objects.exists() else 1
 
-class Score(BaseModel):
+class Score(models.Model):
     STATUS_CHOICES = [
         ('active', 'Đang hoạt động'),
         ('inactive', 'Không hoạt động'),
@@ -36,12 +36,11 @@ class Score(BaseModel):
     notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Trạng thái')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    is_deleted = models.BooleanField(default=False, verbose_name='Đã xóa')
     
     # Thông tin hệ thống
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo', null=False, blank=False)
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_scores')
-    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='updated_scores')
     
     def __str__(self):
         return f"{self.student} - {self.subject} - {self.semester}"

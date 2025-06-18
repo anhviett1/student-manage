@@ -3,10 +3,6 @@ from ..app_semester.models import Semester
 from django.utils.translation import gettext_lazy as _
 
 class SemesterSerializer(serializers.ModelSerializer):
-    created_by = serializers.SlugRelatedField(slug_field='username', read_only=True)
-    updated_by = serializers.SlugRelatedField(slug_field='username', read_only=True)
-    deleted_by = serializers.SlugRelatedField(slug_field='username', read_only=True)
-
     class Meta:
         model = Semester
         fields = [
@@ -21,14 +17,11 @@ class SemesterSerializer(serializers.ModelSerializer):
             'notes', 'is_active',
             'created_at', 'updated_at',
             'is_deleted', 'deleted_at',
-            'created_by', 'updated_by',
-            'deleted_by'
         ]
         read_only_fields = [
             'created_at', 'updated_at',
             'is_deleted', 'deleted_at',
-            'created_by', 'updated_by',
-            'deleted_by'
+
         ]
 
     def validate(self, data):

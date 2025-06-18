@@ -4,10 +4,11 @@ from django.contrib.auth import get_user_model
 from datetime import date
 from django.utils.translation import gettext_lazy as _
 
-from ..app_home.models import BaseModel, Department, User
+from ..app_home.models import Department, User
 
 User = get_user_model()
-class Student(BaseModel):
+
+class Student(models.Model):
     """
     Model đại diện cho sinh viên trong hệ thống
     Kế thừa từ BaseModel để có các trường cơ bản
@@ -52,7 +53,7 @@ class Student(BaseModel):
     )
     date_of_birth = models.DateField(
         verbose_name='Ngày sinh',
-        default= date.today,  # Ngày sinh mặc định là ngày hiện tại
+        default=date.today,
         help_text='Định dạng: YYYY-MM-DD'
     )
     gender = models.CharField(
@@ -98,10 +99,10 @@ class Student(BaseModel):
     status = models.CharField(
         max_length=20,
         choices=[
-            ('active', _('Active')),
-            ('graduated', _('Graduated')),
-            ('suspended', _('Suspended')),
-            ('withdrawn', _('Withdrawn')),
+            ('active', 'Đang học'),
+            ('graduated', 'Đã tốt nghiệp'),
+            ('suspended', 'Bị đình chỉ'),
+            ('withdrawn', 'Đã rút học bạ'),
         ],
         default='active',
         verbose_name=_('Status')
@@ -183,7 +184,6 @@ class Student(BaseModel):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo', null=False, blank=False)
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='Ngày xóa')
-    deleted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='deleted_students', verbose_name='Người xóa')
     is_deleted = models.BooleanField(default=False, verbose_name='Đã xóa')
     
     # Quan hệ
@@ -243,7 +243,7 @@ class Student(BaseModel):
             ("can_view_student_grades", "Có thể xem điểm sinh viên"),
             ("can_manage_student_enrollment", "Có thể quản lý đăng ký của sinh viên"),
         ]
-
+    
     @property
     def full_name(self):
         """Property để lấy họ và tên đầy đủ"""

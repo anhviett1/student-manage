@@ -28,7 +28,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
         """
         queryset = super().get_queryset()
         if not self.request.user.has_perm('app_subject.can_manage_subject'):
-            queryset = queryset.filter(is_active=True, is_deleted=False)
+            queryset = queryset.filter(is_active=True)
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -106,9 +106,9 @@ class SubjectViewSet(viewsets.ModelViewSet):
         """
         try:
             instance = self.get_object()
-            if not instance.is_deleted:
-                return Response({'error': _('Môn học chưa bị xóa.')}, status=status.HTTP_400_BAD_REQUEST)
-            instance.is_deleted = False
+            if not instance.is_active:
+                return Response({'error': _('Môn học chưa hoạt động.')}, status=status.HTTP_400_BAD_REQUEST)
+            instance.is_active = True
             instance.deleted_by = None
             instance.deleted_at = None
             instance.updated_by = request.user

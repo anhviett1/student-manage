@@ -36,9 +36,9 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'student', 'student_id', 'subject', 'subject_id', 'semester', 'semester_id',
             'class_obj', 'class_id', 'enrollment_date', 'status', 'is_active', 'notes',
-            'created_at', 'updated_at', 'created_by', 'updated_by', 'is_deleted'
+            'created_at', 'updated_at', 'is_deleted'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'created_by', 'updated_by', 'is_deleted']
+        read_only_fields = ['created_at', 'updated_at', 'is_deleted']
 
     def validate(self, data):
         # Ensure enrollment_date is not in the future

@@ -22,11 +22,10 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = [
             'subject_id', 'name', 'description', 'credits', 'semester', 'semester_id',
             'department', 'department_id', 'status', 'is_active', 'created_at',
-            'updated_at', 'created_by', 'updated_by', 'is_deleted', 'deleted_at', 'deleted_by',
+            'updated_at', 'is_deleted', 'deleted_at',
         ]
         read_only_fields = [
-            'created_at', 'updated_at', 'created_by', 'updated_by',
-            'is_deleted', 'deleted_at', 'deleted_by'
+            'created_at', 'updated_at', 'is_deleted', 'deleted_at'
         ]
 
     def validate_subject_id(self, value):

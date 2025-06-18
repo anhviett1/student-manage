@@ -17,7 +17,7 @@ class ClassPermission(permissions.BasePermission):
 @extend_schema(tags=['Classes'])
 class ClassViewSet(viewsets.ModelViewSet):
     """API ViewSet cho quản lý lớp học"""
-    queryset = Class.objects.filter(is_deleted=False)
+    queryset = Class.objects.filter(is_active=True)
     serializer_class = ClassSerializer
     permission_classes = [permissions.IsAuthenticated, ClassPermission]
     lookup_field = 'class_id'
@@ -51,7 +51,7 @@ class ClassViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """Thực hiện xóa mềm và lưu thông tin người cập nhật"""
-        instance.is_deleted = True
+        instance.is_active = False
         instance.updated_by = self.request.user
         instance.save()
 

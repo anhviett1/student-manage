@@ -39,14 +39,13 @@ class StudentSerializer(serializers.ModelSerializer):
             'major', 'minor', 'gpa', 'credits_earned', 'credits_attempted',
             'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship',
             'profile_picture', 'student_id_card', 'blood_type', 'medical_conditions',
-            'allergies', 'created_at', 'updated_at', 'deleted_at', 'deleted_by',
+            'allergies', 'created_at', 'updated_at', 'deleted_at', 
             'is_deleted', 'department', 'department_id', 'class_assigned', 'class_assigned_ids',
-            'subjects', 'subject_ids', 'scores', 'score_ids', 'full_name',
-            'created_by', 'updated_by', 'deleted_by' ,
+            'subjects', 'subject_ids', 'scores', 'score_ids', 'full_name'
         ]
         read_only_fields = [
-            'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'is_deleted',
-            'created_by', 'updated_by', 'gpa', 'credits_earned', 'credits_attempted'
+            'created_at', 'updated_at', 'deleted_at', 'is_deleted',
+            'gpa', 'credits_earned', 'credits_attempted'
         ]
 
     def validate_student_id(self, value):
