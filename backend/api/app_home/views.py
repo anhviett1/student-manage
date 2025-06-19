@@ -1,6 +1,5 @@
 from rest_framework import viewsets
 from django.db.models import Q
-
 from ..app_department.models import Department
 from ..app_home.permissions import CanManageScores, CanViewOwnScores, IsAdmin
 from ..app_score.models import Score
@@ -19,21 +18,20 @@ from django.core.files.base import ContentFile
 import csv, os
 from django.http import HttpResponse
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth import authenticate, login, logout
-
-
+from django.contrib.auth import logout
+from rest_framework.decorators import action
 
 @extend_schema(tags=["Users"])
 class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet quản lý người dùng."""
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """Lọc người dùng dựa trên tham số truy vấn."""
         queryset = User.objects.none()
-
         if self.request.user.is_authenticated:
             filters = Q()
-
             search_term = self.request.query_params.get("searchTerm", "")
             role_filter = self.request.query_params.get("role", "")
             department_filter = self.request.query_params.get("department", "")
@@ -45,7 +43,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
             if status_list:
                 filters &= Q(is_active__in=[s == "active" for s in status_list])
-
             if search_term:
                 filters &= (
                     Q(username__icontains=search_term)
@@ -53,56 +50,72 @@ class UserViewSet(viewsets.ModelViewSet):
                     | Q(last_name__icontains=search_term)
                     | Q(email__icontains=search_term)
                 )
-
             if role_list:
                 filters &= Q(role__in=role_list)
-
             if department_list:
                 filters &= Q(department__id__in=department_list)
 
             queryset = User.objects.filter(filters).distinct().order_by("-created_at")
-
         return queryset
 
+    def perform_create(self, serializer):
+        """Tạo người dùng mới và mã hóa mật khẩu nếu có."""
+        user = serializer.save()
+        password = self.request.data.get("password")
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+
     def perform_update(self, serializer):
-        instance = serializer.save()
+        """Cập nhật người dùng và lưu last_login_ip nếu có."""
+        user = serializer.save()
         if "last_login_ip" in self.request.data:
-            instance.update_last_login_ip(self.request.data["last_login_ip"])
+            user.update_last_login_ip(self.request.data["last_login_ip"])
+        return user
 
     def perform_destroy(self, instance):
+        """Xóa mềm người dùng."""
         instance.soft_delete()
 
-@extend_schema(tags=["Users"])
-class LoginAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            user.update_last_login_ip(request.META.get("REMOTE_ADDR"))
-            serializer = UserSerializer(user)
+    @action(detail=False, methods=["post"])
+    def register(self, request):
+        """Đăng ký người dùng mới."""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = self.perform_create(serializer)
             return Response(
-                {"message": "Login successful", "user": serializer.data},
-                status=status.HTTP_200_OK,
+                {"message": "Registration successful", "user": serializer.data},
+                status=status.HTTP_201_CREATED,
             )
-        return Response(
-            {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
-        )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(tags=["Users"])
 class LogoutAPIView(APIView):
+    """API để đăng xuất người dùng."""
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        logout(request)
+        """Đăng xuất người dùng và thêm token vào danh sách đen nếu dùng JWT."""
+        if hasattr(request.auth, 'blacklist'):
+            request.auth.blacklist()  # Vô hiệu hóa JWT token
+        logout(request)  # Đăng xuất session
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
 
 @extend_schema(tags=["Users"])
 class ProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self,request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
     def put(self, request):
         user = request.user
         serializer = UserSerializer(user, data=request.data, partial=True)

@@ -18,6 +18,12 @@ const router = createRouter({
           meta: { title: 'Trang Chủ' }
         },
         {
+          path: 'department',
+          name: 'department',
+          component: () => import('../views/DepartmentView.vue'),
+          meta: { requiresAuth: true, title: 'Khoa' }
+        },
+        {
           path: 'profile',
           name: 'profile',
           component: () => import('../views/ProfileView.vue'),
@@ -70,6 +76,12 @@ const router = createRouter({
           name: 'scores',
           component: () => import('../views/ScoreView.vue'),
           meta: { requiresAuth: true, role: 'teacher', title: 'Quản Lý Điểm Số' }
+        },
+        {
+          path: 'schedule',
+          name: 'schedule',
+          component: () => import('../views/ScheduleView.vue'),
+          meta: { requiresAuth: true, title: 'Thời khóa biểu' }
         }
       ]
     },

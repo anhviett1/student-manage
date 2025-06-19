@@ -20,14 +20,15 @@ const api = axios.create({
 export const endpoints = {
   // Authentication
   login: `${API_PREFIX}/token/`,
-  logout: `${API_PREFIX}/auth/logout/`,
-  register: `${API_PREFIX}/auth/register/`,
+  logout: `${API_PREFIX}/users/logout/`,
+  register: `${API_PREFIX}/users/register/`,
   refreshToken: `${API_PREFIX}/token/refresh/`,
   // User Management
   userProfile: `${API_PREFIX}/users/profile/`,
   users: `${API_PREFIX}/users/`,
   changePassword: `${API_PREFIX}/users/change-password/`,
   uploadAvatar: `${API_PREFIX}/users/avatar-upload/`,
+  scoreManagement: `${API_PREFIX}/users/score-management/`,
 
   students: `${API_PREFIX}/students/`,
   teachers: `${API_PREFIX}/teachers/`,
@@ -38,6 +39,8 @@ export const endpoints = {
   scores: `${API_PREFIX}/scores/`,
   activities: `${API_PREFIX}/activities/`,
   departments: `${API_PREFIX}/departments/`,
+  schedules: `${API_PREFIX}/schedules/`,
+
 
 }
 
