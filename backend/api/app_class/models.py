@@ -5,7 +5,7 @@ from ..app_semester.models import Semester
 from ..app_subject.models import Subject
 from ..app_teacher.models import Teacher
 from django.utils.translation import gettext_lazy as _
-from ..app_home.models import Department
+from ..app_department.models import Department
 
 User = get_user_model()
 

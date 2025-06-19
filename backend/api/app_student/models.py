@@ -3,10 +3,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from ..app_home.models import Department, User
+from ..app_home.models import User
+from ..app_department.models import Department
 
 User = get_user_model()
-
 
 class Student(models.Model):
     GENDER_CHOICES = [("M", "Nam"), ("F", "Nữ"), ("O", "Khác")]
@@ -88,11 +88,6 @@ class Student(models.Model):
         "app_score.Score", related_name="student_score_sets", blank=True, verbose_name="Điểm số"
     )
 
-    def __str__(self):
-        return f"{self.student_id} - {self.user.get_full_name()}"
-
-    def get_full_name(self):
-        return f"{self.first_name} {self.last_name}"
 
     def calculate_gpa(self):
         if not self.scores.exists():
@@ -107,10 +102,6 @@ class Student(models.Model):
             self.gpa = round(total_points / total_credits, 2)
             self.save(update_fields=["gpa"])
         return self.gpa
-
-    @property
-    def full_name(self):
-        return self.get_full_name()
 
     class Meta:
         verbose_name = _("Student")

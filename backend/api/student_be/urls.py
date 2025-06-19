@@ -21,7 +21,7 @@ urlpatterns = [
     path("api/v1/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     # Core API endpoints
     path("api/v1/users/", include("api.app_home.urls")),
-    path("api/v1/departments/", include("api.app_home.urls")),
+    path("api/v1/departments/", include("api.app_department.urls")),
     path("api/v1/students/", include("api.app_student.urls")),
     path("api/v1/teachers/", include("api.app_teacher.urls")),
     path("api/v1/classes/", include("api.app_class.urls")),

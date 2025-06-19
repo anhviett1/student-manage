@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     "api.app_activity",
     "api.app_semester",
     "api.app_schedule",
+    "api.app_department",
 ]
 
 MIDDLEWARE = [
@@ -215,7 +216,10 @@ SPECTACULAR_SETTINGS = {
         "defaultModelExpandDepth": 1,
     },
     "TAGS": [
-        {"name": "Department", "description": "Quản lý khoa", "x-displayName": "📚 Quản lý khoa"},
+        {
+            "name": "Departments", 
+            "description": "Quản lý khoa", 
+            "x-displayName": "📚 Quản lý khoa"},
         {
             "name": "Students",
             "description": "Quản lý sinh viên",
@@ -237,18 +241,24 @@ SPECTACULAR_SETTINGS = {
             "x-displayName": "🏫 Quản lý lớp học",
         },
         {
-            "name": "Schedule",
+            "name": "Schedules",
             "description": "Quản lý thời khóa biểu",
             "x-displayName": "🗓️ Quản lý thời khóa biểu",
 
         },
-        {"name": "Semesters", "description": "Quản lý học kỳ", "x-displayName": "🗓️ Quản lý học kỳ"},
+        {   
+            "name": "Semesters",
+            "description": "Quản lý học kỳ",
+            "x-displayName": "🗓️ Quản lý học kỳ"},
         {
             "name": "Enrollments",
             "description": "Quản lý đăng ký học",
             "x-displayName": "📋 Quản lý đăng ký học",
         },
-        {"name": "Scores", "description": "Quản lý điểm số", "x-displayName": "📊 Quản lý điểm số"},
+        {
+            "name": "Scores",
+            "description": "Quản lý điểm số",
+            "x-displayName": "📊 Quản lý điểm số"},
         {
             "name": "Activities",
             "description": "Quản lý hoạt động",
@@ -261,8 +271,8 @@ SPECTACULAR_SETTINGS = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
     }
 }
 

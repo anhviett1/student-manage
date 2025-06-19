@@ -3,13 +3,13 @@ from .models import Score
 
 
 class ScoreSerializer(serializers.ModelSerializer):
-    student_name = serializers.ReadOnlyField(source="student.full_name")
+    student_name = serializers.ReadOnlyField(source="student.name")
     subject_name = serializers.ReadOnlyField(source="subject.name")
     semester_name = serializers.ReadOnlyField(source="semester.name")
 
     class Meta:
         model = Score
-        fields = [f.name for f in Score._meta.fields] + [
+        fields = [
             "student_name",
             "subject_name",
             "semester_name",

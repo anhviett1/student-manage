@@ -1,11 +1,10 @@
 from rest_framework import serializers
-from .models import User, Department
-
+from .models import User
+from drf_spectacular.utils import extend_schema_field
 
 class UserSerializer(serializers.ModelSerializer):
-    department_name = serializers.ReadOnlyField(source="department.name")
-    full_name = serializers.ReadOnlyField(source="get_full_name")
-    role_display = serializers.ReadOnlyField(source="get_role_display_name")
+    department_name = serializers.ReadOnlyField(source="department.name") 
+
 
     class Meta:
         model = User
@@ -28,27 +27,5 @@ class UserSerializer(serializers.ModelSerializer):
             "address",
             "department",
             "department_name",
-            "full_name",
-            "role_display",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "last_login_ip"]
-
-
-class DepartmentSerializer(serializers.ModelSerializer):
-    head_name = serializers.ReadOnlyField(source="head.get_full_name")
-
-    class Meta:
-        model = Department
-        fields = [
-            "id",
-            "name",
-            "code",
-            "description",
-            "is_active",
-            "created_at",
-            "updated_at",
-            "is_deleted",
-            "head",
-            "head_name",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]

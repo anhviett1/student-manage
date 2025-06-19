@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
 
-@extend_schema(tags=["Teachers"])
+@extend_schema(tags=["Semesters"])
 class SemesterViewSet(viewsets.ModelViewSet):
     serializer_class = SemesterSerializer
     permission_classes = [IsAuthenticated]

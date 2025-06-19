@@ -33,7 +33,7 @@ class ScoreViewSet(viewsets.ModelViewSet):
             if search_term:
                 filters &= (
                     Q(notes__icontains=search_term)
-                    | Q(student__full_name__icontains=search_term)
+                    | Q(student__name__icontains=search_term)
                     | Q(subject__name__icontains=search_term)
                     | Q(semester__name__icontains=search_term)
                 )
@@ -60,3 +60,4 @@ class ScoreViewSet(viewsets.ModelViewSet):
         instance = serializer.save()
         # Recalculate total_score on update
         instance.save()
+

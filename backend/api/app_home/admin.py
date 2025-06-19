@@ -3,16 +3,15 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 from django import forms
 from datetime import date
-from .models import User, Department
+from .models import User
+from ..app_department.models import Department
 from ..app_student.models import Student
 
 
 class UserAdminForm(forms.ModelForm):
     student_id = forms.CharField(max_length=20, required=False, label=_("Mã sinh viên"))
     enrollment_date = forms.DateField(required=False, label=_("Ngày nhập học"), initial=date.today)
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa")
-    )
+    department = forms.ModelChoiceField(queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa"))
 
     class Meta:
         model = User
@@ -155,41 +154,3 @@ class UserAdmin(BaseUserAdmin):
             student.is_active = obj.is_active
             student.save()
         super().save_model(request, obj, form, change)
-
-
-@admin.register(Department)
-class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "is_active", "is_deleted", "created_at", "updated_at")
-    list_filter = ("is_active", "is_deleted")
-    search_fields = ("name", "code")
-    ordering = ("name",)
-
-    fieldsets = (
-        (None, {"fields": ("name", "code", "description")}),
-        (_("Status"), {"fields": ("is_active", "is_deleted")}),
-        (_("Metadata"), {"fields": ("created_at", "updated_at")}),
-    )
-
-    readonly_fields = ("created_at", "updated_at")
-
-    def get_queryset(self, request):
-        return self.model.objects.all()
-
-    def soft_delete(self, request, queryset):
-        for dept in queryset:
-            dept.soft_delete()
-        self.message_user(request, _("Selected departments have been soft deleted."))
-
-    soft_delete.short_description = _("Soft delete selected departments")
-
-    def restore(self, request, queryset):
-        for dept in queryset:
-            dept.restore()
-        self.message_user(request, _("Selected departments have been restored."))
-
-    restore.short_description = _("Restore selected departments")
-
-    actions = ["soft_delete", "restore"]
-
-    def has_delete_permission(self, request, obj=None):
-        return False

@@ -7,7 +7,8 @@ from .models import Student
 class StudentAdmin(admin.ModelAdmin):
     list_display = (
         "student_id",
-        "full_name",
+        "first_name",
+        "last_name",
         "email",
         "phone",
         "department",

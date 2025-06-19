@@ -8,5 +8,5 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = [f.name for f in Subject._meta.fields] + ["department_name", "semester_name"]
+        fields = ["department_name", "semester_name"]
         read_only_fields = ["subject_id", "created_at", "updated_at"]

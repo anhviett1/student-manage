@@ -5,8 +5,7 @@ from .serializers import EnrollmentSerializer
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
-
-@extend_schema(tags=["Enrollment"])
+@extend_schema(tags=["Enrollments"])
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAuthenticated]
@@ -41,7 +40,7 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
             if search_term:
                 filters &= (
                     Q(notes__icontains=search_term)
-                    | Q(student__full_name__icontains=search_term)
+                    | Q(student__name__icontains=search_term)
                     | Q(subject__name__icontains=search_term)
                     | Q(semester__name__icontains=search_term)
                     | Q(class_obj__name__icontains=search_term)
