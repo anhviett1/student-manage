@@ -2,14 +2,19 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Score
 from .serializers import ScoreSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdminOrTeacher, IsOwnerOrAdmin
 from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Scores"])
 class ScoreViewSet(viewsets.ModelViewSet):
     serializer_class = ScoreSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrTeacher]
+
+    def get_permissions(self):
+        if self.action in ["retrieve"]:
+            return [IsOwnerOrAdmin()]
+        return super().get_permissions()
 
     def get_queryset(self):
         queryset = Score.objects.none()

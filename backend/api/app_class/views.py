@@ -2,14 +2,14 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Class
 from .serializers import ClassSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Classes"])
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = Class.objects.none()  # Empty default queryset

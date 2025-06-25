@@ -2,14 +2,14 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Semester
 from .serializers import SemesterSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Semesters"])
 class SemesterViewSet(viewsets.ModelViewSet):
     serializer_class = SemesterSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = Semester.objects.none()

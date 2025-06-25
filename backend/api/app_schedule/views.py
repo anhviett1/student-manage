@@ -2,14 +2,14 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Schedule
 from .serializers import ScheduleSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Schedules"])
 class ScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
     def get_queryset(self):
         queryset = Schedule.objects.none()
         if self.request.user.is_authenticated:

@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Department
 from .serializers import DepartmentSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdmin, IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.views import APIView
@@ -13,7 +13,7 @@ from django.http import HttpResponse
 @extend_schema(tags=["Departments"])
 class DepartmentViewSet(viewsets.ModelViewSet):
     serializer_class = DepartmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = Department.objects.none()
@@ -52,7 +52,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=["Departments"])
 class DepartmentRestoreAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def post(self, request, pk):
         try:
@@ -66,7 +66,7 @@ class DepartmentRestoreAPIView(APIView):
         
 @extend_schema(tags=["Departments"])
 class DepartmentExportAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         response = HttpResponse(content_type="text/csv")

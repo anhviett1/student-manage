@@ -1,7 +1,13 @@
 from rest_framework import viewsets
 from django.db.models import Q
 from ..app_department.models import Department
-from ..app_home.permissions import CanManageScores, CanViewOwnScores, IsAdmin
+from ..app_home.permissions import (
+    CanManageScores,
+    CanViewOwnScores,
+    IsAdmin,
+    IsAdminOrTeacher,
+    IsOwnerOrAdmin,
+)
 from ..app_score.models import Score
 from ..app_score.serializers import ScoreSerializer
 from .models import User
@@ -25,7 +31,14 @@ from rest_framework.decorators import action
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet quản lý người dùng."""
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
+
+    def get_permissions(self):
+        if self.action == "register":
+            return [AllowAny()]
+        if self.action in ["retrieve", "update", "partial_update"]:
+            return [IsOwnerOrAdmin()]
+        return super().get_permissions()
 
     def get_queryset(self):
         """Lọc người dùng dựa trên tham số truy vấn."""
@@ -78,7 +91,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Xóa mềm người dùng."""
         instance.soft_delete()
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
     def register(self, request):
         """Đăng ký người dùng mới."""
         serializer = self.get_serializer(data=request.data)
@@ -89,6 +102,20 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["put"], url_path="change-role")
+    def change_role(self, request, pk=None):
+        user = self.get_object()
+        new_role = request.data.get("role")
+        if new_role not in dict(User.ROLE_CHOICES):
+            return Response(
+                {"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        user.role = new_role
+        user.save(update_fields=["role"])
+        return Response(
+            {"message": "Role updated successfully"}, status=status.HTTP_200_OK
+        )
 
 @extend_schema(tags=["Users"])
 class LogoutAPIView(APIView):
@@ -161,28 +188,6 @@ class ChangePasswordAPIView(APIView):
         )
 
 @extend_schema(tags=["Users"])
-class UserRoleAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        user = request.user
-        new_role = request.data.get("role")
-        if new_role not in dict(User.ROLE_CHOICES):
-            return Response(
-                {"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST
-            )
-        if not user.is_admin and user.role != new_role:
-            return Response(
-                {"error": "Only admins can change roles"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        user.role = new_role
-        user.save(update_fields=["role"])
-        return Response(
-            {"message": "Role updated successfully"}, status=status.HTTP_200_OK
-        )
-
-@extend_schema(tags=["Users"])
 class AvatarUploadView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -233,7 +238,7 @@ class AvatarUploadView(APIView):
 
 @extend_schema(tags=["Users"])
 class UserRestoreAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def post(self, request, pk):
         try:
@@ -245,7 +250,7 @@ class UserRestoreAPIView(APIView):
 
 @extend_schema(tags=["Users"])
 class UserExportAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         response = HttpResponse(content_type="text/csv")
@@ -265,60 +270,6 @@ class UserExportAPIView(APIView):
             ])
 
         return response
-
-@extend_schema(tags=["Users"])
-class AvatarUploadView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        avatar_file = request.FILES.get("avatar")
-
-        if not avatar_file:
-            return Response({"error": "No avatar file provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Kiểm tra định dạng file (chỉ cho phép ảnh)
-        allowed_extensions = [".jpg", ".jpeg", ".png", ".gif"]
-        file_ext = os.path.splitext(avatar_file.name)[1].lower()
-        if file_ext not in allowed_extensions:
-            return Response(
-                {"error": "Invalid file format. Only JPG, JPEG, PNG, GIF are allowed"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Xóa ảnh cũ nếu có
-        if user.profile_picture:
-            try:
-                default_storage.delete(user.profile_picture.path)
-            except Exception:
-                pass  # Bỏ qua nếu file không tồn tại
-
-        # Tạo tên file duy nhất dựa trên username và timestamp
-        file_name = f"profile_pictures/{user.username}_{avatar_file.name}"
-        file_path = default_storage.save(file_name, ContentFile(avatar_file.read()))
-
-        # Cập nhật trường profile_picture của user
-        user.profile_picture = file_path
-        user.save(update_fields=["profile_picture"])
-
-        # Trả về URL của ảnh
-        avatar_url = default_storage.url(file_path)
-        return Response(
-            {"message": "Avatar uploaded successfully", "avatar_url": avatar_url},
-            status=status.HTTP_200_OK,
-        )
-
-    def delete(self, request):
-        user = request.user
-        if user.profile_picture:
-            try:
-                default_storage.delete(user.profile_picture.path)
-                user.profile_picture = None
-                user.save(update_fields=["profile_picture"])
-                return Response({"message": "Avatar deleted successfully"}, status=status.HTTP_200_OK)
-            except Exception:
-                return Response({"error": "Failed to delete avatar"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"error": "No avatar to delete"}, status=status.HTTP_400_BAD_REQUEST)    
 
 @extend_schema(tags=["Scores"])
 class ScoreManagementAPIView(APIView):
@@ -341,7 +292,7 @@ class ViewOwnScoresAPIView(APIView):
 
 @extend_schema(tags=["Statistics"])
 class StatisticsAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrTeacher]
     serializer_class = None
     
     def get(self, request):

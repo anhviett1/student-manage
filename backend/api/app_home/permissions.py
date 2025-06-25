@@ -1,104 +1,120 @@
-from rest_framework.permissions import BasePermission
-from django.contrib.auth.models import Permission
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 from django.contrib.contenttypes.models import ContentType
-from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import Permission
 from functools import lru_cache
+from django.utils.translation import gettext_lazy as _
 
-# Hàm hỗ trợ để cache ContentType và Permission
-@lru_cache(maxsize=128)
-def get_permission(codename, model):
-    content_type = ContentType.objects.get_for_model(model)
-    return Permission.objects.filter(codename=codename, content_type=content_type).first()
+# ================================
+# 1. Role-based permissions
+# ================================
 
-class IsAdmin(BasePermission):
-    """Cho phép truy cập chỉ cho người dùng có vai trò admin."""
-    message = _("Only admin users are allowed to perform this action.")
-
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "admin"
-
-class IsTeacher(BasePermission):
-    """Cho phép truy cập chỉ cho người dùng có vai trò giảng viên."""
-    message = _("Only teacher users are allowed to perform this action.")
+class RolePermission(BasePermission):
+    """Permission kiểm tra vai trò (role)."""
+    roles = []
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_teacher
+        return (
+            request.user.is_authenticated and
+            getattr(request.user, 'role', None) in self.roles
+        )
 
-class IsStudent(BasePermission):
-    """Cho phép truy cập chỉ cho người dùng có vai trò sinh viên."""
-    message = _("Only student users are allowed to perform this action.")
+def make_role_permission_class(role_list, message):
+    """Factory tạo permission theo role."""
+    return type(
+        f"Is{'Or'.join(r.capitalize() for r in role_list)}",
+        (RolePermission,),
+        {"roles": role_list, "message": _(message)}
+    )
 
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_student
+# Cụ thể hóa
+IsAdmin = make_role_permission_class(['admin'], "Only admin users are allowed.")
+IsTeacher = make_role_permission_class(['teacher'], "Only teacher users are allowed.")
+IsStudent = make_role_permission_class(['student'], "Only student users are allowed.")
+IsAdminOrTeacher = make_role_permission_class(['admin', 'teacher'], "Only admin or teacher users are allowed.")
+
+# ================================
+# 2. Read-only for authenticated users, write for admin
+# ================================
 
 class IsAdminOrReadOnly(BasePermission):
-    """Cho phép đọc cho tất cả người dùng đã xác thực, ghi chỉ cho admin."""
     message = _("Only admin users can modify data.")
 
     def has_permission(self, request, view):
-        if request.method in ("GET", "HEAD", "OPTIONS"):
+        if request.method in SAFE_METHODS:
             return request.user.is_authenticated
-        return request.user.is_authenticated and request.user.role == "admin"
+        return request.user.is_authenticated and getattr(request.user, 'role', '') == 'admin'
+
+# ================================
+# 3. Object-level: is owner or admin
+# ================================
 
 class IsOwnerOrAdmin(BasePermission):
-    """Cho phép truy cập cho chủ sở hữu đối tượng hoặc admin."""
-    message = _("Only the owner or admin can perform this action.")
+    message = _("Only the owner or admin can access this object.")
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and (
-            obj == request.user or request.user.role == "admin"
+            obj == request.user or
+            getattr(obj, 'user', None) == request.user or
+            getattr(request.user, 'role', '') == 'admin'
         )
 
-class IsAdminOrTeacher(BasePermission):
-    """Cho phép truy cập cho admin hoặc giảng viên."""
-    message = _("Only admin or teacher users can perform this action.")
+# ================================
+# 4. Model permission (dynamic by codename)
+# ================================
 
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            request.user.is_admin or request.user.is_teacher
-        )
+@lru_cache(maxsize=128)
+def get_permission(codename, model_cls):
+    content_type = ContentType.objects.get_for_model(model_cls)
+    return Permission.objects.filter(codename=codename, content_type=content_type).first()
 
 class HasModelPermission(BasePermission):
-    """Kiểm tra quyền dựa trên codename và model của view."""
     message = _("You do not have the required permission.")
 
-    def __init__(self, codename):
+    def __init__(self, codename=None):
         self.codename = codename
 
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        if not (request.user.is_authenticated and self.codename):
             return False
-        model = view.queryset.model if hasattr(view, "queryset") else None
+
+        model = getattr(getattr(view, 'queryset', None), 'model', None)
         if not model:
             return False
-        permission = get_permission(self.codename, model)
-        if not permission:
+
+        perm = get_permission(self.codename, model)
+        if not perm:
             return False
-        return request.user.has_perm(f"{permission.content_type.app_label}.{self.codename}")
 
-# Các lớp quyền cụ thể kế thừa từ HasModelPermission
-class CanManageScores(HasModelPermission):
-    """Cho phép quản lý điểm số."""
-    def __init__(self):
-        super().__init__(codename="can_manage_scores")
+        return request.user.has_perm(f"{perm.content_type.app_label}.{self.codename}")
 
-class CanManageSubject(HasModelPermission):
-    """Cho phép quản lý môn học."""
-    def __init__(self):
-        super().__init__(codename="can_manage_subject")
+# ================================
+# 5. Factory tạo các quyền cụ thể theo codename
+# ================================
 
-class CanViewSubjectScores(HasModelPermission):
-    """Cho phép xem điểm số môn học."""
-    def __init__(self):
-        super().__init__(codename="can_view_subject_scores")
+def make_model_permission_class(name, codename, message=None):
+    return type(
+        name,
+        (HasModelPermission,),
+        {
+            "__init__": lambda self: super(type(self), self).__init__(codename=codename),
+            "message": _(message or f"You need `{codename}` permission.")
+        }
+    )
+
+# Các quyền cụ thể
+CanManageScores = make_model_permission_class("CanManageScores", "can_manage_scores")
+CanManageSubjects = make_model_permission_class("CanManageSubjects", "can_manage_subjects")
+CanViewSubjectScores = make_model_permission_class("CanViewSubjectScores", "can_view_subject_scores")
+
+# ================================
+# 6. Sinh viên xem điểm của chính mình
+# ================================
 
 class CanViewOwnScores(BasePermission):
-    """Cho phép sinh viên xem điểm số của chính họ."""
     message = _("Only students can view their own scores.")
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_student
+        return request.user.is_authenticated and getattr(request.user, 'role', '') == 'student'
 
     def has_object_permission(self, request, view, obj):
-        # Giả sử obj là bản ghi điểm số có trường user
-        return hasattr(obj, "user") and obj.user == request.user
+        return hasattr(obj, 'user') and obj.user == request.user

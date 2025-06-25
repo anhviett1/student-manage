@@ -3,14 +3,21 @@ from django.db.models import Q
 from django.utils import timezone
 from .models import Student
 from .serializers import StudentSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdmin, IsAdminOrTeacher, IsOwnerOrAdmin
 from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(tags=["Students"])
 class StudentViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
+
+    def get_permissions(self):
+        if self.action == "list":
+            return [IsAdminOrTeacher()]
+        if self.action == "retrieve":
+            return [IsOwnerOrAdmin()]
+        return super().get_permissions()
 
     def get_queryset(self):
         queryset = Student.objects.none()

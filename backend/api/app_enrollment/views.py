@@ -2,13 +2,20 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Enrollment
 from .serializers import EnrollmentSerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import IsAdmin, IsAdminOrTeacher, IsOwnerOrAdmin
 from drf_spectacular.utils import extend_schema
 
 @extend_schema(tags=["Enrollments"])
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
+
+    def get_permissions(self):
+        if self.action == "list":
+            return [IsAdminOrTeacher()]
+        if self.action == "retrieve":
+            return [IsOwnerOrAdmin()]
+        return super().get_permissions()
 
     def get_queryset(self):
         queryset = Enrollment.objects.none()  # Empty default queryset
