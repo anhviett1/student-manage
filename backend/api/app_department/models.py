@@ -4,26 +4,18 @@ from ..app_home.models import User
 
 # Create your models here.
 class Department(models.Model):
-    name = models.CharField(max_length=200, verbose_name=_("Tên khoa"), null=False, blank=False)
-    code = models.CharField(
-        max_length=20, unique=True, verbose_name=_("Mã khoa"), null=False, blank=False
-    )
+    department_id = models.AutoField(primary_key=True, verbose_name=_("ID khoa"))
+    department_name= models.CharField(max_length=200, verbose_name=_("Tên khoa"), null=False, blank=False)
     description = models.TextField(blank=True, null=True, verbose_name=_("Mô tả"))
     is_active = models.BooleanField(default=True, verbose_name=_("Đang hoạt động"))
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Ngày tạo"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Ngày cập nhật"))
     is_deleted = models.BooleanField(default=False, verbose_name=_("Đã xóa"))
     head = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,blank=True, verbose_name=_("Trưởng khoa"), related_name="headed_departments",)
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return self.department_name
 
     class Meta:
-        verbose_name = _("department")
-        verbose_name_plural = _("departments")
-        ordering = ["name"]
-        db_table = "app_home_department"
-        permissions = [
-            ("can_manage_department", _("Có thể quản lý khoa")),
-            ("can_view_department", _("Có thể xem thông tin khoa")),
-        ]
+        app_label = "app_department"

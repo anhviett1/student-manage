@@ -35,3 +35,18 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=['is_deleted', 'is_active'])
+        return instance
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.start_time >= instance.end_time:
+            raise ValueError("Thời gian bắt đầu không thể lớn hơn hoặc bằng thời gian kết thúc.")
+        if instance.day_of_week < 0 or instance.day_of_week > 6:
+            raise ValueError("Ngày trong tuần phải nằm trong khoảng từ 0 (Chủ nhật) đến 6 (Thứ bảy).")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.start_time >= instance.end_time:
+            raise ValueError("Thời gian bắt đầu không thể lớn hơn hoặc bằng thời gian kết thúc.")
+        if instance.day_of_week < 0 or instance.day_of_week > 6:
+            raise ValueError("Ngày trong tuần phải nằm trong khoảng từ 0 (Chủ nhật) đến 6 (Thứ bảy).")
+        return instance

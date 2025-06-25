@@ -58,14 +58,6 @@ class Teacher(models.Model):
     is_deleted = models.BooleanField(default=False, verbose_name="Đã xóa")
 
     class Meta:
-        verbose_name = _("teacher")
-        verbose_name_plural = _("teachers")
-        ordering = ["last_name", "first_name"]
-        permissions = [
-            ("can_view_teacher_details", "Có thể xem thông tin giảng viên"),
-            ("can_manage_teacher", "Có thể quản lý giảng viên"),
-            ("can_view_teacher_schedule", "Có thể xem lịch giảng dạy"),
-            ("can_manage_teacher_schedule", "Có thể quản lý lịch giảng dạy"),
-        ]
+        app_label = "app_teacher"
 
 

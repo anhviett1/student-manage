@@ -56,13 +56,21 @@ class ScoreViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        # Ensure total_score is calculated on create
-        instance.save()
-
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.is_active = False
+        instance.save(update_fields=["is_deleted", "is_active"])
+        return instance
     def perform_update(self, serializer):
         instance = serializer.save()
-        # Recalculate total_score on update
-        instance.save()
+        if instance.midterm_score is not None and instance.final_score is not None:
+            instance.total_score = (instance.midterm_score * 0.4) + (instance.final_score * 0.6)
+            instance.save(update_fields=["total_score"])
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.midterm_score is not None and instance.final_score is not None:
+            instance.total_score = (instance.midterm_score * 0.4) + (instance.final_score * 0.6)
+            instance.save(update_fields=["total_score"])
+        return instance
 

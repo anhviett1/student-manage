@@ -128,7 +128,8 @@ class LogoutAPIView(APIView):
             request.auth.blacklist()  # Vô hiệu hóa JWT token
         logout(request)  # Đăng xuất session
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
-
+import logging
+logger = logging.getLogger(__name__)
 @extend_schema(tags=["Users"])
 class ProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]

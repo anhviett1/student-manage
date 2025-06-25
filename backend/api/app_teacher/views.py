@@ -61,3 +61,13 @@ class TeacherViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.email and Teacher.objects.filter(email=instance.email).exclude(pk=instance.pk).exists():
+            raise ValueError("Email must be unique.")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.email and Teacher.objects.filter(email=instance.email).exists():
+            raise ValueError("Email must be unique.")
+        return instance

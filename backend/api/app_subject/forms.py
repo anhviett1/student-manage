@@ -10,7 +10,7 @@ class SubjectForm(forms.ModelForm):
         model = Subject
         fields = [
             "subject_id",
-            "name",
+            "subject_name",
             "description",
             "credits",
             "semester",
@@ -77,7 +77,7 @@ class SubjectForm(forms.ModelForm):
         }
         labels = {
             "subject_id": _("Mã môn học"),
-            "name": _("Tên môn học"),
+            "subject_name": _("Tên môn học"),
             "description": _("Mô tả"),
             "credits": _("Số tín chỉ"),
             "semester": _("Học kỳ"),
@@ -87,7 +87,7 @@ class SubjectForm(forms.ModelForm):
         }
         error_messages = {
             "subject_id": {"required": _("Vui lòng nhập mã môn học.")},
-            "name": {"required": _("Vui lòng nhập tên môn học.")},
+            "subject_name": {"required": _("Vui lòng nhập tên môn học.")},
             "credits": {"required": _("Vui lòng nhập số tín chỉ.")},
             "department": {"required": _("Vui lòng chọn khoa.")},
             "status": {"required": _("Vui lòng chọn trạng thái.")},
@@ -125,7 +125,7 @@ class SubjectForm(forms.ModelForm):
         return subject_id
 
     def clean_name(self):
-        name = self.cleaned_data.get("name")
+        name = self.cleaned_data.get("subject_name")
         if len(name) < 3 or len(name) > 200:
             raise forms.ValidationError(_("Tên môn học phải từ 3 đến 200 ký tự."))
         return name

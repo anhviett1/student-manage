@@ -72,3 +72,18 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
             queryset = Enrollment.objects.filter(filters).distinct().order_by("-created_at")
 
         return queryset
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.is_active = False
+        instance.save(update_fields=["is_deleted", "is_active"])
+        return instance
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.status not in ["pending", "approved", "rejected"]:
+            raise ValueError("Trạng thái đăng ký không hợp lệ.")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.status not in ["pending", "approved", "rejected"]:
+            raise ValueError("Trạng thái đăng ký không hợp lệ.")
+        return instance

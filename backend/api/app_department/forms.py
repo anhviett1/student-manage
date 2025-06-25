@@ -24,8 +24,18 @@ class DepartmentForm(forms.ModelForm):
             "name": {"required": _("Vui lòng nhập tên khoa.")},
         }
 
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+        if not name:
+            raise forms.ValidationError(_("Tên khoa không được để trống."))
+        if User.department.model.objects.filter(name=name).exists():
+            raise forms.ValidationError(_("Khoa này đã tồn tại. Vui lòng chọn tên khác."))
+        return name
     def save(self, commit=True):
-        instance = super().save(commit=False)
+        department = super().save(commit=False)
         if commit:
-            instance.save()
-        return instance
+            department.save()
+        return department
+    def __str__(self):
+        return self.cleaned_data.get("name", _("Khoa mới"))
+    

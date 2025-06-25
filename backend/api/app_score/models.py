@@ -51,20 +51,7 @@ class Score(models.Model):
     def __str__(self):
         return f"{self.student} - {self.subject} - {self.semester}"
 
-    def save(self, *args, **kwargs):
-        # Tính tổng điểm nếu có điểm giữa kỳ và cuối kỳ
-        if self.midterm_score is not None and self.final_score is not None:
-            self.total_score = (self.midterm_score * 0.4) + (self.final_score * 0.6)
-        super().save(*args, **kwargs)
-
+    
     class Meta:
-        verbose_name = _("score")
-        verbose_name_plural = _("scores")
-        ordering = ["-created_at"]
-        unique_together = ["student", "subject", "semester"]
-        permissions = [
-            ("can_view_score_details", "Có thể xem thông tin điểm số"),
-            ("can_manage_scores", "Có thể quản lý điểm số"),
-            ("can_view_score_statistics", "Có thể xem thống kê điểm số"),
-            ("can_export_score", "Có thể xuất điểm số"),
-        ]
+        app_label = "app_score"
+        

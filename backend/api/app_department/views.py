@@ -49,6 +49,21 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
+        return instance
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.head and not instance.head.is_active:
+            raise ValueError("Trưởng khoa phải là người dùng đang hoạt động.")
+        if instance.code and Department.objects.filter(code=instance.code).exclude(pk=instance.pk).exists():
+            raise ValueError("Mã khoa phải là duy nhất.")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.head and not instance.head.is_active:
+            raise ValueError("Trưởng khoa phải là người dùng đang hoạt động.")
+        if instance.code and Department.objects.filter(code=instance.code).exists():
+            raise ValueError("Mã khoa phải là duy nhất.")
+        return instance
 
 @extend_schema(tags=["Departments"])
 class DepartmentRestoreAPIView(APIView):

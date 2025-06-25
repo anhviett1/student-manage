@@ -3,15 +3,17 @@ from .models import Score
 
 
 class ScoreSerializer(serializers.ModelSerializer):
-    student_name = serializers.ReadOnlyField(source="student.name")
-    subject_name = serializers.ReadOnlyField(source="subject.name")
-    semester_name = serializers.ReadOnlyField(source="semester.name")
-
     class Meta:
         model = Score
         fields = [
-            "student_name",
-            "subject_name",
-            "semester_name",
+            "student",
+            "subject",
+            "semester",
+            "score",
+            "grade",
+            "is_active",
+            "is_deleted",
+            "created_at",
+            "updated_at"
         ]
-        read_only_fields = ["created_at", "updated_at", "total_score"]
+        read_only_fields = ["student", "score", "grade", "created_at", "updated_at"]

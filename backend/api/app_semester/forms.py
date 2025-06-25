@@ -9,7 +9,7 @@ class SemesterForm(forms.ModelForm):
     class Meta:
         model = Semester
         fields = [
-            "name",
+            "semester_name",
             "academic_year",
             "start_date",
             "end_date",
@@ -28,7 +28,7 @@ class SemesterForm(forms.ModelForm):
             "is_active",
         ]
         widgets = {
-            "name": forms.TextInput(
+            "semester_name": forms.TextInput(
                 attrs={
                     "class": "form-control",
                     "data-placeholder": "Nhập tên học kỳ (VD: HK1)",
@@ -144,7 +144,7 @@ class SemesterForm(forms.ModelForm):
             ),
         }
         labels = {
-            "name": _("Tên học kỳ"),
+            "semester_name": _("Tên học kỳ"),
             "academic_year": _("Năm học"),
             "start_date": _("Ngày bắt đầu"),
             "end_date": _("Ngày kết thúc"),
@@ -163,7 +163,7 @@ class SemesterForm(forms.ModelForm):
             "is_active": _("Đang hoạt động"),
         }
         error_messages = {
-            "name": {"required": _("Vui lòng nhập tên học kỳ.")},
+            "semester_name": {"required": _("Vui lòng nhập tên học kỳ.")},
             "academic_year": {"required": _("Vui lòng nhập năm học.")},
             "start_date": {"required": _("Vui lòng chọn ngày bắt đầu.")},
             "end_date": {"required": _("Vui lòng chọn ngày kết thúc.")},
@@ -195,7 +195,7 @@ class SemesterForm(forms.ModelForm):
         )
 
     def clean_name(self):
-        name = self.cleaned_data.get("name")
+        name = self.cleaned_data.get("semester_name")
         if not name:
             raise ValidationError(_("Tên học kỳ không được để trống."))
         if len(name) < 3 or len(name) > 50:

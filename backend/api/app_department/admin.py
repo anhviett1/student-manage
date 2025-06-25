@@ -4,13 +4,13 @@ from django.utils.translation import gettext_lazy as _
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "is_active", "is_deleted", "created_at", "updated_at")
+    list_display = ("department_id", "department_name", "is_active", "is_deleted", "created_at", "updated_at")
     list_filter = ("is_active", "is_deleted")
-    search_fields = ("name", "code")
-    ordering = ("name",)
+    search_fields = ("department_id", "department_name")
+    ordering = ("department_name",)
 
     fieldsets = (
-        (None, {"fields": ("name", "code", "description")}),
+        (None, {"fields": ("department_id", "department_name", "description")}),
         (_("Status"), {"fields": ("is_active", "is_deleted")}),
         (_("Metadata"), {"fields": ("created_at", "updated_at")}),
     )

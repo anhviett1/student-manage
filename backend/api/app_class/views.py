@@ -59,3 +59,22 @@ class ClassViewSet(viewsets.ModelViewSet):
             queryset = Class.objects.filter(filters).distinct().order_by("name")
 
         return queryset
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.is_active = False
+        instance.save(update_fields=["is_deleted", "is_active"])
+        return instance
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.semester.start_date > instance.semester.end_date:
+            raise ValueError("Ngày bắt đầu học kỳ không thể lớn hơn ngày kết thúc học kỳ.")
+        if instance.subject.credits <= 0:
+            raise ValueError("Số tín chỉ của môn học phải lớn hơn 0.")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.semester.start_date > instance.semester.end_date:
+            raise ValueError("Ngày bắt đầu học kỳ không thể lớn hơn ngày kết thúc học kỳ.")
+        if instance.subject.credits <= 0:
+            raise ValueError("Số tín chỉ của môn học phải lớn hơn 0.")
+        return instance 

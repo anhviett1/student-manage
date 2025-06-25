@@ -2,21 +2,31 @@ from rest_framework import serializers
 from .models import Class
 
 class ClassSerializer(serializers.ModelSerializer):
-    department_name = serializers.ReadOnlyField(source="department.name")
-    semester_name = serializers.ReadOnlyField(source="semester.name")
-    subject_name = serializers.ReadOnlyField(source="subject.name")
-    teacher_name = serializers.ReadOnlyField(source="teacher.name")
-    teacher_ids = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="teachers")
-    subject_ids = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="subjects")
+    
+    semester_name = serializers.CharField(source="semester.name", read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    teacher_name = serializers.CharField(source="teacher.name", read_only=True)
 
     class Meta:
         model = Class
-        fields =  [
-            "department_name",
+        fields = [
+            "class_id",
+            "class_name",
+            "description",
+            "department",
+            "credits",
+            "status",
+            "is_active",
+            "is_deleted",
+            "semester",
             "semester_name",
+            "subject",
             "subject_name",
+            "teacher",
             "teacher_name",
-            "teacher_ids",
-            "subject_ids",
+            "teachers",
+            "subjects",
+            "created_at",
+            "updated_at"
         ]
         read_only_fields = ["class_id", "created_at", "updated_at"]

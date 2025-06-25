@@ -3,22 +3,17 @@ from .models import Department
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
-    head_name = serializers.ReadOnlyField(source="head.name")
     class Meta:
         model = Department
         fields = [
-            "id",
-            "name",
-            "code",
+            "department_id",
+            "department_name",
             "description",
             "is_active",
-            "created_at",
-            "updated_at",
             "is_deleted",
-            "head",
-            "head_name",
+            "created_at",
+            "updated_at"
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-
+        read_only_fields = ["department_id", "created_at", "updated_at"]
 
     

@@ -50,3 +50,23 @@ class SemesterViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
+        return instance
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.start_date > instance.end_date:
+            raise ValueError("Ngày bắt đầu không thể lớn hơn ngày kết thúc.")
+        if instance.registration_start > instance.registration_end:
+            raise ValueError("Ngày bắt đầu đăng ký không thể lớn hơn ngày kết thúc đăng ký.")
+        if instance.add_drop_deadline < instance.registration_start:
+            raise ValueError("Hạn chót thêm/xóa môn không thể trước ngày bắt đầu đăng ký.")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.start_date > instance.end_date:
+            raise ValueError("Ngày bắt đầu không thể lớn hơn ngày kết thúc.")
+        if instance.registration_start > instance.registration_end:
+            raise ValueError("Ngày bắt đầu đăng ký không thể lớn hơn ngày kết thúc đăng ký.")
+        if instance.add_drop_deadline < instance.registration_start:
+            raise ValueError("Hạn chót thêm/xóa môn không thể trước ngày bắt đầu đăng ký.")
+        return instance
+    

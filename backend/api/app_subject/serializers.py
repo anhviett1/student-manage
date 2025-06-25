@@ -3,10 +3,15 @@ from .models import Subject
 
 
 class SubjectSerializer(serializers.ModelSerializer):
-    department_name = serializers.ReadOnlyField(source="department.name")
-    semester_name = serializers.ReadOnlyField(source="semester.name")
-
     class Meta:
         model = Subject
-        fields = ["department_name", "semester_name"]
-        read_only_fields = ["subject_id", "created_at", "updated_at"]
+        fields = [
+            "subject_id",
+            "name",
+            "credits",
+            "is_active",
+            "is_deleted",
+            "created_at",
+            "updated_at"
+        ]
+        read_only_fields = ["subject_id","name", "created_at", "updated_at"]

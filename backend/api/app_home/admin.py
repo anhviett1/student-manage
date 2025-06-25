@@ -6,12 +6,16 @@ from datetime import date
 from .models import User
 from ..app_department.models import Department
 from ..app_student.models import Student
-
+from ..app_teacher.models import Teacher
 
 class UserAdminForm(forms.ModelForm):
     student_id = forms.CharField(max_length=20, required=False, label=_("Mã sinh viên"))
     enrollment_date = forms.DateField(required=False, label=_("Ngày nhập học"), initial=date.today)
     department = forms.ModelChoiceField(queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa"))
+    
+    teacher_id = forms.CharField(max_length=20, required=False, label=_("Mã giảng viên"))
+    department = forms.ModelChoiceField(queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa"))
+    
 
     class Meta:
         model = User
@@ -23,8 +27,24 @@ class UserAdminForm(forms.ModelForm):
         student_id = cleaned_data.get("student_id")
         enrollment_date = cleaned_data.get("enrollment_date")
         department = cleaned_data.get("department")
-
-        if role == "student":
+        teacher_id = cleaned_data.get("teacher_id")
+        
+        if role == "admin":
+            if not department:
+                self.add_error("department", _("Khoa là bắt buộc khi vai trò là quản trị viên."))
+        elif role == "department_head":
+            if not department:
+                self.add_error("department", _("Khoa là bắt buộc khi vai trò là trưởng khoa."))
+        
+        elif role == "teacher":
+            if not teacher_id:
+                self.add_error(
+                    "teacher_id", _("Mã giảng viên là bắt buộc khi vai trò là giảng viên.")
+                )
+            if not department:
+                self.add_error("department", _("Khoa là bắt buộc khi vai trò là giảng viên."))
+        
+        elif role == "student":
             if not student_id:
                 self.add_error(
                     "student_id", _("Mã sinh viên là bắt buộc khi vai trò là sinh viên.")
@@ -154,3 +174,5 @@ class UserAdmin(BaseUserAdmin):
             student.is_active = obj.is_active
             student.save()
         super().save_model(request, obj, form, change)
+    
+    

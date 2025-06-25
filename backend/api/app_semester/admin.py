@@ -6,7 +6,7 @@ from .models import Semester
 class SemesterAdmin(admin.ModelAdmin):
     list_display = [
         "semester_id",
-        "name",
+        "semester_name",
         "academic_year",
         "start_date",
         "end_date",
@@ -24,7 +24,7 @@ class SemesterAdmin(admin.ModelAdmin):
         ("start_date", admin.DateFieldListFilter),
         ("end_date", admin.DateFieldListFilter),
     ]
-    search_fields = ["semester_id", "name", "academic_year", "description", "notes"]
+    search_fields = ["semester_id", "semester_name", "academic_year", "description", "notes"]
     ordering = ["-start_date"]
     list_per_page = 20
     actions = ["soft_delete"]

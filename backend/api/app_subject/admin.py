@@ -4,11 +4,11 @@ from .models import Subject
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ["subject_id", "name", "credits", "status", "is_active", "is_deleted"]
+    list_display = ["subject_id", "subject_name", "credits", "status", "is_active", "is_deleted"]
     list_filter = ["status", "is_active", "is_deleted"]
-    search_fields = ["subject_id", "name", "description"]
+    search_fields = ["subject_id", "subject_name", "description"]
     list_per_page = 20
-    ordering = ["name"]
+    ordering = ["subject_name"]
     actions = ["soft_delete"]
 
     def soft_delete(self, request, queryset):

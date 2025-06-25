@@ -78,3 +78,16 @@ class StudentViewSet(viewsets.ModelViewSet):
         instance.is_active = False
         instance.deleted_at = timezone.now()
         instance.save(update_fields=["is_deleted", "is_active", "deleted_at"])
+    def calculate_gpa(self):
+        if not self.scores.exists():
+            return 0.00
+        total_points = 0
+        total_credits = 0
+        for score in self.scores.all():
+            if score.grade_point and score.subject.credits:
+                total_points += score.grade_point * score.subject.credits
+                total_credits += score.subject.credits
+        if total_credits > 0:
+            self.gpa = round(total_points / total_credits, 2)
+            self.save(update_fields=["gpa"])
+        return self.gpa

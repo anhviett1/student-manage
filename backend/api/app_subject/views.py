@@ -50,3 +50,14 @@ class SubjectViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.code and Subject.objects.filter(code=instance.code).exclude(pk=instance.pk).exists():
+            raise ValueError("Mã môn học phải là duy nhất.")
+        return instance
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.code and Subject.objects.filter(code=instance.code).exists():
+            raise ValueError("Mã môn học phải là duy nhất.")
+        return instance
+    
