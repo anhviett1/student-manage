@@ -5,7 +5,6 @@ from .serializers import ScoreSerializer
 from ..app_home.permissions import IsAdminOrTeacher, IsOwnerOrAdmin
 from drf_spectacular.utils import extend_schema
 
-
 @extend_schema(tags=["Scores"])
 class ScoreViewSet(viewsets.ModelViewSet):
     serializer_class = ScoreSerializer

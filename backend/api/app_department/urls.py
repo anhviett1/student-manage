@@ -1,12 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import DepartmentViewSet, DepartmentExportAPIView, DepartmentRestoreAPIView
+from .views import DepartmentViewSet, DepartmentExportAPIView
 
 router = DefaultRouter()
 router.register(r"", DepartmentViewSet, basename="departments")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("<int:pk>/restore/", DepartmentRestoreAPIView.as_view(), name="department-restore"),
     path("export/", DepartmentExportAPIView.as_view(), name="department-export"),
 ]

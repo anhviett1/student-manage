@@ -10,16 +10,5 @@ class ActivitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Activity
-        fields = [
-            "id",
-            "user",
-            "user_username",
-            "activity_type",
-            "activity_type_display",
-            "content_type",
-            "object_id",
-            "description",
-            "ip_address",
-            "created_at",
-        ]
+        fields = '__all__'
         read_only_fields = ["id", "user", "created_at"]

@@ -6,6 +6,7 @@ from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
 
 
+
 @extend_schema(tags=["Classes"])
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer

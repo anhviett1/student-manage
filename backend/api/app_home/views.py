@@ -121,6 +121,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class LogoutAPIView(APIView):
     """API để đăng xuất người dùng."""
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
 
     def post(self, request):
         """Đăng xuất người dùng và thêm token vào danh sách đen nếu dùng JWT."""
@@ -158,6 +159,7 @@ class ProfileAPIView(APIView):
 @extend_schema(tags=["Users"])
 class ChangePasswordAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
 
     def post(self, request):
         user = request.user
@@ -191,6 +193,7 @@ class ChangePasswordAPIView(APIView):
 @extend_schema(tags=["Users"])
 class AvatarUploadView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
     
     def post(self, request):
         user = request.user
@@ -237,22 +240,12 @@ class AvatarUploadView(APIView):
                 return Response({"error": "Failed to delete avatar"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "No avatar to delete"}, status=status.HTTP_400_BAD_REQUEST)
 
-@extend_schema(tags=["Users"])
-class UserRestoreAPIView(APIView):
-    permission_classes = [IsAdmin]
-
-    def post(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk, is_deleted=True)
-            user.restore()
-            return Response({"message": "User restored successfully"}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found or not deleted"}, status=status.HTTP_404_NOT_FOUND)
 
 @extend_schema(tags=["Users"])
 class UserExportAPIView(APIView):
     permission_classes = [IsAdmin]
-
+    serializer_class = UserSerializer
+    
     def get(self, request):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="users.csv"'
@@ -275,6 +268,7 @@ class UserExportAPIView(APIView):
 @extend_schema(tags=["Scores"])
 class ScoreManagementAPIView(APIView):
     permission_classes = [CanManageScores]
+    serializer_class = UserSerializer
     queryset = Score.objects.all()  
 
     def post(self, request):
@@ -316,35 +310,3 @@ class StatisticsAPIView(APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
     
-@extend_schema(tags=["Permissions"])
-class UserPermissionAPIView(APIView):
-    permission_classes = [IsAdmin]
-
-    def get(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            permissions = user.user_permissions.all().values("codename", "name")
-            return Response(list(permissions), status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    def post(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            permission_codenames = request.data.get("permissions", [])
-            permissions = Permission.objects.filter(codename__in=permission_codenames)
-            user.user_permissions.add(*permissions)
-            return Response({"message": "Permissions added successfully"}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    def delete(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            permission_codenames = request.data.get("permissions", [])
-            permissions = Permission.objects.filter(codename__in=permission_codenames)
-            user.user_permissions.remove(*permissions)
-            return Response({"message": "Permissions removed successfully"}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)    
-        

@@ -5,15 +5,7 @@ from .models import Department
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = [
-            "department_id",
-            "department_name",
-            "description",
-            "is_active",
-            "is_deleted",
-            "created_at",
-            "updated_at"
-        ]
+        fields = '__all__'
         read_only_fields = ["department_id", "created_at", "updated_at"]
 
     

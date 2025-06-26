@@ -12,9 +12,11 @@ from django.http import HttpResponse
 
 @extend_schema(tags=["Departments"])
 class DepartmentViewSet(viewsets.ModelViewSet):
-    serializer_class = DepartmentSerializer
+    
     permission_classes = [IsAdminOrReadOnly]
-
+    serializer_class = DepartmentSerializer
+    lookup_field = "department_id"
+    
     def get_queryset(self):
         queryset = Department.objects.none()
 
@@ -65,40 +67,42 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             raise ValueError("Mã khoa phải là duy nhất.")
         return instance
 
-@extend_schema(tags=["Departments"])
-class DepartmentRestoreAPIView(APIView):
-    permission_classes = [IsAdmin]
-
-    def post(self, request, pk):
-        try:
-            department = Department.objects.get(pk=pk, is_deleted=True)
-            department.is_deleted = False
-            department.is_active = True
-            department.save(update_fields=["is_deleted", "is_active"])
-            return Response({"message": "Department restored successfully"}, status=status.HTTP_200_OK)
-        except Department.DoesNotExist:
-            return Response({"error": "Department not found or not deleted"}, status=status.HTTP_404_NOT_FOUND)
-        
-@extend_schema(tags=["Departments"])
+  
 class DepartmentExportAPIView(APIView):
     permission_classes = [IsAdmin]
-
-    def get(self, request):
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = 'attachment; filename="departments.csv"'
+    serializer_class = DepartmentSerializer
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="departments.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(["ID", "Code", "Name", "Head", "Is Active"])
 
-        departments = Department.objects.filter(is_deleted=False)
-        for dept in departments:
+        # Write header row
+        writer.writerow([
+            'department_id', 'department_name', 'code', 'description', 
+            'is_active', 'created_at', 'updated_at', 'is_deleted', 'head_id', 'head_username'
+        ])
+
+        # Write data rows
+        departments = Department.objects.filter(is_deleted=False).order_by('department_name')
+        for department in departments:
             writer.writerow([
-                dept.id,
-                dept.code,
-                dept.name,
-   
-                dept.is_active,
+                department.department_id,
+                department.department_name,
+                department.code,
+                department.description,
+                department.is_active,
+                department.created_at.isoformat() if department.created_at else '',
+                department.updated_at.isoformat() if department.updated_at else '',
+                department.is_deleted,
+                department.head.id if department.head else '',
+                department.head.username if department.head else ''
             ])
-
         return response
+
+
+    
+
+
+
     

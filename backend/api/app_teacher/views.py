@@ -11,6 +11,7 @@ from drf_spectacular.utils import extend_schema
 class TeacherViewSet(viewsets.ModelViewSet):
     serializer_class = TeacherSerializer
     permission_classes = [IsAdmin]
+    lookup_field = "teacher_id"
 
     def get_permissions(self):
         if self.action == "list":

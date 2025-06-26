@@ -9,6 +9,7 @@ from drf_spectacular.utils import extend_schema
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAdmin]
+    lookup_field = "enrollment_id"
 
     def get_permissions(self):
         if self.action == "list":
