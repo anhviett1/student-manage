@@ -1,213 +1,134 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
+/**
+ * Composable cung cấp các quyền truy cập dựa trên vai trò và quyền của người dùng.
+ * Luôn là nguồn đáng tin cậy duy nhất cho việc kiểm tra quyền trong toàn bộ ứng dụng.
+ */
 export function usePermissions() {
   const authStore = useAuthStore()
 
-  // Role checks
-  const isSuperuser = computed(() => authStore.isSuperuser)
-  const isAdmin = computed(() => authStore.role === 'admin')
-  const isTeacher = computed(() => authStore.role === 'teacher')
-  const isStudent = computed(() => authStore.role === 'student')
-
-  // Role combinations
+  // --- 1. Quyền dựa trên vai trò (Role-based) ---
+  const isAuthenticated = computed(() => authStore.isAuthenticated)
+  const isAdmin = computed(() => ['admin', 'superuser'].includes(authStore.user?.role))
+  const isTeacher = computed(() => authStore.user?.role === 'teacher')
+  const isStudent = computed(() => authStore.user?.role === 'student')
   const isAdminOrTeacher = computed(() => isAdmin.value || isTeacher.value)
-  const isAdminOrSuperuser = computed(() => isAdmin.value || isSuperuser.value)
-  const isTeacherOrStudent = computed(() => isTeacher.value || isStudent.value)
 
-  // Permission checks
-  const hasPermission = (permission) => {
-    if (isSuperuser.value) return true
-    if (authStore.permissions.includes('*')) return true
-    return authStore.permissions.includes(permission)
+  // --- 2. Quyền xem các mục menu trong Sidebar ---
+  // Logic này quyết định mục nào sẽ hiển thị trên menu chính.
+  // Các view con có thể có logic phân quyền chi tiết hơn.
+  const canViewStudents = computed(() => isAdminOrTeacher.value)
+  const canViewTeachers = computed(() => isAdmin.value)
+  const canViewClasses = computed(() => isAdminOrTeacher.value)
+  const canViewSubjects = computed(() => isAdminOrTeacher.value)
+  const canViewEnrollments = computed(() => isAdminOrTeacher.value)
+  const canViewSemesters = computed(() => isAdminOrTeacher.value)
+  const canViewScores = computed(() => isAuthenticated.value) // Mọi người đã đăng nhập đều có thể xem mục này
+  const canViewSchedules = computed(() => isAuthenticated.value) // Mọi người đã đăng nhập đều có thể xem mục này
+  const canViewDepartments = computed(() => isAdminOrTeacher.value)
+  const canViewUsers = computed(() => isAdmin.value)
+
+  // --- 3. Quyền CRUD (Create, Read, Update, Delete) ---
+  /**
+   * Kiểm tra quyền đọc cho mọi user, quyền ghi chỉ cho admin.
+   * Tương tự IsAdminOrReadOnly của Django.
+   * @param {string} method - HTTP method: 'GET', 'POST', 'PUT', 'DELETE', etc.
+   */
+  const isPermissionAdminOrReadOnly = (method) => {
+    const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+    if (SAFE_METHODS.includes(method.toUpperCase())) {
+      return isAuthenticated.value
+    }
+    return isAuthenticated.value && isAdmin.value
   }
 
-  // Permission combinations
-  const hasAnyPermission = (permissions) => {
-    return permissions.some(permission => hasPermission(permission))
+  // --- 4. Quyền trên đối tượng (Object-level) ---
+  /**
+   * Kiểm tra user hiện tại có phải là chủ sở hữu của đối tượng hoặc là admin không.
+   * @param {object} obj - Đối tượng cần kiểm tra, phải có trường 'user' hoặc id.
+   * @param {string} [ownerKey='user'] - Tên của trường chứa id của chủ sở hữu.
+   */
+  const isOwnerOrAdmin = (obj, ownerKey = 'user') => {
+    if (!isAuthenticated.value || !obj) return false
+    if (isAdmin.value) return true
+
+    const currentUserId = authStore.user?.id
+    if (!currentUserId) return false
+
+    let objOwnerId = null
+    const ownerData = obj[ownerKey]
+
+    if (ownerData) {
+      // Nếu ownerData là object (vd: { id: 1, ... })
+      if (typeof ownerData === 'object' && ownerData !== null && 'id' in ownerData) {
+        objOwnerId = ownerData.id
+        // Nếu ownerData là id trực tiếp (vd: 1)
+      } else {
+        objOwnerId = ownerData
+      }
+    }
+
+    return objOwnerId !== null && objOwnerId === currentUserId
   }
 
-  const hasAllPermissions = (permissions) => {
-    return permissions.every(permission => hasPermission(permission))
+  // --- 5. Quyền theo model của Django (Django Model Permissions) ---
+  /**
+   * Kiểm tra quyền model cụ thể từ danh sách permissions của user.
+   * @param {string} codename - Codename của quyền (vd: 'can_manage_scores').
+   * @param {string} appLabel - App label của Django (vd: 'app_score').
+   */
+  const hasModelPermission = (codename, appLabel) => {
+    if (!isAuthenticated.value) return false
+    const permissions = authStore.user?.permissions || []
+    const fullPerm = `${appLabel}.${codename}`
+    return permissions.includes(fullPerm)
   }
 
-  // Common permissions
-  const canViewStudents = computed(() => hasPermission('student:view'))
-  const canEditStudents = computed(() => hasPermission('student:edit'))
-  const canDeleteStudents = computed(() => hasPermission('student:delete'))
-  const canImportStudents = computed(() => hasPermission('student:import'))
-  const canExportStudents = computed(() => hasPermission('student:export'))
+  // Ví dụ cụ thể hóa:
+  const canManageScores = (appLabel) => hasModelPermission('can_manage_scores', appLabel)
 
-  const canViewTeachers = computed(() => hasPermission('teacher:view'))
-  const canEditTeachers = computed(() => hasPermission('teacher:edit'))
-  const canDeleteTeachers = computed(() => hasPermission('teacher:delete'))
-  const canImportTeachers = computed(() => hasPermission('teacher:import'))
-  const canExportTeachers = computed(() => hasPermission('teacher:export'))
-
-  const canViewSubjects = computed(() => hasPermission('subject:view'))
-  const canEditSubjects = computed(() => hasPermission('subject:edit'))
-  const canDeleteSubjects = computed(() => hasPermission('subject:delete'))
-  const canImportSubjects = computed(() => hasPermission('subject:import'))
-  const canExportSubjects = computed(() => hasPermission('subject:export'))
-
-  const canViewClasses = computed(() => hasPermission('class:view'))
-  const canEditClasses = computed(() => hasPermission('class:edit'))
-  const canDeleteClasses = computed(() => hasPermission('class:delete'))
-  const canImportClasses = computed(() => hasPermission('class:import'))
-  const canExportClasses = computed(() => hasPermission('class:export'))
-
-  const canViewEnrollments = computed(() => hasPermission('enrollment:view'))
-  const canEditEnrollments = computed(() => hasPermission('enrollment:edit'))
-  const canDeleteEnrollments = computed(() => hasPermission('enrollment:delete'))
-  const canImportEnrollments = computed(() => hasPermission('enrollment:import'))
-  const canExportEnrollments = computed(() => hasPermission('enrollment:export'))
-
-  const canViewScores = computed(() => hasPermission('score:view'))
-  const canEditScores = computed(() => hasPermission('score:edit'))
-  const canDeleteScores = computed(() => hasPermission('score:delete'))
-  const canImportScores = computed(() => hasPermission('score:import'))
-  const canExportScores = computed(() => hasPermission('score:export'))
-  const canUploadScores = computed(() => hasPermission('score:upload'))
-
-  const canViewSemesters = computed(() => hasPermission('semester:view'))
-  const canEditSemesters = computed(() => hasPermission('semester:edit'))
-  const canDeleteSemesters = computed(() => hasPermission('semester:delete'))
-  const canImportSemesters = computed(() => hasPermission('semester:import'))
-  const canExportSemesters = computed(() => hasPermission('semester:export'))
-
-  // Feature-based permissions
-  const canManageUsers = computed(() => isAdminOrSuperuser.value)
-  const canManageSystem = computed(() => isAdminOrSuperuser.value)
-  const canViewReports = computed(() => isAdminOrTeacher.value)
-  const canExportData = computed(() => isAdminOrTeacher.value)
-  const canImportData = computed(() => isAdminOrTeacher.value)
-  const canManageSettings = computed(() => isAdminOrSuperuser.value)
-  const canViewDashboard = computed(() => isAdminOrTeacher.value)
-  const canViewAnalytics = computed(() => isAdminOrTeacher.value)
-
-  // Student-specific permissions
-  const canViewOwnScores = computed(() => isStudent.value)
-  const canViewOwnEnrollments = computed(() => isStudent.value)
-  const canViewStudentProfile = computed(() => isStudent.value)
-  const canEditStudentProfile = computed(() => isStudent.value)
-  const canViewStudentSchedule = computed(() => isStudent.value)
-  const canUploadStudentAvatar = computed(() => isStudent.value)
-
-  // Teacher-specific permissions
-  const canManageOwnClass = computed(() => isTeacher.value)
-  const canManageOwnScores = computed(() => isTeacher.value)
-  const canViewOwnStudents = computed(() => isTeacher.value)
-  const canViewTeacherSchedule = computed(() => isTeacher.value)
-  const canEditTeacherProfile = computed(() => isTeacher.value)
-  const canUploadTeacherAvatar = computed(() => isTeacher.value)
-
-  // Admin profile permissions
-  const canUploadAdminAvatar = computed(() => isAdmin.value)
-
-  // Department permissions
-  const canViewDepartments = computed(() => hasPermission('department:view'))
-  const canEditDepartments = computed(() => hasPermission('department:edit'))
-  const canDeleteDepartments = computed(() => hasPermission('department:delete'))
-  const canImportDepartments = computed(() => hasPermission('department:import'))
-  const canExportDepartments = computed(() => hasPermission('department:export'))
-
-  // Schedule permissions
-  const canViewSchedules = computed(() => hasPermission('schedule:view'))
-  const canEditSchedules = computed(() => hasPermission('schedule:edit'))
-  const canDeleteSchedules = computed(() => hasPermission('schedule:delete'))
-  const canImportSchedules = computed(() => hasPermission('schedule:import'))
-  const canExportSchedules = computed(() => hasPermission('schedule:export'))
+  // --- 6. Quyền đặc biệt ---
+  /**
+   * Cho phép sinh viên xem điểm của chính mình.
+   * @param {object} scoreObject - Đối tượng điểm, chứa thông tin user.
+   */
+  const canViewOwnScores = (scoreObject) => {
+    if (!isStudent.value || !scoreObject) return false
+    return isOwnerOrAdmin(scoreObject) // Tận dụng lại logic isOwnerOrAdmin
+  }
 
   return {
-    // Role checks
-    isSuperuser,
+    // Trạng thái xác thực
+    isAuthenticated,
+
+    // Vai trò
     isAdmin,
     isTeacher,
     isStudent,
     isAdminOrTeacher,
-    isAdminOrSuperuser,
-    isTeacherOrStudent,
 
-    // Permission checks
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-
-    // Common permissions
+    // Quyền xem menu
     canViewStudents,
-    canEditStudents,
-    canDeleteStudents,
-    canImportStudents,
-    canExportStudents,
     canViewTeachers,
-    canEditTeachers,
-    canDeleteTeachers,
-    canImportTeachers,
-    canExportTeachers,
-    canViewSubjects,
-    canEditSubjects,
-    canDeleteSubjects,
-    canImportSubjects,
-    canExportSubjects,
     canViewClasses,
-    canEditClasses,
-    canDeleteClasses,
-    canImportClasses,
-    canExportClasses,
+    canViewSubjects,
     canViewEnrollments,
-    canEditEnrollments,
-    canDeleteEnrollments,
-    canImportEnrollments,
-    canExportEnrollments,
-    canViewScores,
-    canEditScores,
-    canDeleteScores,
-    canImportScores,
-    canExportScores,
-    canUploadScores,
     canViewSemesters,
-    canEditSemesters,
-    canDeleteSemesters,
-    canImportSemesters,
-    canExportSemesters,
-
-    // Feature-based permissions
-    canManageUsers,
-    canManageSystem,
-    canViewReports,
-    canExportData,
-    canImportData,
-    canManageSettings,
-    canViewDashboard,
-    canViewAnalytics,
-
-    // Role-specific permissions
-    canViewOwnScores,
-    canViewOwnEnrollments,
-    canViewStudentProfile,
-    canEditStudentProfile,
-    canViewStudentSchedule,
-    canUploadStudentAvatar,
-    canManageOwnClass,
-    canManageOwnScores,
-    canViewOwnStudents,
-    canViewTeacherSchedule,
-    canEditTeacherProfile,
-    canUploadTeacherAvatar,
-    canUploadAdminAvatar,
-
-    // Department permissions
-    canViewDepartments,
-    canEditDepartments,
-    canDeleteDepartments,
-    canImportDepartments,
-    canExportDepartments,
-
-    // Schedule permissions
+    canViewScores,
     canViewSchedules,
-    canEditSchedules,
-    canDeleteSchedules,
-    canImportSchedules,
-    canExportSchedules
+    canViewDepartments,
+    canViewUsers,
+
+    // Quyền CRUD & Object-level
+    isPermissionAdminOrReadOnly,
+    isOwnerOrAdmin,
+
+    // Quyền Model Django
+    hasModelPermission,
+    canManageScores,
+
+    // Quyền đặc biệt
+    canViewOwnScores,
   }
 }

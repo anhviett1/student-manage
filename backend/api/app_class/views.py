@@ -39,7 +39,7 @@ class ClassViewSet(viewsets.ModelViewSet):
 
             if search_term:
                 filters &= (
-                    Q(name__icontains=search_term)
+                    Q(class_name__icontains=search_term)
                     | Q(description__icontains=search_term)
                     | Q(class_id__icontains=search_term)
                 )
@@ -57,7 +57,7 @@ class ClassViewSet(viewsets.ModelViewSet):
                 filters &= Q(teacher__id__in=teacher_list)
 
             # Return the filtered queryset
-            queryset = Class.objects.filter(filters).distinct().order_by("name")
+            queryset = Class.objects.filter(filters).distinct().order_by("class_name")
 
         return queryset
     def perform_destroy(self, instance):

@@ -6,7 +6,7 @@ import { onMounted } from 'vue'
 const authStore = useAuthStore()
 
 onMounted(async () => {
-  // Tải thông tin người dùng nếu đã đăng nhập
+  // Nếu đã đăng nhập mà chưa có user, tự động fetch user
   if (authStore.isAuthenticated && !authStore.user) {
     try {
       await authStore.fetchCurrentUser()
@@ -20,6 +20,8 @@ onMounted(async () => {
 <template>
   <div class="app">
     <router-view />
+    <!-- Toast notification toàn cục nếu muốn -->
+    <Toast position="top-right" />
   </div>
 </template>
 

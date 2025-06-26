@@ -1,379 +1,370 @@
 <template>
-  <div class="users-view">
-    <div class="header">
-      <h1 @click="navigateToHome">User Management</h1>
-      <button @click="openCreateModal" class="btn-primary">
-        <i class="fas fa-plus"></i> Add User
-      </button>
-    </div>
+  <div v-if="isAdmin">
+    <div class="card">
+      <Toast />
+      <ConfirmDialog></ConfirmDialog>
 
-    <div class="filters">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search users..."
-        class="search-input"
-      />
-      <select v-model="roleFilter" class="role-select">
-        <option value="">All Roles</option>
-        <option value="admin">Admin</option>
-        <option value="teacher">Teacher</option>
-        <option value="student">Student</option>
-      </select>
-    </div>
-
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in filteredUsers" :key="user.id">
-            <td>{{ user.id }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
-            <td>
-              <span :class="['role-badge', user.role]">
-                {{ user.role }}
-              </span>
-            </td>
-            <td>
-              <span :class="['status-badge', user.is_active ? 'active' : 'inactive']">
-                {{ user.is_active ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
-            <td class="actions">
-              <button @click="editUser(user)" class="btn-icon">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button @click="deleteUser(user)" class="btn-icon danger">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Create/Edit Modal -->
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
-        <h2>{{ isEditing ? 'Edit User' : 'Create User' }}</h2>
-        <form @submit.prevent="handleSubmit">
-          <div class="form-group">
-            <label>Username</label>
-            <input v-model="form.username" type="text" required />
-          </div>
-          <div class="form-group">
-            <label>Email</label>
-            <input v-model="form.email" type="email" required />
-          </div>
-          <div class="form-group">
-            <label>Role</label>
-            <select v-model="form.role" required>
-              <option value="admin">Admin</option>
-              <option value="teacher">Teacher</option>
-              <option value="student">Student</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Password</label>
-            <input v-model="form.password" type="password" :required="!isEditing" />
-          </div>
-          <div class="form-group">
-            <label>Status</label>
-            <select v-model="form.is_active">
-              <option :value="true">Active</option>
-              <option :value="false">Inactive</option>
-            </select>
-          </div>
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              {{ isEditing ? 'Update' : 'Create' }}
-            </button>
-          </div>
-        </form>
+      <div class="header">
+        <h2>Quản Lý Người Dùng</h2>
+        <Button
+          icon="pi pi-plus"
+          label="Thêm Người Dùng"
+          severity="primary"
+          @click="openNew"
+          v-tooltip="'Thêm người dùng mới'"
+        />
       </div>
+
+      <div class="filter-bar">
+        <div class="filter-group">
+          <Dropdown
+            v-model="filters.role"
+            :options="roleOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Lọc theo vai trò"
+            class="filter-dropdown"
+            showClear
+            @change="loadUsers"
+          />
+          <InputText
+            v-model="filters.search"
+            placeholder="Tìm theo tên, email..."
+            class="filter-search"
+            @input="onSearchInput"
+          />
+        </div>
+      </div>
+
+      <DataTable
+        :value="userStore.users"
+        :loading="userStore.isLoading"
+        dataKey="id"
+        paginator
+        :rows="10"
+        :rowsPerPageOptions="[5, 10, 20]"
+        responsiveLayout="scroll"
+        class="p-datatable-sm"
+      >
+        <template #empty>
+          <div class="empty-message">Không tìm thấy người dùng nào.</div>
+        </template>
+        <template #loading>
+          <div class="loading-message">Đang tải dữ liệu...</div>
+        </template>
+        <Column field="id" header="ID" sortable style="width: 8%" />
+        <Column field="username" header="Tên Đăng Nhập" sortable style="width: 20%" />
+        <Column field="email" header="Email" sortable style="width: 25%" />
+        <Column field="role" header="Vai Trò" sortable style="width: 15%">
+          <template #body="{ data }">
+            <Tag :severity="getRoleSeverity(data.role)" :value="data.role" />
+          </template>
+        </Column>
+        <Column field="is_active" header="Trạng Thái" sortable style="width: 12%">
+          <template #body="{ data }">
+            <Tag :severity="data.is_active ? 'success' : 'danger'" :value="data.is_active ? 'Active' : 'Inactive'" />
+          </template>
+        </Column>
+        <Column header="Hành Động" style="width: 15%" align="center">
+          <template #body="{ data }">
+            <Button
+              icon="pi pi-pencil"
+              outlined
+              rounded
+              severity="info"
+              @click="editUser(data)"
+              v-tooltip="'Sửa'"
+            />
+            <Button
+              icon="pi pi-trash"
+              outlined
+              rounded
+              severity="danger"
+              class="ml-2"
+              @click="confirmDeleteUser(data)"
+              v-tooltip="'Xóa'"
+            />
+          </template>
+        </Column>
+      </DataTable>
+
+      <!-- Create/Edit Dialog -->
+      <Dialog
+        v-model:visible="userDialog"
+        :header="isEditing ? 'Sửa Người Dùng' : 'Thêm Người Dùng'"
+        :style="{ width: '500px' }"
+        modal
+        class="p-fluid"
+      >
+        <div class="field">
+          <label for="username">Tên Đăng Nhập</label>
+          <InputText id="username" v-model.trim="form.username" required :class="{ 'p-invalid': errors.username }" />
+          <small class="p-error" v-if="errors.username">{{ errors.username }}</small>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <InputText id="email" v-model.trim="form.email" type="email" required :class="{ 'p-invalid': errors.email }" />
+          <small class="p-error" v-if="errors.email">{{ errors.email }}</small>
+        </div>
+        <div class="field">
+          <label for="role">Vai Trò</label>
+          <Dropdown
+            id="role"
+            v-model="form.role"
+            :options="roleOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Chọn vai trò"
+            required
+            :class="{ 'p-invalid': errors.role }"
+          />
+          <small class="p-error" v-if="errors.role">{{ errors.role }}</small>
+        </div>
+        <div class="field">
+          <label for="password">Mật Khẩu</label>
+          <Password
+            id="password"
+            v-model="form.password"
+            :required="!isEditing"
+            :feedback="false"
+            toggleMask
+            :placeholder="isEditing ? 'Bỏ trống nếu không đổi' : 'Nhập mật khẩu'"
+            :class="{ 'p-invalid': errors.password }"
+          />
+          <small class="p-error" v-if="errors.password">{{ errors.password }}</small>
+        </div>
+        <div class="field-checkbox">
+          <Checkbox id="is_active" v-model="form.is_active" :binary="true" />
+          <label for="is_active" class="ml-2">Hoạt động</label>
+        </div>
+        <template #footer>
+          <Button label="Hủy" icon="pi pi-times" text @click="hideDialog" />
+          <Button :label="isEditing ? 'Cập Nhật' : 'Tạo'" icon="pi pi-check" @click="handleSubmit" />
+        </template>
+      </Dialog>
     </div>
+  </div>
+  <div v-else class="access-denied">
+    <h2>Truy Cập Bị Từ Chối</h2>
+    <p>Bạn không có quyền truy cập vào trang này.</p>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useUserStore } from '@/stores/user'
-import { useToast } from '@/composables/useToast'
+import { ref, onMounted } from 'vue';
+import { useUserStore } from '@/stores/user';
+import { usePermissions } from '@/composables/usePermissions';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
+import Dropdown from 'primevue/dropdown';
+import Checkbox from 'primevue/checkbox';
+import Password from 'primevue/password';
+import Tag from 'primevue/tag';
+import Toast from 'primevue/toast';
+import ConfirmDialog from 'primevue/confirmdialog';
 
-const userStore = useUserStore()
-const { showToast } = useToast()
+const userStore = useUserStore();
+const { isAdmin } = usePermissions();
+const toast = useToast();
+const confirm = useConfirm();
 
-const users = ref([])
-const searchQuery = ref('')
-const roleFilter = ref('')
-const showModal = ref(false)
-const isEditing = ref(false)
+const filters = ref({
+  search: '',
+  role: null,
+});
+const userDialog = ref(false);
+const isEditing = ref(false);
 const form = ref({
+  id: null,
   username: '',
   email: '',
   role: 'student',
   password: '',
-  is_active: true
-})
+  is_active: true,
+});
+const errors = ref({});
+let searchTimeout = null;
 
-const navigateToHome = () => {
-  router.push('/')
-}
+const roleOptions = [
+  { label: 'Admin', value: 'admin' },
+  { label: 'Teacher', value: 'teacher' },
+  { label: 'Student', value: 'student' },
+];
 
-const filteredUsers = computed(() => {
-  return users.value.filter(user => {
-    const matchesSearch = user.username.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesRole = !roleFilter.value || user.role === roleFilter.value
-    return matchesSearch && matchesRole
-  })
-})
-
-onMounted(async () => {
-  await loadUsers()
-})
+onMounted(() => {
+  if (isAdmin.value) {
+    loadUsers();
+  }
+});
 
 const loadUsers = async () => {
+  const params = {
+    search: filters.value.search,
+    role: filters.value.role,
+  };
   try {
-    users.value = await userStore.fetchUsers()
+    await userStore.fetchUsers(params);
   } catch (error) {
-    showToast('Error loading users', 'error')
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách người dùng', life: 3000 });
   }
-}
+};
 
-const openCreateModal = () => {
-  isEditing.value = false
+const onSearchInput = () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    loadUsers();
+  }, 500);
+};
+
+const openNew = () => {
+  isEditing.value = false;
   form.value = {
+    id: null,
     username: '',
     email: '',
     role: 'student',
     password: '',
-    is_active: true
-  }
-  showModal.value = true
-}
+    is_active: true,
+  };
+  errors.value = {};
+  userDialog.value = true;
+};
 
 const editUser = (user) => {
-  isEditing.value = true
-  form.value = { ...user, password: '' }
-  showModal.value = true
-}
+  isEditing.value = true;
+  form.value = { ...user, password: '' }; // Clear password for editing
+  errors.value = {};
+  userDialog.value = true;
+};
 
-const closeModal = () => {
-  showModal.value = false
-  form.value = {
-    username: '',
-    email: '',
-    role: 'student',
-    password: '',
-    is_active: true
-  }
-}
+const hideDialog = () => {
+  userDialog.value = false;
+};
 
 const handleSubmit = async () => {
+  errors.value = {};
   try {
     if (isEditing.value) {
-      await userStore.updateUser(form.value.id, form.value)
-      showToast('User updated successfully', 'success')
+      // Don't send empty password
+      const payload = { ...form.value };
+      if (!payload.password) {
+        delete payload.password;
+      }
+      await userStore.updateUser(form.value.id, payload);
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật người dùng thành công', life: 3000 });
     } else {
-      await userStore.createUser(form.value)
-      showToast('User created successfully', 'success')
+      await userStore.createUser(form.value);
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Tạo người dùng thành công', life: 3000 });
     }
-    closeModal()
-    await loadUsers()
+    hideDialog();
+    loadUsers();
   } catch (error) {
-    showToast(error.message || 'Error saving user', 'error')
-  }
-}
-
-const deleteUser = async (user) => {
-  if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
-    try {
-      await userStore.deleteUser(user.id)
-      showToast('User deleted successfully', 'success')
-      await loadUsers()
-    } catch (error) {
-      showToast('Error deleting user', 'error')
+    const errorData = error.response?.data;
+    if (errorData) {
+      errors.value = errorData;
     }
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: errorData?.detail || 'Lưu người dùng thất bại', life: 3000 });
   }
-}
+};
+
+const confirmDeleteUser = (user) => {
+  confirm.require({
+    message: `Bạn có chắc muốn xóa người dùng "${user.username}"?`,
+    header: 'Xác nhận xóa',
+    icon: 'pi pi-exclamation-triangle',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await userStore.deleteUser(user.id);
+        toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa người dùng thành công', life: 3000 });
+        loadUsers();
+      } catch (error) {
+        toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Xóa người dùng thất bại', life: 3000 });
+      }
+    },
+  });
+};
+
+const getRoleSeverity = (role) => {
+  if (role === 'admin') return 'danger';
+  if (role === 'teacher') return 'info';
+  return 'success';
+};
 </script>
 
 <style scoped>
-.users-view {
-  padding: 1rem;
+.card {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-.filters {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+.header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
 }
 
-.search-input,
-.role-select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-}
-
-.role-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-}
-
-.role-badge.admin {
-  background: #e74c3c;
-  color: white;
-}
-
-.role-badge.teacher {
-  background: #3498db;
-  color: white;
-}
-
-.role-badge.student {
-  background: #2ecc71;
-  color: white;
-}
-
-.status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-}
-
-.status-badge.active {
-  background: #2ecc71;
-  color: white;
-}
-
-.status-badge.inactive {
-  background: #95a5a6;
-  color: white;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-icon {
-  padding: 0.5rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #f8f9fa;
-}
-
-.btn-icon.danger {
-  color: #e74c3c;
-}
-
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 500px;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.modal-actions {
+.filter-bar {
   display: flex;
   justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
   gap: 1rem;
+}
+
+.filter-dropdown {
+  width: 200px;
+}
+
+.filter-search {
+  width: 250px;
+}
+
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td) {
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.p-datatable-sm :deep(.p-datatable-thead > tr > th) {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.field {
+  margin-bottom: 1.2rem;
+}
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
   margin-top: 1rem;
 }
 
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background: #95a5a6;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.access-denied {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+.access-denied h2 {
+  color: #dc3545;
 }
 </style> 

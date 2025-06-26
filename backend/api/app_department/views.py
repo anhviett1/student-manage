@@ -35,7 +35,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
             if search_term:
                 filters &= (
-                    Q(name__icontains=search_term)
+                    Q(department_name__icontains=search_term)
                     | Q(code__icontains=search_term)
                     | Q(description__icontains=search_term)
                 )
@@ -43,7 +43,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             if head_list:
                 filters &= Q(head__id__in=head_list)
 
-            queryset = Department.objects.filter(filters).distinct().order_by("name")
+            queryset = Department.objects.filter(filters).distinct().order_by("department_name")
 
         return queryset
 
@@ -67,7 +67,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             raise ValueError("Mã khoa phải là duy nhất.")
         return instance
 
-  
+@extend_schema(tags=["Departments"]) 
 class DepartmentExportAPIView(APIView):
     permission_classes = [IsAdmin]
     serializer_class = DepartmentSerializer

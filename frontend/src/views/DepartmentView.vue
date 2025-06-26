@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="canViewDepartments">
     <div class="card-header">
       <div>
         <Button @click="loadActiveDepartments" severity="primary" icon="pi pi-filter" label="Khoa Active" class="mr-2" />
@@ -9,7 +9,6 @@
       </div>
     </div>
     <DataTable
-      v-if="canViewDepartments"
       :value="departments"
       :paginator="true"
       :rows="10"
@@ -175,13 +174,16 @@
       </template>
     </Dialog>
   </div>
+  <div v-else class="access-denied">
+    <p>Bạn không có quyền truy cập trang này.</p>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import api, { endpoints } from '@/services/api'
 
 const toast = useToast()
 const { canViewDepartments, canEditDepartments, canDeleteDepartments, canImportDepartments, canExportDepartments } = usePermissions()
@@ -204,13 +206,15 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  await Promise.all([loadDepartments(), loadUsers()])
+  if (canViewDepartments.value) {
+    await Promise.all([loadDepartments(), loadUsers()])
+  }
 })
 
 const loadDepartments = async () => {
   try {
     loading.value = true
-    const response = await api.get('/departments')
+    const response = await api.get(endpoints.departments)
     departments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
@@ -221,7 +225,7 @@ const loadDepartments = async () => {
 
 const loadUsers = async () => {
   try {
-    const response = await api.get('/users', { params: { role: 'department_head,admin' } })
+    const response = await api.get(endpoints.users, { params: { role: 'department_head,admin' } })
     users.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách người dùng', life: 3000 })
@@ -231,7 +235,7 @@ const loadUsers = async () => {
 const loadActiveDepartments = async () => {
   try {
     loading.value = true
-    const response = await api.get('/departments', { params: { status: 'active' } })
+    const response = await api.get(endpoints.departments, { params: { status: 'active' } })
     departments.value = response.data
     toast.add({ severity: 'info', summary: 'Thành công', detail: 'Hiển thị các khoa đang hoạt động', life: 3000 })
   } catch (error) {
@@ -263,10 +267,10 @@ const confirmDelete = (data) => {
   deleteDepartmentDialog.value = true
 }
 
-const restoreDepartment = async () => {
+const restoreDepartment = async (data) => {
   try {
-    const response = await api.post(`/departments/${department.value.code}/restore/`)
-    departments.value = departments.value.map(d => d.code === department.value.code ? response.data : d)
+    const response = await api.post(`${endpoints.departments}${data.code}/restore/`)
+    departments.value = departments.value.map(d => d.code === data.code ? response.data : d)
     restoreDepartmentDialog.value = false
     department.value = {}
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục khoa thành công', life: 3000 })
@@ -287,11 +291,11 @@ const saveDepartment = async () => {
   try {
     const payload = { ...department.value }
     if (department.value.code) {
-      const updatedDepartment = (await api.patch(`/departments/${department.value.code}/`, payload)).data
+      const updatedDepartment = (await api.patch(`${endpoints.departments}${department.value.code}/`, payload)).data
       departments.value = departments.value.map(d => d.code === updatedDepartment.code ? updatedDepartment : d)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật khoa thành công', life: 3000 })
     } else {
-      const newDepartment = (await api.post('/departments/', payload)).data
+      const newDepartment = (await api.post(endpoints.departments, payload)).data
       departments.value.push(newDepartment)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm khoa thành công', life: 3000 })
     }
@@ -305,7 +309,7 @@ const saveDepartment = async () => {
 
 const deleteDepartment = async () => {
   try {
-    await api.delete(`/departments/${department.value.code}/`)
+    await api.delete(`${endpoints.departments}${department.value.code}/`)
     departments.value = departments.value.filter(d => d.code !== department.value.code)
     deleteDepartmentDialog.value = false
     department.value = {}
@@ -364,5 +368,11 @@ const getStatusSeverity = (status) => {
 }
 :deep(.p-datatable .p-datatable-tbody > tr:hover) {
   background: #f1f5f9;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

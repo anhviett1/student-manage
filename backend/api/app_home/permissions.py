@@ -4,6 +4,8 @@ from django.contrib.auth.models import Permission
 from functools import lru_cache
 from django.utils.translation import gettext_lazy as _
 
+ADMIN_ROLES = ['admin', 'superuser']
+
 # ================================
 # 1. Role-based permissions
 # ================================
@@ -13,6 +15,9 @@ class RolePermission(BasePermission):
     roles = []
 
     def has_permission(self, request, view):
+        # Superuser của Django có mọi quyền, không cần kiểm tra vai trò
+        if request.user.is_superuser:
+            return True
         return (
             request.user.is_authenticated and
             getattr(request.user, 'role', None) in self.roles
@@ -27,10 +32,10 @@ def make_role_permission_class(role_list, message):
     )
 
 # Cụ thể hóa
-IsAdmin = make_role_permission_class(['admin'], "Only admin users are allowed.")
+IsAdmin = make_role_permission_class(ADMIN_ROLES, "Only admin users are allowed.")
 IsTeacher = make_role_permission_class(['teacher'], "Only teacher users are allowed.")
 IsStudent = make_role_permission_class(['student'], "Only student users are allowed.")
-IsAdminOrTeacher = make_role_permission_class(['admin', 'teacher'], "Only admin or teacher users are allowed.")
+IsAdminOrTeacher = make_role_permission_class(ADMIN_ROLES + ['teacher'], "Only admin or teacher users are allowed.")
 
 # ================================
 # 2. Read-only for authenticated users, write for admin
@@ -42,7 +47,10 @@ class IsAdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return request.user.is_authenticated
-        return request.user.is_authenticated and getattr(request.user, 'role', '') == 'admin'
+        return request.user.is_authenticated and (
+            request.user.is_superuser or
+            getattr(request.user, 'role', '') in ADMIN_ROLES
+        )
 
 # ================================
 # 3. Object-level: is owner or admin
@@ -52,10 +60,11 @@ class IsOwnerOrAdmin(BasePermission):
     message = _("Only the owner or admin can access this object.")
 
     def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, 'role', '') in ADMIN_ROLES
         return request.user.is_authenticated and (
             obj == request.user or
             getattr(obj, 'user', None) == request.user or
-            getattr(request.user, 'role', '') == 'admin'
+            is_admin
         )
 
 # ================================

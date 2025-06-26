@@ -26,15 +26,17 @@ import 'primeicons/primeicons.css'
 
 const app = createApp(App)
 
+// Khởi tạo Pinia (state management)
 app.use(createPinia())
+// Khởi tạo router
 app.use(router)
+// Khởi tạo PrimeVue và các dịch vụ
 app.use(PrimeVue, { ripple: true })
 app.use(ToastService)
 app.use(ConfirmationService)
-
 app.directive('tooltip', Tooltip)
 
-// Register PrimeVue components
+// Đăng ký các component PrimeVue toàn cục
 app.component('Button', Button)
 app.component('InputText', InputText)
 app.component('Textarea', Textarea)
@@ -46,4 +48,5 @@ app.component('Column', Column)
 app.component('Dialog', Dialog)
 app.component('Toast', Toast)
 
+// Mount app
 app.mount('#app')

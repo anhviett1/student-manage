@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card" v-if="isStudent || isAdminOrTeacher">
     <Toast />
     <TabView>
       <!-- Tab for Students -->
@@ -429,29 +429,28 @@
       </TabPanel>
     </TabView>
   </div>
+  <div v-else class="access-denied">
+    <p>Bạn không có quyền truy cập trang này.</p>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useToast } from 'primevue/usetoast'
+import { ref, onMounted, reactive, computed } from 'vue'
+import { useToast, useConfirm } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import { useUserStore } from '@/stores/user'
+import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
+import TabPanel from 'primevue/tabpanel'
+import Tag from 'primevue/tag'
 
 const toast = useToast()
-const {
-  isAdmin,
-  isTeacher,
-  canViewStudents,
-  canEditStudents,
-  canDeleteStudents,
-  canExportData
-} = usePermissions()
+const confirm = useConfirm()
+const permissions = usePermissions()
+const userStore = useUserStore()
 
-const isStudent = ref(false)
-const isAdminOrTeacher = ref(false)
-const student = ref({})
 const students = ref([])
+const student = ref({})
 const departments = ref([])
 const loading = ref(false)
 const isEditing = ref(false)
@@ -461,17 +460,27 @@ const changeStatusDialog = ref(false)
 const errors = ref({})
 const newStatus = ref('')
 const submitted = ref(false)
-const filters = ref({
-  status: null,
-  department: null,
+const filters = reactive({
   global: '',
+  status: 'active',
+  department: null,
 })
 
+const { isStudent, isAdminOrTeacher } = permissions
+const canViewStudents = computed(() => permissions.canViewStudents.value)
+const canEditStudents = computed(
+  () => permissions.isAdmin.value || permissions.hasModelPermission('change_student', 'app_student'),
+)
+const canDeleteStudents = computed(
+  () => permissions.isAdmin.value || permissions.hasModelPermission('delete_student', 'app_student'),
+)
+const canExportData = computed(() => permissions.isAdmin.value)
 
 const genderOptions = [
   { label: 'Nam', value: 'M' },
   { label: 'Nữ', value: 'F' },
   { label: 'Khác', value: 'O' },
+  { label: 'Đình chỉ', value: 'suspended' },
 ]
 
 const statusOptions = [
@@ -483,55 +492,52 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  const user = await fetchUserRole()
-  isStudent.value = user.role === 'student'
-  isAdminOrTeacher.value = user.role === 'admin' || user.role === 'teacher'
-
-  await loadDepartments()
-  if (isStudent.value) await loadStudentProfile()
-  if (isAdminOrTeacher.value) await loadStudents()
-})
-
-const fetchUserRole = async () => {
-  try {
-    const response = await api.get('/api/v1/auth/user-role/')
-    return response.data
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xác định vai trò người dùng', life: 3000 })
-    return { role: 'student' }
+  if (isStudent.value) {
+    await loadCurrentStudentProfile()
   }
-}
+  if (isAdminOrTeacher.value) {
+    await loadStudents()
+    await loadDepartments()
+  }
+})
 
 const loadDepartments = async () => {
   try {
-    const response = await api.get('/api/v1/departments/')
+    const response = await api.get(endpoints.departments)
     departments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
   }
 }
 
-const loadStudentProfile = async () => {
+const loadCurrentStudentProfile = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    const response = await api.get('/api/v1/students/me/')
-    student.value = response.data.data
+    if (!userStore.currentUser) {
+      await userStore.getCurrentUser()
+    }
+    student.value = userStore.currentUser?.student_profile || {}
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải thông tin cá nhân', life: 3000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Không thể tải thông tin cá nhân.',
+      life: 3000,
+    })
   } finally {
     loading.value = false
   }
 }
 
 const loadStudents = async () => {
+  if (!canViewStudents.value) return
   try {
     loading.value = true
-    let url = '/api/v1/students/'
     const params = {}
-    if (filters.value.status) params.status = filters.value.status
-    if (filters.value.department) params.department_id = filters.value.department
-    if (filters.value.global) params.search = filters.value.global
-    const response = await api.get(url, { params })
+    if (filters.status) params.status = filters.status
+    if (filters.department) params.department_id = filters.department
+    if (filters.global) params.search = filters.global
+    const response = await api.get(endpoints.students, { params })
     students.value = response.data.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách sinh viên', life: 3000 })
@@ -551,7 +557,7 @@ const openEdit = () => {
 
 const cancelEdit = () => {
   isEditing.value = false
-  loadStudentProfile()
+  loadCurrentStudentProfile()
 }
 
 const openNew = () => {
@@ -610,7 +616,7 @@ const saveStudent = async () => {
 
     let response
     if (student.value.id) {
-      response = await api.put(`/api/v1/students/${student.value.id}/`, formData, {
+      response = await api.put(`${endpoints.students}${student.value.id}/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       if (isStudent.value) {
@@ -618,7 +624,7 @@ const saveStudent = async () => {
         student.value = response.data.data
       }
     } else {
-      response = await api.post('/api/v1/students/', formData, {
+      response = await api.post(endpoints.students, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       studentDialog.value = false
@@ -642,7 +648,7 @@ const confirmDelete = (data) => {
 
 const deleteStudent = async () => {
   try {
-    await api.delete(`/api/v1/students/${student.value.id}/`)
+    await api.delete(`${endpoints.students}${student.value.id}/`)
     deleteDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa sinh viên thành công', life: 3000 })
     await loadStudents()
@@ -653,7 +659,7 @@ const deleteStudent = async () => {
 
 const restoreStudent = async (data) => {
   try {
-    const response = await api.post(`/api/v1/students/${data.id}/restore/`)
+    const response = await api.post(`${endpoints.students}${data.id}/restore/`)
     toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 })
     await loadStudents()
   } catch (error) {
@@ -673,7 +679,7 @@ const changeStatus = async () => {
   if (!newStatus.value) return
 
   try {
-    const response = await api.post(`/api/v1/students/${student.value.id}/change_status/`, { status: newStatus.value })
+    const response = await api.post(`${endpoints.students}${student.value.id}/change-status/`, { status: newStatus.value })
     changeStatusDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 })
     await loadStudents()
@@ -684,7 +690,7 @@ const changeStatus = async () => {
 
 const exportStudents = async () => {
   try {
-    const response = await api.get('/api/v1/students/export/', { responseType: 'blob' })
+    const response = await api.get(`${endpoints.students}export/`, { responseType: 'blob' })
     const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     saveAs(blob, `students_${new Date().toISOString().split('T')[0]}.xlsx`)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xuất danh sách sinh viên thành công', life: 3000 })
@@ -845,5 +851,11 @@ const getStatusSeverity = (status) => {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
   <div class="card">
     <Toast />
-    <TabView>
+    <TabView v-if="canViewEnrollments || isStudent">
       <!-- Tab for Students -->
       <TabPanel header="Đăng Ký Của Tôi" v-if="isStudent">
         <div class="filter-bar">
           <div class="filter-group">
-            <label for="semesterFilter" @click="navigateToHome">Học Kỳ</label>
+            <label for="semesterFilter">Học Kỳ</label>
             <Dropdown
               id="semesterFilter"
               v-model="selectedSemester"
@@ -26,7 +26,6 @@
           />
         </div>
         <DataTable
-          v-if="canViewOwnEnrollments"
           :value="myEnrollments"
           :loading="loading"
           dataKey="id"
@@ -120,7 +119,6 @@
         </div>
 
         <DataTable
-          v-if="canViewEnrollments"
           :value="enrollments"
           :loading="loading"
           dataKey="id"
@@ -359,26 +357,26 @@
         </Dialog>
       </TabPanel>
     </TabView>
+    <div v-else class="access-denied">
+      <p>Bạn không có quyền truy cập trang này.</p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api' 
+import api, { endpoints } from '@/services/api'
 
 const toast = useToast()
 const {
-  isAdmin,
-  isTeacher,
   isStudent,
   isAdminOrTeacher,
   canViewEnrollments,
   canEditEnrollments,
   canDeleteEnrollments,
   canExportData,
-  canViewOwnEnrollments
 } = usePermissions()
 
 const myEnrollments = ref([])
@@ -403,10 +401,6 @@ const filters = ref({
   global: ''
 })
 
-const navigateToHome = () => {
-  router.push('/')
-}
-
 const statusOptions = [
   { label: 'Chờ xử lý', value: 'pending' },
   { label: 'Đã duyệt', value: 'approved' },
@@ -414,25 +408,25 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  const user = await fetchUserRole()
-  isStudent.value = user.role === 'student'
-  isAdminOrTeacher.value = user.role === 'admin' || user.role === 'teacher'
+  if (canViewEnrollments.value || isStudent.value) {
+    await loadSemesters()
+    await loadSubjects()
+    await loadClasses()
+  }
 
-  await loadSemesters()
-  await loadStudents()
-  await loadSubjects()
-  await loadClasses()
-  if (isStudent.value) await loadMyEnrollments()
-  if (isAdminOrTeacher.value) await loadEnrollments()
+  if (isAdminOrTeacher.value) {
+    await loadStudents()
+    await loadEnrollments()
+  }
+
+  if (isStudent.value) {
+    await loadMyEnrollments()
+  }
 })
-
-const fetchUserRole = async () => {
-  return { role: 'admin' } // Thay bằng API thực tế
-}
 
 const loadSemesters = async () => {
   try {
-    const response = await api.get('/api/v1/semesters/active/')
+    const response = await api.get(endpoints.semesters, { params: { active: true } })
     semesters.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải học kỳ', life: 3000 })
@@ -441,7 +435,7 @@ const loadSemesters = async () => {
 
 const loadStudents = async () => {
   try {
-    const response = await api.get('/api/v1/students/')
+    const response = await api.get(endpoints.students)
     students.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách sinh viên', life: 3000 })
@@ -450,7 +444,7 @@ const loadStudents = async () => {
 
 const loadSubjects = async () => {
   try {
-    const response = await api.get('/api/v1/subjects/')
+    const response = await api.get(endpoints.subjects)
     subjects.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách môn học', life: 3000 })
@@ -459,7 +453,7 @@ const loadSubjects = async () => {
 
 const loadClasses = async () => {
   try {
-    const response = await api.get('/api/v1/classes/')
+    const response = await api.get(endpoints.classes)
     classes.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách lớp', life: 3000 })
@@ -469,11 +463,11 @@ const loadClasses = async () => {
 const loadMyEnrollments = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/enrollments/'
     const params = {}
     if (selectedSemester.value) params.semester__semester_id = selectedSemester.value
     if (globalFilter.value) params.search = globalFilter.value
-    const response = await api.get(url, { params })
+    // Backend sẽ tự lọc dựa trên token
+    const response = await api.get(endpoints.enrollments, { params })
     myEnrollments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải đăng ký', life: 3000 })
@@ -485,12 +479,11 @@ const loadMyEnrollments = async () => {
 const loadEnrollments = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/enrollments/'
     const params = {}
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.semester) params.semester__semester_id = filters.value.semester
     if (filters.value.global) params.search = filters.value.global
-    const response = await api.get(url, { params })
+    const response = await api.get(endpoints.enrollments, { params })
     enrollments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải đăng ký', life: 3000 })
@@ -564,11 +557,11 @@ const saveEnrollment = async () => {
       enrollment_date: enrollment.value.enrollment_date.toISOString().split('T')[0]
     }
     if (enrollment.value.id) {
-      const response = await api.patch(`/api/v1/enrollments/${enrollment.value.id}/`, payload)
+      const response = await api.patch(`${endpoints.enrollments}${enrollment.value.id}/`, payload)
       enrollments.value = enrollments.value.map(e => e.id === enrollment.value.id ? response.data : e)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật đăng ký thành công', life: 3000 })
     } else {
-      const response = await api.post('/api/v1/enrollments/', payload)
+      const response = await api.post(endpoints.enrollments, payload)
       enrollments.value.push(response.data)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm đăng ký thành công', life: 3000 })
     }
@@ -581,7 +574,7 @@ const saveEnrollment = async () => {
 
 const deleteEnrollment = async () => {
   try {
-    await api.delete(`/api/v1/enrollments/${enrollment.value.id}/`)
+    await api.delete(`${endpoints.enrollments}${enrollment.value.id}/`)
     enrollments.value = enrollments.value.filter(e => e.id !== enrollment.value.id)
     deleteDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa đăng ký thành công', life: 3000 })
@@ -592,7 +585,7 @@ const deleteEnrollment = async () => {
 
 const restoreEnrollment = async (data) => {
   try {
-    const response = await api.post(`/api/v1/enrollments/${data.id}/restore/`)
+    const response = await api.post(`${endpoints.enrollments}${data.id}/restore/`)
     enrollments.value = enrollments.value.map(e => e.id === data.id ? response.data.data : e)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục đăng ký thành công', life: 3000 })
   } catch (error) {
@@ -605,7 +598,7 @@ const changeStatus = async () => {
   if (!newStatus.value) return
 
   try {
-    const response = await api.post(`/api/v1/enrollments/${enrollment.value.id}/change-status/`, { status: newStatus.value })
+    const response = await api.post(`${endpoints.enrollments}${enrollment.value.id}/change-status/`, { status: newStatus.value })
     enrollments.value = enrollments.value.map(e => e.id === enrollment.value.id ? response.data.data : e)
     changeStatusDialog.value = false
     newStatus.value = ''
@@ -617,7 +610,7 @@ const changeStatus = async () => {
 
 const exportEnrollments = async () => {
   try {
-    const response = await api.get('/api/v1/enrollments/export/', { responseType: 'blob' })
+    const response = await api.get(`${endpoints.enrollments}export/`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
@@ -742,5 +735,11 @@ const getStatusSeverity = (status) => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

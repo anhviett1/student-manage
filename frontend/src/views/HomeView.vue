@@ -1,110 +1,90 @@
 <template>
-  <BaseLayout>
-    <div class="home card">
-      <div class="header">
-        <h1>Chào Mừng Đến Với Hệ Thống Quản Lý Sinh Viên</h1>
-        <p class="subtitle">Quản lý thông tin sinh viên, giảng viên và học tập một cách hiệu quả</p>
-      </div>
-      <div class="content">
-        <div class="welcome-section">
-          <img src="@/assets/images/login.png" alt="Welcome Illustration" class="welcome-image" />
-          <div class="welcome-text">
-            <h3>Bắt Đầu Ngay</h3>
-            <p>Sử dụng menu điều hướng bên trái để truy cập các chức năng như quản lý sinh viên, giảng viên, môn học, điểm số và nhiều hơn nữa.</p>
-            <Button
-              label="Khám Phá Chức Năng"
-              icon="pi pi-arrow-right"
-              severity="primary"
-              @click="navigateToStudents"
-              class="explore-button"
-            />
-          </div>
+  <div class="home card">
+    <div class="header">
+      <h1>Chào Mừng Đến Với Hệ Thống Quản Lý Sinh Viên</h1>
+      <p class="subtitle">Quản lý thông tin sinh viên, giảng viên và học tập một cách hiệu quả</p>
+    </div>
+    <div class="content">
+      <div class="welcome-section">
+        <img src="@/assets/images/login.png" alt="Welcome Illustration" class="welcome-image" />
+        <div class="welcome-text">
+          <h3>Bắt Đầu Ngay</h3>
+          <p>
+            Sử dụng menu điều hướng bên trái để truy cập các chức năng như quản lý sinh viên, giảng
+            viên, môn học, điểm số và nhiều hơn nữa.
+          </p>
+          <Button
+            label="Khám Phá Chức Năng"
+            icon="pi pi-arrow-right"
+            severity="primary"
+            @click="navigateTo('/students')"
+            class="explore-button"
+          />
         </div>
-        <div class="overview-section">
-          <h3>Tổng Quan Hệ Thống</h3>
-          <div class="overview-cards">
-            <div class="card-item">
-              <i class="pi pi-users icon" />
-              <h4>Quản Lý Sinh Viên</h4>
-              <p>Theo dõi thông tin, điểm số và trạng thái của sinh viên.</p>
-              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToStudents" />
-            </div>
-            <div class="card-item">
-              <i class="pi pi-briefcase icon" />
-              <h4>Quản Lý Giảng Viên</h4>
-              <p>Quản lý thông tin và lịch giảng dạy của giảng viên.</p>
-              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToTeachers" />
-            </div>
-            <div class="card-item">
-              <i class="pi pi-book icon" />
-              <h4>Quản Lý Môn Học</h4>
-              <p>Tổ chức và theo dõi các môn học trong hệ thống.</p>
-              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToSubjects" />
-            </div>
-            <div class="card-item">
-               <i class="pi pi-book icon" />
-               <h4>Quản Lý Học Kì</h4>
-               <p>Tổ chức và theo dõi các học kì trong hệ thống.</p>
-               <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToSemesters" />
-             </div>
-             <div class="card-item">
-               <i class="pi pi-book icon" />
-               <h4>Đăng kí</h4>
-               <p>Theo dõi đăng kí trong hệ thống.</p>
-               <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToEnrollments" />
-             </div>
-             <div class="card-item">
-               <i class="pi pi-chart-bar icon" />
-               <h4>Quản lí điểm</h4>
-               <p>Theo dõi, báo cáo và dữ liệu học tập.</p>
-               <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToScores" />
-            </div>
-            <div class="card-item">
-              <i class="pi pi-chart-bar icon" />
-              <h4>Django Admin</h4>
-              <p>Trang quản trị Django.</p>
-              <Button label="Xem Chi Tiết" icon="pi pi-arrow-right" class="p-button-sm" @click="navigateToAdmin" />
-            </div>
+      </div>
+      <div class="overview-section">
+        <h3>Tổng Quan Hệ Thống</h3>
+        <div class="overview-cards">
+          <div class="card-item" @click="navigateTo('/students')">
+            <i class="pi pi-users icon" />
+            <h4>Quản Lý Sinh Viên</h4>
+            <p>Theo dõi thông tin, điểm số và trạng thái của sinh viên.</p>
+          </div>
+          <div class="card-item" @click="navigateTo('/teachers')">
+            <i class="pi pi-briefcase icon" />
+            <h4>Quản Lý Giảng Viên</h4>
+            <p>Quản lý thông tin và lịch giảng dạy của giảng viên.</p>
+          </div>
+          <div class="card-item" @click="navigateTo('/subjects')">
+            <i class="pi pi-book icon" />
+            <h4>Quản Lý Môn Học</h4>
+            <p>Tổ chức và theo dõi các môn học trong hệ thống.</p>
+          </div>
+          <div class="card-item" @click="navigateTo('/semesters')">
+            <i class="pi pi-book icon" />
+            <h4>Quản Lý Học Kì</h4>
+            <p>Tổ chức và theo dõi các học kì trong hệ thống.</p>
+          </div>
+          <div class="card-item" @click="navigateTo('/enrollments')">
+            <i class="pi pi-book icon" />
+            <h4>Đăng kí</h4>
+            <p>Theo dõi đăng kí trong hệ thống.</p>
+          </div>
+          <div class="card-item" @click="navigateTo('/scores')">
+            <i class="pi pi-chart-bar icon" />
+            <h4>Quản lí điểm</h4>
+            <p>Theo dõi, báo cáo và dữ liệu học tập.</p>
+          </div>
+          <div class="card-item" v-if="isAdmin" @click="navigateTo('/users')">
+            <i class="pi pi-users icon" />
+            <h4>Quản lý người dùng</h4>
+            <p>Quản lý tài khoản và vai trò người dùng.</p>
+          </div>
+          <div class="card-item" @click="navigateTo('/admin')">
+            <i class="pi pi-chart-bar icon" />
+            <h4>Django Admin</h4>
+            <p>Trang quản trị Django.</p>
           </div>
         </div>
       </div>
     </div>
-  </BaseLayout>
+  </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-import BaseLayout from '@/components/BaseLayout.vue'
 import Button from 'primevue/button'
+import { usePermissions } from '@/composables/usePermissions'
 
 const router = useRouter()
+const { isAdmin } = usePermissions()
 
-const navigateToStudents = () => {
-  router.push('/students')
-}
-
-const navigateToTeachers = () => {
-  router.push('/teachers')
-}
-
-const navigateToSubjects = () => {
-  router.push('/subjects')
-}
-
-const navigateToScores = () => {
-  router.push('/scores')
-}
-
-const navigateToSemesters = () => {
-  router.push('/semesters')
-}
-
-const navigateToEnrollments = () => {
-  router.push('/enrollments')
-}
-
-const navigateToAdmin = () => {
-  router.push('/admin')
+const navigateTo = (path) => {
+  if (path === '/admin') {
+    window.open('http://127.0.0.1:8000/admin/', '_blank')
+    return
+  }
+  router.push(path)
 }
 </script>
 
@@ -190,7 +170,7 @@ const navigateToAdmin = () => {
 
 .overview-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.5rem;
 }
 
@@ -199,12 +179,15 @@ const navigateToAdmin = () => {
   background: #f9fafb;
   border-radius: 8px;
   text-align: center;
-  transition: transform 0.2s;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
 }
 
 .card-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
 }
 
 .card-item .icon {

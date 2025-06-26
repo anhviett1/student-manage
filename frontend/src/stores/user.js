@@ -12,7 +12,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoading = ref(false)
   const errorMessage = ref(null)
 
-  const isAdmin = computed(() => currentUser.value?.role === 'admin')
+  const isAdmin = computed(() => ['admin', 'superuser'].includes(currentUser.value?.role))
   const isTeacher = computed(() => currentUser.value?.role === 'teacher')
   const isStudent = computed(() => currentUser.value?.role === 'student')
 

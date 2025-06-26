@@ -75,19 +75,13 @@ const handleSubmit = async () => {
   const isFormCorrect = await v$.value.$validate()
   if (!isFormCorrect) return
 
+  isLoading.value = true
   try {
-    isLoading.value = true
     await authStore.login(form)
-    form.password = '' 
     const redirectPath = route.query.redirect || '/'
     router.push(redirectPath)
   } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Lỗi',
-      detail: error.response?.data?.detail || 'Thông tin đăng nhập không hợp lệ',
-      life: 3000,
-    })
+    // Toast is already handled in the auth store
   } finally {
     isLoading.value = false
   }

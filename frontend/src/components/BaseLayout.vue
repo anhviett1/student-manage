@@ -22,6 +22,7 @@
         <PanelMenu :model="menuItems" class="menu" v-model:expandedKeys="expandedKeys">
           <template #item="{ item }">
             <router-link
+              v-if="item.visible"
               :to="item.to"
               class="menu-item"
               :class="{ 'active': $route.path === item.to }"
@@ -67,7 +68,7 @@
         </div>
       </div>
       <div class="content">
-        <router-view></router-view> 
+        <router-view></router-view>
       </div>
     </main>
   </div>
@@ -78,14 +79,13 @@ import { ref, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
 import PanelMenu from 'primevue/panelmenu'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
 import logo from '@/assets/images/logo_min.png'
 
 const authStore = useAuthStore()
-console.log('authStore:', authStore)
-console.log('authStore.isAuthenticated:', authStore.isAuthenticated)
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
@@ -93,50 +93,84 @@ const expandedKeys = ref({})
 const isSidebarCollapsed = ref(false)
 const isMobile = ref(window.innerWidth <= 768)
 
-const menuItems = computed(() => [
-  {
-    label: 'Sinh Viên',
-    icon: 'pi pi-users',
-    to: '/students',
-    visible: authStore.isAuthenticated,
-  },
-  {
-    label: 'Giảng Viên',
-    icon: 'pi pi-briefcase',
-    to: '/teachers',
-    visible: authStore.isAuthenticated,
-  },
-  {
-    label: 'Lớp Học',
-    icon: 'pi pi-building',
-    to: '/classes',
-    visible: authStore.isAuthenticated,
-  },
-  {
-    label: 'Môn Học',
-    icon: 'pi pi-book',
-    to: '/subjects',
-    visible: authStore.isAuthenticated,
-  },
-  {
-    label: 'Ghi Danh',
-    icon: 'pi pi-check-square',
-    to: '/enrollments',
-    visible: authStore.isAuthenticated,
-  },
-  {
-    label: 'Học Kỳ',
-    icon: 'pi pi-calendar',
-    to: '/semesters',
-    visible: authStore.isAuthenticated,
-  },
-  {
-    label: 'Điểm Số',
-    icon: 'pi pi-chart-bar',
-    to: '/scores',
-    visible: authStore.isAuthenticated,
-  },
-].filter(item => item.visible))
+const {
+  canViewStudents,
+  canViewTeachers,
+  canViewClasses,
+  canViewSubjects,
+  canViewEnrollments,
+  canViewSemesters,
+  canViewScores,
+  canViewSchedules,
+  isStudent,
+  isTeacher,
+  isAdmin,
+} = usePermissions()
+
+const menuItems = computed(() =>
+  [
+    {
+      label: 'Trang Chủ',
+      icon: 'pi pi-home',
+      to: '/home',
+      visible: true,
+    },
+    {
+      label: 'Sinh Viên',
+      icon: 'pi pi-users',
+      to: '/students',
+      visible: canViewStudents.value,
+    },
+    {
+      label: 'Giảng Viên',
+      icon: 'pi pi-briefcase',
+      to: '/teachers',
+      visible: canViewTeachers.value,
+    },
+    {
+      label: 'Lớp Học',
+      icon: 'pi pi-building',
+      to: '/classes',
+      visible: canViewClasses.value,
+    },
+    {
+      label: 'Môn Học',
+      icon: 'pi pi-book',
+      to: '/subjects',
+      visible: canViewSubjects.value,
+    },
+    {
+      label: 'Ghi Danh',
+      icon: 'pi pi-check-square',
+      to: '/enrollments',
+      visible: canViewEnrollments.value,
+    },
+    {
+      label: 'Học Kỳ',
+      icon: 'pi pi-calendar',
+      to: '/semesters',
+      visible: canViewSemesters.value,
+    },
+    {
+      label: 'Điểm Số',
+      icon: 'pi pi-chart-bar',
+      to: '/scores',
+      visible: canViewScores.value || isStudent.value,
+    },
+    {
+      label: 'Lịch Học',
+      icon: 'pi pi-calendar-alt',
+      to: '/schedules',
+      visible: canViewSchedules.value,
+    },
+    {
+      label: 'Quản lý người dùng',
+      icon: 'pi pi-cog',
+      to: '/users',
+      visible: isAdmin.value,
+    },
+  ].filter((item) => item.visible),
+)
 
 const currentRouteName = computed(() => {
   return route.meta.title || 'Trang Chủ'
@@ -148,7 +182,12 @@ const handleLogout = async () => {
 }
 
 const toggleNotifications = () => {
-  toast.add({ severity: 'info', summary: 'Thông Báo', detail: 'Chức năng thông báo đang được phát triển', life: 3000 })
+  toast.add({
+    severity: 'info',
+    summary: 'Thông Báo',
+    detail: 'Chức năng thông báo đang được phát triển',
+    life: 3000,
+  })
 }
 
 const toggleSidebar = () => {
@@ -190,6 +229,8 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   transition: width 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-collapsed {
@@ -234,6 +275,7 @@ onUnmounted(() => {
 .sidebar-menu {
   flex: 1;
   padding: 1rem 0;
+  overflow-y: auto;
 }
 
 .menu {
@@ -241,13 +283,27 @@ onUnmounted(() => {
   border: none;
 }
 
+.menu :deep(.p-panelmenu-header-action) {
+  background: transparent !important;
+  color: #d1d5db !important;
+}
+.menu :deep(.p-panelmenu-header-action:hover) {
+  background: #34495e !important;
+  color: #fff !important;
+}
+.menu :deep(.p-menuitem-icon),
+.menu :deep(.p-menuitem-text) {
+  color: #d1d5db !important;
+}
+
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
   color: #d1d5db;
   text-decoration: none;
   transition: background-color 0.2s, color 0.2s;
+  border-radius: 6px;
 }
 
 .menu-item:hover {

@@ -1,77 +1,79 @@
 <template>
-  <div class="change-password-container">
-    <Toast />
-    <div class="card">
-      <div class="card-header">
-        <h2>Đổi Mật Khẩu</h2>
+  <BaseLayout>
+    <div class="change-password-container">
+      <Toast />
+      <div class="card">
+        <div class="card-header">
+          <h2>Đổi Mật Khẩu</h2>
+        </div>
+        <form @submit.prevent="changePassword" class="p-fluid">
+          <div class="field">
+            <label for="current_password">Mật Khẩu Hiện Tại</label>
+            <Password
+              id="current_password"
+              v-model="formData.current_password"
+              :feedback="false"
+              toggleMask
+              :class="{ 'p-invalid': v$.current_password.$error }"
+              @input="v$.current_password.$touch()"
+            />
+            <small class="p-error" v-if="v$.current_password.required.$invalid && v$.current_password.$dirty">
+              Vui lòng nhập mật khẩu hiện tại.
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="new_password">Mật Khẩu Mới</label>
+            <Password
+              id="new_password"
+              v-model="formData.new_password"
+              :feedback="true"
+              toggleMask
+              :class="{ 'p-invalid': v$.new_password.$error }"
+              @input="v$.new_password.$touch()"
+            />
+            <small class="p-error" v-if="v$.new_password.required.$invalid && v$.new_password.$dirty">
+              Vui lòng nhập mật khẩu mới.
+            </small>
+            <small class="p-error" v-if="v$.new_password.minLength.$invalid && v$.new_password.$dirty">
+              Mật khẩu mới phải có ít nhất 8 ký tự.
+            </small>
+            <small class="p-error" v-if="v$.new_password.strongPassword.$invalid && v$.new_password.$dirty">
+              Mật khẩu phải chứa chữ hoa, chữ thường, số và ký tự đặc biệt.
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="confirm_password">Xác Nhận Mật Khẩu Mới</label>
+            <Password
+              id="confirm_password"
+              v-model="formData.confirm_password"
+              :feedback="false"
+              toggleMask
+              :class="{ 'p-invalid': v$.confirm_password.$error }"
+              @input="v$.confirm_password.$touch()"
+            />
+            <small class="p-error" v-if="v$.confirm_password.required.$invalid && v$.confirm_password.$dirty">
+              Vui lòng xác nhận mật khẩu mới.
+            </small>
+            <small class="p-error" v-if="v$.confirm_password.sameAsPassword.$invalid && v$.confirm_password.$dirty">
+              Mật khẩu xác nhận không khớp.
+            </small>
+          </div>
+
+          <div class="form-actions">
+            <Button
+              type="submit"
+              label="Đổi Mật Khẩu"
+              icon="pi pi-check"
+              :loading="isLoading"
+              class="submit-button"
+            />
+          </div>
+        </form>
       </div>
-      <form @submit.prevent="changePassword" class="p-fluid">
-        <div class="field">
-          <label for="current_password">Mật Khẩu Hiện Tại</label>
-          <Password
-            id="current_password"
-            v-model="formData.current_password"
-            :feedback="false"
-            toggleMask
-            :class="{ 'p-invalid': v$.current_password.$error }"
-            @input="v$.current_password.$touch()"
-          />
-          <small class="p-error" v-if="v$.current_password.required.$invalid && v$.current_password.$dirty">
-            Vui lòng nhập mật khẩu hiện tại.
-          </small>
-        </div>
-
-        <div class="field">
-          <label for="new_password">Mật Khẩu Mới</label>
-          <Password
-            id="new_password"
-            v-model="formData.new_password"
-            :feedback="true"
-            toggleMask
-            :class="{ 'p-invalid': v$.new_password.$error }"
-            @input="v$.new_password.$touch()"
-          />
-          <small class="p-error" v-if="v$.new_password.required.$invalid && v$.new_password.$dirty">
-            Vui lòng nhập mật khẩu mới.
-          </small>
-          <small class="p-error" v-if="v$.new_password.minLength.$invalid && v$.new_password.$dirty">
-            Mật khẩu mới phải có ít nhất 8 ký tự.
-          </small>
-          <small class="p-error" v-if="v$.new_password.strongPassword.$invalid && v$.new_password.$dirty">
-            Mật khẩu phải chứa chữ hoa, chữ thường, số và ký tự đặc biệt.
-          </small>
-        </div>
-
-        <div class="field">
-          <label for="confirm_password">Xác Nhận Mật Khẩu Mới</label>
-          <Password
-            id="confirm_password"
-            v-model="formData.confirm_password"
-            :feedback="false"
-            toggleMask
-            :class="{ 'p-invalid': v$.confirm_password.$error }"
-            @input="v$.confirm_password.$touch()"
-          />
-          <small class="p-error" v-if="v$.confirm_password.required.$invalid && v$.confirm_password.$dirty">
-            Vui lòng xác nhận mật khẩu mới.
-          </small>
-          <small class="p-error" v-if="v$.confirm_password.sameAsPassword.$invalid && v$.confirm_password.$dirty">
-            Mật khẩu xác nhận không khớp.
-          </small>
-        </div>
-
-        <div class="form-actions">
-          <Button
-            type="submit"
-            label="Đổi Mật Khẩu"
-            icon="pi pi-check"
-            :loading="isLoading"
-            class="submit-button"
-          />
-        </div>
-      </form>
     </div>
-  </div>
+  </BaseLayout>
 </template>
 
 <script setup>
@@ -83,6 +85,7 @@ import { required, minLength, helpers } from '@vuelidate/validators'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
+import BaseLayout from '@/components/BaseLayout.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -152,14 +155,10 @@ const changePassword = async () => {
   }
 }
 
-onMounted(async () => {
+onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/login')
-    return
   }
-  
-  // Load dữ liệu dashboard
-  await loadDashboardData()
 })
 </script>
 
@@ -168,8 +167,7 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: #f4f6f9;
+  width: 100%;
   padding: 1rem;
 }
 

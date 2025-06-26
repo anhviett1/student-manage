@@ -4,35 +4,16 @@
       <Toast />
       <div class="card-header">
         <h2>Thông Tin Cá Nhân</h2>
-        <div class="action-buttons">
-          <Button
-            v-if="isStudent && canEditStudentProfile"
-            icon="pi pi-pencil"
-            label="Chỉnh sửa"
-            @click="openEdit"
-          />
-          <Button
-            v-if="isTeacher && canEditTeacherProfile"
-            icon="pi pi-pencil"
-            label="Chỉnh sửa"
-            @click="openEdit"
-          />
-        </div>
       </div>
       <div class="grid">
         <!-- Thông Tin Cơ Bản -->
         <div class="col-6">
-          <div class="card">
+          <div class="card-inner">
             <h3>Thông Tin Cơ Bản</h3>
             <form @submit.prevent="updateProfile" class="p-fluid">
               <div class="field">
                 <label for="username">Tên Đăng Nhập</label>
-                <InputText
-                  id="username"
-                  v-model="v$.username.$model"
-                  disabled
-                  class="p-inputtext-lg"
-                />
+                <InputText id="username" v-model="formData.username" disabled />
               </div>
               <div class="field">
                 <label for="email">Email</label>
@@ -41,7 +22,6 @@
                   v-model="v$.email.$model"
                   :class="{ 'p-invalid': v$.email.$error }"
                   @input="v$.email.$touch()"
-                  class="p-inputtext-lg"
                 />
                 <small class="p-error" v-if="v$.email.required.$invalid && v$.email.$dirty">
                   Vui lòng nhập email.
@@ -57,7 +37,6 @@
                   v-model="v$.full_name.$model"
                   :class="{ 'p-invalid': v$.full_name.$error }"
                   @input="v$.full_name.$touch()"
-                  class="p-inputtext-lg"
                 />
                 <small class="p-error" v-if="v$.full_name.required.$invalid && v$.full_name.$dirty">
                   Vui lòng nhập họ và tên.
@@ -70,32 +49,14 @@
                   v-model="v$.phone.$model"
                   :class="{ 'p-invalid': v$.phone.$error }"
                   @input="v$.phone.$touch()"
-                  class="p-inputtext-lg"
                 />
-                <small class="p-error" v-if="v$.phone.required.$invalid && v$.phone.$dirty">
-                  Vui lòng nhập số điện thoại.
-                </small>
-                <small class="p-error" v-if="v$.phone.phone.$invalid && v$.phone.$dirty">
-                  Số điện thoại không hợp lệ.
+                 <small class="p-error" v-if="v$.phone.phone.$invalid && v$.phone.$dirty">
+                  Số điện thoại không hợp lệ (yêu cầu 10 số).
                 </small>
               </div>
               <div class="field">
                 <label for="role">Vai Trò</label>
-                <InputText
-                  id="role"
-                  v-model="v$.role.$model"
-                  disabled
-                  class="p-inputtext-lg"
-                />
-              </div>
-              <div class="form-actions">
-                <Button
-                  type="submit"
-                  label="Cập Nhật"
-                  icon="pi pi-check"
-                  :loading="isLoading"
-                  class="submit-button"
-                />
+                <InputText id="role" v-model="formData.role" disabled />
               </div>
             </form>
           </div>
@@ -103,26 +64,15 @@
 
         <!-- Thông Tin Bổ Sung -->
         <div class="col-6">
-          <div class="card">
+          <div class="card-inner">
             <h3>Thông Tin Bổ Sung</h3>
             <div class="field">
               <label for="address">Địa Chỉ</label>
-              <Textarea
-                id="address"
-                v-model="formData.address"
-                rows="3"
-                class="p-inputtext-lg"
-              />
+              <Textarea id="address" v-model="formData.address" rows="3" />
             </div>
             <div class="field">
               <label for="birth_date">Ngày Sinh</label>
-              <Calendar
-                id="birth_date"
-                v-model="formData.birth_date"
-                dateFormat="dd/mm/yy"
-                :showIcon="true"
-                class="p-inputtext-lg"
-              />
+              <Calendar id="birth_date" v-model="formData.birth_date" dateFormat="yy-mm-dd" :showIcon="true" />
             </div>
             <div class="field">
               <label for="gender">Giới Tính</label>
@@ -133,18 +83,12 @@
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Chọn giới tính"
-                class="p-inputtext-lg"
               />
             </div>
             <div class="field">
               <label for="avatar">Ảnh Đại Diện</label>
               <div class="avatar-upload">
-                <img
-                  v-if="formData.avatar"
-                  :src="formData.avatar"
-                  alt="Avatar"
-                  class="avatar-preview"
-                />
+                <img v-if="formData.avatar" :src="formData.avatar" alt="Avatar" class="avatar-preview" />
                 <FileUpload
                   mode="basic"
                   name="avatar"
@@ -154,11 +98,23 @@
                   @uploader="onUpload"
                   :customUpload="true"
                   class="upload-button"
+                  :disabled="!canUploadAvatar"
                 />
               </div>
             </div>
           </div>
         </div>
+      </div>
+      <div class="form-actions">
+        <Button
+          type="button"
+          label="Cập Nhật Hồ Sơ"
+          icon="pi pi-check"
+          :loading="isLoading"
+          class="submit-button"
+          @click="updateProfile"
+          :disabled="!canEditProfile"
+        />
       </div>
     </div>
   </BaseLayout>
@@ -166,7 +122,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useToast } from '@/composables/useToast'
+import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, helpers } from '@vuelidate/validators'
@@ -179,25 +135,14 @@ import Button from 'primevue/button'
 import Toast from 'primevue/toast'
 import BaseLayout from '@/components/BaseLayout.vue'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import api, { endpoints } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
-import axios from 'axios'
 
 const toast = useToast()
 const userStore = useUserStore()
 const authStore = useAuthStore()
 const isLoading = ref(false)
-const {
-  isAdmin,
-  isTeacher,
-  isStudent,
-  canViewStudentProfile,
-  canEditStudentProfile,
-  canEditTeacherProfile,
-  canUploadStudentAvatar,
-  canUploadTeacherAvatar,
-  canUploadAdminAvatar
-} = usePermissions()
+const { isTeacher, isStudent, canEditProfile, canUploadAvatar } = usePermissions()
 
 const formData = ref({
   username: '',
@@ -212,22 +157,17 @@ const formData = ref({
 })
 
 const genderOptions = [
-  { label: 'Nam', value: 'male' },
-  { label: 'Nữ', value: 'female' },
-  { label: 'Khác', value: 'other' },
+  { label: 'Nam', value: 'M' },
+  { label: 'Nữ', value: 'F' },
+  { label: 'Khác', value: 'O' },
 ]
 
-const phoneValidator = helpers.regex(/^[0-9]{10}$/)
+const phoneValidator = helpers.regex(/^(0|\+84)[3|5|7|8|9][0-9]{8}$/)
 
 const rules = computed(() => ({
-  username: { required },
   email: { required, email },
   full_name: { required },
-  phone: {
-    required,
-    phone: helpers.withMessage('Số điện thoại phải là 10 chữ số', phoneValidator),
-  },
-  role: { required },
+  phone: { phone: helpers.withMessage('Số điện thoại không hợp lệ.', phoneValidator) },
 }))
 
 const v$ = useVuelidate(rules, formData)
@@ -238,30 +178,45 @@ onMounted(async () => {
 
 const fetchProfile = async () => {
   try {
-    const userProfile = await authStore.fetchUserProfile()
-    if (userProfile.role === 'student') {
-      const response = await axios.get('/api/v1/students/me/')
-      formData.value = response.data
-    } else if (userProfile.role === 'teacher') {
-      const response = await axios.get('/api/v1/teachers/me/')
-      formData.value = response.data
-    } else {
-      formData.value = userProfile
+    const user = authStore.user
+    if (!user) {
+       await authStore.fetchCurrentUser()
     }
+    
+    let profileEndpoint = ''
+    if (isStudent.value) {
+      profileEndpoint = `${endpoints.students}me/`
+    } else if (isTeacher.value) {
+      profileEndpoint = `${endpoints.teachers}me/`
+    }
+
+    if (profileEndpoint) {
+      const { data } = await api.get(profileEndpoint)
+      // The actual profile data might be nested
+      const profileData = data.data || data
+      formData.value = { ...authStore.user, ...profileData }
+    } else {
+      formData.value = { ...authStore.user }
+    }
+
   } catch (error) {
     console.error('Error fetching profile:', error)
-    toast.addToast({
+    toast.add({
       severity: 'error',
       summary: 'Lỗi',
       detail: 'Không thể tải thông tin hồ sơ',
-      life: 3000
+      life: 3000,
     })
   }
 }
 
+
 const updateProfile = async () => {
   v$.value.$touch()
-  if (v$.value.$invalid) return
+  if (v$.value.$invalid) {
+     toast.add({ severity: 'warn', summary: 'Dữ liệu không hợp lệ', detail: 'Vui lòng kiểm tra lại các trường thông tin.', life: 3000 });
+     return
+  }
 
   isLoading.value = true
   try {
@@ -270,18 +225,32 @@ const updateProfile = async () => {
       full_name: formData.value.full_name,
       phone: formData.value.phone,
       address: formData.value.address,
-      birth_date: formData.value.birth_date ? formData.value.birth_date.toISOString().split('T')[0] : null,
+      birth_date: formData.value.birth_date ? new Date(formData.value.birth_date).toISOString().split('T')[0] : null,
       gender: formData.value.gender,
+      // Include other fields specific to student/teacher if needed
     }
-    await userStore.updateProfile(profileData)
-    toast.addToast({
+    
+    // Determine the correct endpoint to update
+    let updateEndpoint = ''
+     if (isStudent.value) {
+      updateEndpoint = `${endpoints.students}${formData.value.id}/`
+    } else if (isTeacher.value) {
+      updateEndpoint = `${endpoints.teachers}${formData.value.id}/`
+    } else { // Admin
+      updateEndpoint = endpoints.userProfile
+    }
+    
+    await api.patch(updateEndpoint, profileData);
+
+    toast.add({
       severity: 'success',
       summary: 'Thành Công',
       detail: 'Cập nhật thông tin thành công',
       life: 3000,
     })
+    await authStore.fetchCurrentUser() // Refresh user data in store
   } catch (error) {
-    toast.addToast({
+    toast.add({
       severity: 'error',
       summary: 'Lỗi',
       detail: error.response?.data?.detail || 'Không thể cập nhật thông tin',
@@ -293,21 +262,31 @@ const updateProfile = async () => {
 }
 
 const onUpload = async (event) => {
+  if (!canUploadAvatar.value) {
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Bạn không có quyền tải lên ảnh đại diện.', life: 3000 });
+    return;
+  }
+  
   try {
-    const formData = new FormData()
-    formData.append('avatar', event.files[0])
-    const response = await api.post('/api/upload-avatar/', formData, {
+    const file = event.files[0];
+    const uploadFormData = new FormData()
+    uploadFormData.append('avatar', file)
+
+    const response = await api.post(endpoints.uploadAvatar, uploadFormData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    formData.value.avatar = response.data.avatar_url
-    toast.addToast({
+    
+    formData.value.avatar = response.data.avatar_url; // Assuming the response contains the new URL
+    await authStore.fetchCurrentUser(); // Refresh auth store to get new avatar URL everywhere
+
+    toast.add({
       severity: 'success',
       summary: 'Thành Công',
       detail: 'Cập nhật ảnh đại diện thành công',
       life: 3000,
     })
   } catch (error) {
-    toast.addToast({
+    toast.add({
       severity: 'error',
       summary: 'Lỗi',
       detail: 'Không thể tải lên ảnh đại diện',
@@ -329,22 +308,23 @@ const onUpload = async (event) => {
 
 .card-header {
   margin-bottom: 2rem;
+  text-align: center;
 }
 
 .card-header h2 {
   font-size: 2rem;
   color: #2c3e50;
   margin: 0;
-  text-align: center;
 }
 
-.card {
+.card-inner {
   padding: 2rem;
   background: #f9fafb;
   border-radius: 8px;
+  height: 100%;
 }
 
-.card h3 {
+.card-inner h3 {
   font-size: 1.5rem;
   color: #1f2937;
   margin-bottom: 1.5rem;
@@ -373,22 +353,9 @@ const onUpload = async (event) => {
 
 :deep(.p-inputtext),
 :deep(.p-textarea),
-:deep(.p-calendar),
+:deep(.p-calendar .p-inputtext),
 :deep(.p-dropdown) {
   width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  transition: border-color 0.3s;
-}
-
-:deep(.p-inputtext:focus),
-:deep(.p-textarea:focus),
-:deep(.p-calendar .p-inputtext:focus),
-:deep(.p-dropdown:focus) {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 :deep(.p-invalid) {
@@ -414,26 +381,14 @@ const onUpload = async (event) => {
   border: 2px solid #d1d5db;
 }
 
-.upload-button {
-  font-size: 1rem;
-}
-
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   margin-top: 2rem;
 }
 
 .submit-button {
   font-size: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #3b82f6;
-  border: none;
-  border-radius: 6px;
-  transition: background 0.3s;
-}
-
-.submit-button:hover {
-  background: #2563eb;
+  padding: 0.75rem 2.5rem;
 }
 </style>

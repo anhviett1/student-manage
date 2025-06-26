@@ -1,8 +1,8 @@
 <template>
   <div class="card">
-    <TabView>
+    <TabView v-if="canViewSchedules">
       <TabPanel header="Lịch Học Của Tôi" v-if="isStudent">
-        <DataTable v-if="canViewStudentSchedule" :value="mySchedules" :loading="loading" :rows="10" paginator>
+        <DataTable :value="mySchedules" :loading="loading" :rows="10" paginator>
           <Column field="class_assigned.name" header="Lớp Học" sortable></Column>
           <Column field="teacher.full_name" header="Giảng Viên" sortable>
             <template #body="{ data }">
@@ -21,7 +21,7 @@
         </DataTable>
       </TabPanel>
       <TabPanel header="Lịch Giảng Dạy" v-if="isTeacher">
-        <DataTable v-if="canViewTeacherSchedule" :value="teacherSchedules" :loading="loading" :rows="10" paginator>
+        <DataTable :value="teacherSchedules" :loading="loading" :rows="10" paginator>
           <Column field="class_assigned.name" header="Lớp Học" sortable></Column>
           <Column field="day_of_week" header="Ngày" sortable>
             <template #body="{ data }">
@@ -42,7 +42,7 @@
             <Button v-if="canExportSchedules" icon="pi pi-download" label="Export" @click="exportCSV" />
           </div>
         </div>
-        <DataTable v-if="canViewSchedules" :value="schedules" :loading="loading" :rows="10" paginator>
+        <DataTable :value="schedules" :loading="loading" :rows="10" paginator>
           <Column field="class_assigned.name" header="Lớp Học" sortable></Column>
           <Column field="teacher.full_name" header="Giảng Viên" sortable>
             <template #body="{ data }">
@@ -132,6 +132,9 @@
         </Dialog>
       </TabPanel>
     </TabView>
+    <div v-else class="access-denied">
+      <p>Bạn không có quyền truy cập trang này.</p>
+    </div>
   </div>
 </template>
 
@@ -139,10 +142,22 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+import api, { endpoints } from '@/services/api'
 
 const toast = useToast()
-const { isAdmin, isTeacher, isStudent, canViewSchedules, canEditSchedules, canDeleteSchedules, canImportSchedules, canExportSchedules, canViewStudentSchedule, canViewTeacherSchedule } = usePermissions()
+const authStore = useAuthStore()
+const {
+  isAdmin,
+  isTeacher,
+  isStudent,
+  canViewSchedules,
+  canEditSchedules,
+  canDeleteSchedules,
+  canImportSchedules,
+  canExportSchedules,
+} = usePermissions()
+
 const schedules = ref([])
 const mySchedules = ref([])
 const teacherSchedules = ref([])
@@ -154,7 +169,6 @@ const deleteScheduleDialog = ref(false)
 const schedule = ref({})
 const errors = ref({})
 const loading = ref(true)
-const userId = ref(localStorage.getItem('userId') || null) // Giả sử userId được lưu trong localStorage sau khi đăng nhập
 
 const dayOptions = [
   { label: 'Thứ Hai', value: 'mon' }, { label: 'Thứ Ba', value: 'tue' }, { label: 'Thứ Tư', value: 'wed' },
@@ -165,19 +179,26 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  await Promise.all([loadSchedules(), loadClasses(), loadTeachers(), loadSemesters()])
+  if (canViewSchedules.value) {
+    await Promise.all([loadSchedules(), loadClasses(), loadTeachers(), loadSemesters()])
+  }
 })
 
 const loadSchedules = async () => {
   try {
     loading.value = true
-    const response = await api.get('/schedules')
-    schedules.value = response.data
-    if (isStudent.value && userId.value) {
-      mySchedules.value = response.data.filter(s => s.class_assigned?.student_classes?.some(c => c.user?.id === parseInt(userId.value)))
+    const response = await api.get(endpoints.schedules)
+    const allSchedules = response.data
+    const currentUserId = authStore.user?.id
+
+    if (isAdmin.value) {
+      schedules.value = allSchedules
     }
-    if (isTeacher.value && userId.value) {
-      teacherSchedules.value = response.data.filter(s => s.teacher?.id === parseInt(userId.value))
+    if (isStudent.value && currentUserId) {
+      mySchedules.value = allSchedules.filter(s => s.class_assigned?.students?.includes(currentUserId))
+    }
+    if (isTeacher.value && currentUserId) {
+      teacherSchedules.value = allSchedules.filter(s => s.teacher?.id === currentUserId)
     }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách lịch học', life: 3000 })
@@ -188,7 +209,7 @@ const loadSchedules = async () => {
 
 const loadClasses = async () => {
   try {
-    const response = await api.get('/classes')
+    const response = await api.get(endpoints.classes)
     classes.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách lớp học', life: 3000 })
@@ -197,7 +218,7 @@ const loadClasses = async () => {
 
 const loadTeachers = async () => {
   try {
-    const response = await api.get('/teachers')
+    const response = await api.get(endpoints.teachers)
     teachers.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách giảng viên', life: 3000 })
@@ -206,7 +227,7 @@ const loadTeachers = async () => {
 
 const loadSemesters = async () => {
   try {
-    const response = await api.get('/semesters')
+    const response = await api.get(endpoints.semesters)
     semesters.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
@@ -262,11 +283,11 @@ const saveSchedule = async () => {
       is_active: schedule.value.is_active
     }
     if (schedule.value.schedule_id) {
-      const updatedSchedule = (await api.patch(`/schedules/${schedule.value.schedule_id}/`, payload)).data
+      const updatedSchedule = (await api.patch(`${endpoints.schedules}${schedule.value.schedule_id}/`, payload)).data
       schedules.value = schedules.value.map(s => s.schedule_id === schedule.value.schedule_id ? updatedSchedule : s)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật lịch học thành công', life: 3000 })
     } else {
-      const newSchedule = (await api.post('/schedules/', payload)).data
+      const newSchedule = (await api.post(endpoints.schedules, payload)).data
       schedules.value.push(newSchedule)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm lịch học thành công', life: 3000 })
     }
@@ -280,7 +301,7 @@ const saveSchedule = async () => {
 
 const deleteSchedule = async () => {
   try {
-    await api.delete(`/schedules/${schedule.value.schedule_id}/`)
+    await api.delete(`${endpoints.schedules}${schedule.value.schedule_id}/`)
     schedules.value = schedules.value.filter(s => s.schedule_id !== schedule.value.schedule_id)
     deleteScheduleDialog.value = false
     schedule.value = {}
@@ -292,7 +313,7 @@ const deleteSchedule = async () => {
 
 const restoreSchedule = async (data) => {
   try {
-    const response = await api.post(`/schedules/${data.schedule_id}/restore/`)
+    const response = await api.post(`${endpoints.schedules}${data.schedule_id}/restore/`)
     schedules.value = schedules.value.map(s => s.schedule_id === data.schedule_id ? response.data : s)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục lịch học thành công', life: 3000 })
   } catch (error) {
@@ -364,5 +385,11 @@ const getStatusSeverity = (status) => {
 }
 :deep(.p-datatable .p-datatable-tbody > tr:hover) {
   background: #f1f5f9;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

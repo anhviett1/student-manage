@@ -1,12 +1,12 @@
 <template>
   <div class="card">
     <Toast />
-    <TabView>
+    <TabView v-if="canViewScores || isStudent">
       <!-- Tab for Students -->
       <TabPanel header="Điểm Của Tôi" v-if="isStudent">
         <div class="filter-bar">
           <div class="filter-group">
-            <label for="semesterFilter" @click="navigateToHome">Học Kỳ</label>
+            <label for="semesterFilter">Học Kỳ</label>
             <Dropdown
               id="semesterFilter"
               v-model="selectedSemester"
@@ -26,7 +26,6 @@
           />
         </div>
         <DataTable
-          v-if="canViewOwnScores"
           :value="myScores"
           :loading="loading"
           dataKey="id"
@@ -69,8 +68,8 @@
         </DataTable>
       </TabPanel>
 
-      <!-- Tab for Teachers -->
-      <TabPanel header="Quản Lý Điểm" v-if="isTeacher">
+      <!-- Tab for Admins/Teachers -->
+      <TabPanel header="Quản Lý Điểm" v-if="isAdminOrTeacher">
         <div class="action-bar">
           <div class="action-buttons">
             <Button
@@ -136,7 +135,6 @@
           </div>
         </div>
         <DataTable
-          v-if="canViewScores"
           :value="scores"
           :loading="loading"
           dataKey="id"
@@ -378,7 +376,7 @@
         >
           <div class="confirmation-content">
             <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-            <span>Bạn có chắc muốn xóa điểm của <b>{{ score.student.name }}</b> cho môn <b>{{ score.subject.name }}</b>?</span>
+            <span>Bạn có chắc muốn xóa điểm của <b>{{ score.student?.name }}</b> cho môn <b>{{ score.subject?.name }}</b>?</span>
           </div>
           <template #footer>
             <Button label="Hủy" icon="pi pi-times" text @click="deleteDialog = false" />
@@ -387,21 +385,22 @@
         </Dialog>
       </TabPanel>
     </TabView>
+    <div v-else class="access-denied">
+      <p>Bạn không có quyền truy cập trang này.</p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import { useAuthStore } from '@/stores/auth'
 
 const toast = useToast()
-const authStore = useAuthStore()
 const {
-  isAdmin,
   isTeacher,
   isStudent,
   isAdminOrTeacher,
@@ -410,7 +409,6 @@ const {
   canDeleteScores,
   canUploadScores,
   canExportData,
-  canViewOwnScores
 } = usePermissions()
 const myScores = ref([])
 const scores = ref([])
@@ -438,29 +436,24 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  const user = await fetchUserRole()
-  isStudent.value = user.role === 'student'
-  isTeacher.value = user.role === 'teacher'
+  if (canViewScores.value || isStudent.value) {
+    await loadSemesters()
+  }
 
-  await loadSemesters()
-  await loadStudents()
-  await loadSubjects()
+  if (isAdminOrTeacher.value) {
+    await loadStudents()
+    await loadSubjects()
+    await loadScores()
+  }
+
   if (isStudent.value) {
     await loadMyScores()
   }
-  if (isTeacher.value) {
-    await loadScores()
-  }
 })
-
-const fetchUserRole = async () => {
-  const response = await api.get('/api/v1/users/role/')
-  return response.data
-}
 
 const loadSemesters = async () => {
   try {
-    const response = await api.get('/api/v1/semesters/active/')
+    const response = await api.get(endpoints.semesters, { params: { active: true } })
     semesters.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải học kỳ', life: 3000 })
@@ -469,7 +462,7 @@ const loadSemesters = async () => {
 
 const loadStudents = async () => {
   try {
-    const response = await api.get('/api/v1/students/')
+    const response = await api.get(endpoints.students)
     students.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách sinh viên', life: 3000 })
@@ -478,7 +471,7 @@ const loadStudents = async () => {
 
 const loadSubjects = async () => {
   try {
-    const response = await api.get('/api/v1/subjects/')
+    const response = await api.get(endpoints.subjects)
     subjects.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách môn học', life: 3000 })
@@ -488,11 +481,11 @@ const loadSubjects = async () => {
 const loadMyScores = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/scores/'
     const params = {}
     if (selectedSemester.value) params.semester_id = selectedSemester.value
     if (globalFilter.value) params.search = globalFilter.value
-    const response = await api.get(url, { params })
+    // Backend sẽ tự lọc điểm của user đang đăng nhập dựa trên token
+    const response = await api.get(endpoints.scores, { params })
     myScores.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải điểm số', life: 3000 })
@@ -504,11 +497,10 @@ const loadMyScores = async () => {
 const loadScores = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/scores/'
     const params = {}
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.global) params.search = filters.value.global
-    const response = await api.get(url, { params })
+    const response = await api.get(endpoints.scores, { params })
     scores.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải điểm số', life: 3000 })
@@ -560,11 +552,11 @@ const saveScore = async () => {
   try {
     const payload = { ...score.value }
     if (score.value.id) {
-      const response = await api.patch(`/api/v1/scores/${score.value.id}/`, payload)
+      const response = await api.patch(`${endpoints.scores}${score.value.id}/`, payload)
       scores.value = scores.value.map(s => s.id === score.value.id ? response.data : s)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật điểm số thành công', life: 3000 })
     } else {
-      const response = await api.post('/api/v1/scores/', payload)
+      const response = await api.post(endpoints.scores, payload)
       scores.value.push(response.data)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm điểm số thành công', life: 3000 })
     }
@@ -582,7 +574,7 @@ const confirmDelete = (data) => {
 
 const deleteScore = async () => {
   try {
-    await api.delete(`/api/v1/scores/${score.value.id}/`)
+    await api.delete(`${endpoints.scores}${score.value.id}/`)
     scores.value = scores.value.filter(s => s.id !== score.value.id)
     deleteDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa điểm số thành công', life: 3000 })
@@ -593,7 +585,7 @@ const deleteScore = async () => {
 
 const restoreScore = async (data) => {
   try {
-    const response = await api.post(`/api/v1/scores/${data.id}/restore/`)
+    const response = await api.post(`${endpoints.scores}${data.id}/restore/`)
     scores.value = scores.value.map(s => s.id === data.id ? response.data.data : s)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục điểm số thành công', life: 3000 })
   } catch (error) {
@@ -615,7 +607,7 @@ const onUploadStudentFile = async (event) => {
   const formData = new FormData()
   formData.append('file', file)
   try {
-    const response = await api.post('/api/v1/scores/upload-student-list/', formData, {
+    const response = await api.post(endpoints.scoreManagement, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 })
@@ -631,7 +623,7 @@ const onUploadScoreFile = async (event) => {
   const formData = new FormData()
   formData.append('file', file)
   try {
-    const response = await api.post('/api/v1/scores/upload-scores/', formData, {
+    const response = await api.post(endpoints.scoreManagement, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 })
@@ -644,14 +636,8 @@ const onUploadScoreFile = async (event) => {
 
 const exportScores = async () => {
   try {
-    const response = await api.get('/api/v1/scores/export-scores/', { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', 'scores.xlsx')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const response = await api.get(`${endpoints.scores}export/`, { responseType: 'blob' })
+    saveAs(response.data, 'scores.xlsx')
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xuất điểm số thành công', life: 3000 })
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xuất điểm số', life: 3000 })
@@ -663,13 +649,7 @@ const downloadSampleExcel = () => {
     { student_id: 'S001', subject_id: 'SUBJ001', semester_id: 'HK001', midterm_score: 8.5, final_score: 9.0, notes: 'Hoàn thành tốt' }
   ]
   const blob = new Blob([JSON.stringify(sampleData, null, 2)], { type: 'application/json' })
-  const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.setAttribute('download', 'score_sample.json')
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  saveAs(blob, 'score_sample.json')
 }
 
 const formatScore = (score) => {
@@ -775,5 +755,11 @@ const getStatusSeverity = (status) => {
 .p-info {
   color: #666;
   font-size: 0.85rem;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

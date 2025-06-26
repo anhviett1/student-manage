@@ -1,11 +1,10 @@
 <template>
-  <div class="card">
+  <div class="card" v-if="canViewSemesters">
     <Toast />
     <div class="header">
       <h2>Quản Lý Học Kỳ</h2>
       <div class="action-buttons">
         <Button
-          v-if="canViewSemesters"
           icon="pi pi-filter"
           label="Học Kỳ Active"
           severity="info"
@@ -45,7 +44,6 @@
     </div>
 
     <DataTable
-      v-if="canViewSemesters"
       :value="semesters"
       :loading="loading"
       dataKey="semester_id"
@@ -407,21 +405,23 @@
       </template>
     </Dialog>
   </div>
+  <div v-else class="access-denied">
+    <p>Bạn không có quyền truy cập trang này.</p>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useToast } from '@/composables/useToast'
-import api from '@/services/api'
+import { ref, onMounted } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import { usePermissions } from '@/composables/usePermissions'
+import api, { endpoints } from '@/services/api'
 
-const authStore = useAuthStore()
-const { addToast } = useToast()
-
-// Computed properties for permissions
-const canViewSemesters = computed(() => authStore.hasPermission('semester:view'))
-const canEditSemesters = computed(() => authStore.hasPermission('semester:edit'))
-const canDeleteSemesters = computed(() => authStore.hasPermission('semester:delete'))
+const toast = useToast()
+const {
+  canViewSemesters,
+  canEditSemesters,
+  canDeleteSemesters,
+} = usePermissions()
 
 const semesters = ref([])
 const semesterDialog = ref(false)
@@ -437,7 +437,6 @@ const filters = ref({
   global: ''
 })
 
-
 const statusOptions = [
   { label: 'Sắp tới', value: 'upcoming' },
   { label: 'Đang diễn ra', value: 'current' },
@@ -446,20 +445,21 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  await loadSemesters()
+  if (canViewSemesters.value) {
+    await loadSemesters()
+  }
 })
 
 const loadSemesters = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/semesters/'
     const params = {}
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.global) params.search = filters.value.global
-    const response = await api.get(url, { params })
+    const response = await api.get(endpoints.semesters, { params })
     semesters.value = response.data
   } catch (error) {
-    addToast({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
   } finally {
     loading.value = false
   }
@@ -468,11 +468,11 @@ const loadSemesters = async () => {
 const loadActiveSemesters = async () => {
   try {
     loading.value = true
-    const response = await api.get('/api/v1/semesters/active/')
+    const response = await api.get(endpoints.semesters, { params: { active: true } })
     semesters.value = response.data
-    addToast({ severity: 'info', summary: 'Thành công', detail: 'Hiển thị các học kỳ đang hoạt động', life: 3000 })
+    toast.add({ severity: 'info', summary: 'Thành công', detail: 'Hiển thị các học kỳ đang hoạt động', life: 3000 })
   } catch (error) {
-    addToast({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải học kỳ active', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải học kỳ active', life: 3000 })
   } finally {
     loading.value = false
   }
@@ -572,39 +572,39 @@ const saveSemester = async () => {
       late_fee_start: semester.value.late_fee_start.toISOString().split('T')[0]
     }
     if (semester.value.semester_id) {
-      const response = await api.patch(`/api/v1/semesters/${semester.value.semester_id}/`, payload)
+      const response = await api.patch(`${endpoints.semesters}${semester.value.semester_id}/`, payload)
       semesters.value = semesters.value.map(s => s.semester_id === semester.value.semester_id ? response.data : s)
-      addToast({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật học kỳ thành công', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật học kỳ thành công', life: 3000 })
     } else {
-      const response = await api.post('/api/v1/semesters/', payload)
+      const response = await api.post(endpoints.semesters, payload)
       semesters.value.push(response.data)
-      addToast({ severity: 'success', summary: 'Thành công', detail: 'Thêm học kỳ thành công', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm học kỳ thành công', life: 3000 })
     }
     hideDialog()
   } catch (error) {
     const errorMsg = error.response?.data?.detail || Object.values(error.response?.data || {}).join(', ') || 'Không thể lưu học kỳ'
-    addToast({ severity: 'error', summary: 'Lỗi', detail: errorMsg, life: 3000 })
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: errorMsg, life: 3000 })
   }
 }
 
 const deleteSemester = async () => {
   try {
-    await api.delete(`/api/v1/semesters/${semester.value.semester_id}/`)
+    await api.delete(`${endpoints.semesters}${semester.value.semester_id}/`)
     semesters.value = semesters.value.filter(s => s.semester_id !== semester.value.semester_id)
     deleteDialog.value = false
-    addToast({ severity: 'success', summary: 'Thành công', detail: 'Xóa học kỳ thành công', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa học kỳ thành công', life: 3000 })
   } catch (error) {
-    addToast({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa học kỳ', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa học kỳ', life: 3000 })
   }
 }
 
 const restoreSemester = async (data) => {
   try {
-    const response = await api.post(`/api/v1/semesters/${data.semester_id}/restore/`)
+    const response = await api.post(`${endpoints.semesters}${data.semester_id}/restore/`)
     semesters.value = semesters.value.map(s => s.semester_id === data.semester_id ? response.data.data : s)
-    addToast({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục học kỳ thành công', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục học kỳ thành công', life: 3000 })
   } catch (error) {
-    addToast({ severity: 'error', summary: 'Lỗi', detail: error.response?.data?.error || 'Không thể khôi phục học kỳ', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: error.response?.data?.error || 'Không thể khôi phục học kỳ', life: 3000 })
   }
 }
 
@@ -613,13 +613,13 @@ const changeStatus = async () => {
   if (!newStatus.value) return
 
   try {
-    const response = await api.post(`/api/v1/semesters/${semester.value.semester_id}/change-status/`, { status: newStatus.value })
+    const response = await api.post(`${endpoints.semesters}${semester.value.semester_id}/change-status/`, { status: newStatus.value })
     semesters.value = semesters.value.map(s => s.semester_id === semester.value.semester_id ? response.data.data : s)
     changeStatusDialog.value = false
     newStatus.value = ''
-    addToast({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật trạng thái thành công', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật trạng thái thành công', life: 3000 })
   } catch (error) {
-    addToast({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật trạng thái', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật trạng thái', life: 3000 })
   }
 }
 
@@ -734,5 +734,11 @@ const getStatusSeverity = (status) => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

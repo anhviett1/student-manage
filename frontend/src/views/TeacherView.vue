@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card" v-if="isTeacher || isAdmin">
     <Toast />
     <TabView>
       <!-- Tab for Teachers -->
@@ -389,13 +389,16 @@
       </TabPanel>
     </TabView>
   </div>
+  <div v-else class="access-denied">
+    <p>Bạn không có quyền truy cập trang này.</p>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 
 const toast = useToast()
@@ -409,6 +412,7 @@ const {
 } = usePermissions()
 
 const teachers = ref([])
+const teacher = ref({})
 const departments = ref([])
 const loading = ref(false)
 const isEditing = ref(false)
@@ -449,28 +453,20 @@ const degreeOptions = [
 ]
 
 onMounted(async () => {
-  const user = await fetchUserRole()
-  isTeacher.value = user.role === 'teacher'
-  isAdmin.value = user.role === 'admin'
-
-  await loadDepartments()
-  if (isTeacher.value) await loadTeacherProfile()
-  if (isAdmin.value) await loadTeachers()
-})
-
-const fetchUserRole = async () => {
-  try {
-    const response = await api.get('/api/v1/auth/user-role/')
-    return response.data
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xác định vai trò người dùng', life: 3000 })
-    return { role: 'teacher' }
+  if (isAdmin.value || isTeacher.value) {
+    await loadDepartments()
   }
-}
+  if (isTeacher.value) {
+    await loadTeacherProfile()
+  }
+  if (isAdmin.value) {
+    await loadTeachers()
+  }
+})
 
 const loadDepartments = async () => {
   try {
-    const response = await api.get('/api/v1/departments/')
+    const response = await api.get(endpoints.departments)
     departments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
@@ -480,7 +476,7 @@ const loadDepartments = async () => {
 const loadTeacherProfile = async () => {
   try {
     loading.value = true
-    const response = await api.get('/api/v1/teachers/me/')
+    const response = await api.get(`${endpoints.teachers}me/`)
     teacher.value = response.data.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải thông tin cá nhân', life: 3000 })
@@ -492,12 +488,11 @@ const loadTeacherProfile = async () => {
 const loadTeachers = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/teachers/'
     const params = {}
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.department) params.department_id = filters.value.department
     if (filters.value.global) params.search = filters.value.global
-    const response = await api.get(url, { params })
+    const response = await api.get(endpoints.teachers, { params })
     teachers.value = response.data.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách giảng viên', life: 3000 })
@@ -565,7 +560,7 @@ const saveTeacher = async () => {
 
     let response
     if (teacher.value.teacher_id) {
-      response = await api.put(`/api/v1/teachers/${teacher.value.teacher_id}/`, formData, {
+      response = await api.put(`${endpoints.teachers}${teacher.value.teacher_id}/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       if (isTeacher.value) {
@@ -573,7 +568,7 @@ const saveTeacher = async () => {
         teacher.value = response.data.data
       }
     } else {
-      response = await api.post('/api/v1/teachers/', formData, {
+      response = await api.post(endpoints.teachers, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       teacherDialog.value = false
@@ -597,7 +592,7 @@ const confirmDelete = (data) => {
 
 const deleteTeacher = async () => {
   try {
-    await api.delete(`/api/v1/teachers/${teacher.value.teacher_id}/`)
+    await api.delete(`${endpoints.teachers}${teacher.value.teacher_id}/`)
     deleteDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa giảng viên thành công', life: 3000 })
     await loadTeachers()
@@ -608,7 +603,7 @@ const deleteTeacher = async () => {
 
 const restoreTeacher = async (data) => {
   try {
-    const response = await api.post(`/api/v1/teachers/${data.teacher_id}/restore/`)
+    const response = await api.post(`${endpoints.teachers}${data.teacher_id}/restore/`)
     toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 })
     await loadTeachers()
   } catch (error) {
@@ -628,7 +623,7 @@ const changeStatus = async () => {
   if (!newStatus.value) return
 
   try {
-    const response = await api.post(`/api/v1/teachers/${teacher.value.teacher_id}/change_status/`, { status: newStatus.value })
+    const response = await api.post(`${endpoints.teachers}${teacher.value.teacher_id}/change-status/`, { status: newStatus.value })
     changeStatusDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 })
     await loadTeachers()
@@ -639,7 +634,7 @@ const changeStatus = async () => {
 
 const exportTeachers = async () => {
   try {
-    const response = await api.get('/api/v1/teachers/export/', { responseType: 'blob' })
+    const response = await api.get(`${endpoints.teachers}export/`, { responseType: 'blob' })
     const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     saveAs(blob, `teachers_${new Date().toISOString().split('T')[0]}.xlsx`)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xuất danh sách giảng viên thành công', life: 3000 })
@@ -779,5 +774,11 @@ const getDegreeLabel = (degree) => {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>

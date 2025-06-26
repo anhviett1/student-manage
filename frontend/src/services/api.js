@@ -18,6 +18,7 @@ const api = axios.create({
 
 // Định nghĩa các endpoint
 export const endpoints = {
+
   // Authentication
   login: `${API_PREFIX}/token/`,
   logout: `${API_PREFIX}/users/logout/`,
@@ -40,6 +41,8 @@ export const endpoints = {
   activities: `${API_PREFIX}/activities/`,
   departments: `${API_PREFIX}/departments/`,
   schedules: `${API_PREFIX}/schedules/`,
+
+  
 
 
 }

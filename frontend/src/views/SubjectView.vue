@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card" v-if="canViewSubjects">
     <Toast />
     <div class="header">
       <h2>Quản Lý Môn Học</h2>
@@ -54,7 +54,6 @@
     </div>
 
     <DataTable
-      v-if="canViewSubjects"
       :value="subjects"
       :loading="loading"
       dataKey="subject_id"
@@ -231,18 +230,19 @@
       </template>
     </Dialog>
   </div>
+  <div v-else class="access-denied">
+    <p>Bạn không có quyền truy cập trang này.</p>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
-import api from '@/services/api'
+import api, { endpoints } from '@/services/api'
 
 const toast = useToast()
 const {
-  isAdmin,
-  isTeacher,
   canViewSubjects,
   canEditSubjects,
   canDeleteSubjects,
@@ -274,12 +274,14 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  await Promise.all([loadDepartments(), loadSemesters(), loadSubjects()])
+  if (canViewSubjects.value) {
+    await Promise.all([loadDepartments(), loadSemesters(), loadSubjects()])
+  }
 })
 
 const loadDepartments = async () => {
   try {
-    const response = await api.get('/api/v1/departments/')
+    const response = await api.get(endpoints.departments)
     departments.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
@@ -288,7 +290,7 @@ const loadDepartments = async () => {
 
 const loadSemesters = async () => {
   try {
-    const response = await api.get('/api/v1/semesters/')
+    const response = await api.get(endpoints.semesters)
     semesters.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
@@ -298,12 +300,11 @@ const loadSemesters = async () => {
 const loadSubjects = async () => {
   try {
     loading.value = true
-    let url = '/api/v1/subjects/'
     const params = {}
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.department) params.department__id = filters.value.department
     if (filters.value.global) params.search = filters.value.global
-    const response = await api.get(url, { params })
+    const response = await api.get(endpoints.subjects, { params })
     subjects.value = response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách môn học', life: 3000 })
@@ -380,11 +381,11 @@ const saveSubject = async () => {
   try {
     const payload = { ...subject.value }
     if (subject.value.subject_id) {
-      const response = await api.patch(`/api/v1/subjects/${subject.value.subject_id}/`, payload)
+      const response = await api.patch(`${endpoints.subjects}${subject.value.subject_id}/`, payload)
       subjects.value = subjects.value.map(s => s.subject_id === subject.value.subject_id ? response.data : s)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật môn học thành công', life: 3000 })
     } else {
-      const response = await api.post('/api/v1/subjects/', payload)
+      const response = await api.post(endpoints.subjects, payload)
       subjects.value.push(response.data)
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Thêm môn học thành công', life: 3000 })
     }
@@ -397,7 +398,7 @@ const saveSubject = async () => {
 
 const deleteSubject = async () => {
   try {
-    await api.delete(`/api/v1/subjects/${subject.value.subject_id}/`)
+    await api.delete(`${endpoints.subjects}${subject.value.subject_id}/`)
     subjects.value = subjects.value.filter(s => s.subject_id !== subject.value.subject_id)
     deleteDialog.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa môn học thành công', life: 3000 })
@@ -408,7 +409,7 @@ const deleteSubject = async () => {
 
 const restoreSubject = async (data) => {
   try {
-    const response = await api.post(`/api/v1/subjects/${data.subject_id}/restore/`)
+    const response = await api.post(`${endpoints.subjects}${data.subject_id}/restore/`)
     subjects.value = subjects.value.map(s => s.subject_id === data.subject_id ? response.data.data : s)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Khôi phục môn học thành công', life: 3000 })
   } catch (error) {
@@ -421,7 +422,7 @@ const changeStatus = async () => {
   if (!newStatus.value) return
 
   try {
-    const response = await api.post(`/api/v1/subjects/${subject.value.subject_id}/change_status/`, { status: newStatus.value })
+    const response = await api.post(`${endpoints.subjects}${subject.value.subject_id}/change-status/`, { status: newStatus.value })
     subjects.value = subjects.value.map(s => s.subject_id === subject.value.subject_id ? response.data.data : s)
     changeStatusDialog.value = false
     newStatus.value = ''
@@ -433,7 +434,7 @@ const changeStatus = async () => {
 
 const exportSubjects = async () => {
   try {
-    const response = await api.get('/api/v1/subjects/export', { responseType: 'blob' })
+    const response = await api.get(`${endpoints.subjects}export/`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
@@ -553,5 +554,11 @@ const getStatusSeverity = (status) => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
+}
+.access-denied {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #ef4444;
 }
 </style>
