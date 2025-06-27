@@ -1,6 +1,20 @@
+<template>
+  <div class="app">
+    <router-view />
+    <!-- Toast notification toàn cục nếu muốn -->
+    <Toast position="top-right" />
+  </div>
+</template>
+
+
 <script setup>
 import { useAuthStore } from '@/stores/auth'
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+import Tag from 'primevue/tag'
+import InputNumber from 'primevue/inputnumber'
 
 // Khởi tạo auth store để kiểm tra trạng thái đăng nhập
 const authStore = useAuthStore()
@@ -17,13 +31,7 @@ onMounted(async () => {
 })
 </script>
 
-<template>
-  <div class="app">
-    <router-view />
-    <!-- Toast notification toàn cục nếu muốn -->
-    <Toast position="top-right" />
-  </div>
-</template>
+
 
 <style>
 /* Import font từ Google Fonts để đồng bộ typography */

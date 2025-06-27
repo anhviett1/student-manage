@@ -16,7 +16,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
             return Subject.objects.none()
 
         filters = self._build_filters()
-        return Subject.objects.filter(filters).distinct().order_by("name")
+        return Subject.objects.filter(filters).distinct().order_by("subject_name")
 
     def _build_filters(self):
         query = self.request.query_params

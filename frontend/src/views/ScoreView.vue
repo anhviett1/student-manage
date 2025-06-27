@@ -398,6 +398,11 @@ import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import { useAuthStore } from '@/stores/auth'
+import Tag from 'primevue/tag'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+import InputNumber from 'primevue/inputnumber'
+
 
 const toast = useToast()
 const {

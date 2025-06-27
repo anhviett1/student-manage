@@ -30,12 +30,8 @@ class UserAdminForm(forms.ModelForm):
         teacher_id = cleaned_data.get("teacher_id")
         
         if role == "admin":
-            if not department:
-                self.add_error("department", _("Khoa là bắt buộc khi vai trò là quản trị viên."))
-        elif role == "department_head":
-            if not department:
-                self.add_error("department", _("Khoa là bắt buộc khi vai trò là trưởng khoa."))
-        
+            pass
+            
         elif role == "teacher":
             if not teacher_id:
                 self.add_error(

@@ -15,7 +15,7 @@ urlpatterns = [
     path("", include(router.urls)),  
     path("profile/", ProfileAPIView.as_view(), name="profile"),
     path("change-password/", ChangePasswordAPIView.as_view(), name="change_password"),
-    path("avatar/", AvatarUploadView.as_view(), name="avatar-upload"),
+    path("avatar/", AvatarUploadView.as_view(), name="profile_picture"),
     path("statistics/", StatisticsAPIView.as_view(), name="statistics"),
     path("export/", UserExportAPIView.as_view(), name="user-export"),
     path("score-management/", ScoreManagementAPIView.as_view(), name="score-management"),

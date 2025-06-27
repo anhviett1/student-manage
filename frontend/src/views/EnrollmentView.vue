@@ -368,6 +368,12 @@ import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
+import Tag from 'primevue/tag'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+import InputNumber from 'primevue/inputnumber'
+import InputSwitch from 'primevue/inputswitch'
+import MultiSelect from 'primevue/multiselect'
 
 const toast = useToast()
 const {
@@ -484,7 +490,7 @@ const loadEnrollments = async () => {
     if (filters.value.semester) params.semester__semester_id = filters.value.semester
     if (filters.value.global) params.search = filters.value.global
     const response = await api.get(endpoints.enrollments, { params })
-    enrollments.value = response.data
+    enrollments.value = Array.isArray(response.data.results) ? response.data.results : response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải đăng ký', life: 3000 })
   } finally {

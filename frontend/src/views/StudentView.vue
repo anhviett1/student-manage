@@ -436,13 +436,16 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue'
-import { useToast, useConfirm } from 'primevue/usetoast'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
+import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Tag from 'primevue/tag'
+import InputNumber from 'primevue/inputnumber'
 
 const toast = useToast()
 const confirm = useConfirm()

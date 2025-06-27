@@ -26,7 +26,7 @@ class SubjectForm(forms.ModelForm):
                     "required": True,
                 }
             ),
-            "name": forms.TextInput(
+            "subject_name": forms.TextInput(
                 attrs={
                     "class": "form-control",
                     "placeholder": "Nhập tên môn học",

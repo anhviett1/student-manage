@@ -322,6 +322,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
+import Tag from 'primevue/tag'
+import InputNumber from 'primevue/inputnumber'
+import InputSwitch from 'primevue/inputswitch'
+import MultiSelect from 'primevue/multiselect'
 
 const toast = useToast()
 const {
@@ -372,7 +376,7 @@ const loadClasses = async () => {
   try {
     loading.value = true
     const response = await api.get(endpoints.classes)
-    classes.value = response.data
+    classes.value = Array.isArray(response.data.results) ? response.data.results : response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách lớp học', life: 3000 })
   } finally {

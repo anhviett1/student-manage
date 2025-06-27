@@ -144,6 +144,10 @@ import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import { useAuthStore } from '@/stores/auth'
 import api, { endpoints } from '@/services/api'
+import Tag from 'primevue/tag'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+
 
 const toast = useToast()
 const authStore = useAuthStore()

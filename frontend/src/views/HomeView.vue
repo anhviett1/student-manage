@@ -1,5 +1,5 @@
 <template>
-  <div class="home card">
+  <div class="home-full">
     <div class="header">
       <h1>Chào Mừng Đến Với Hệ Thống Quản Lý Sinh Viên</h1>
       <p class="subtitle">Quản lý thông tin sinh viên, giảng viên và học tập một cách hiệu quả</p>
@@ -75,6 +75,7 @@
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import { usePermissions } from '@/composables/usePermissions'
+import { onMounted, ref } from 'vue'
 
 const router = useRouter()
 const { isAdmin } = usePermissions()
@@ -86,9 +87,35 @@ const navigateTo = (path) => {
   }
   router.push(path)
 }
+
+const departments = ref([])
+
+const loadDepartments = async () => {
+  const response = await api.get(endpoints.departments)
+  departments.value = Array.isArray(response.data.results) ? response.data.results : response.data
+}
+
+onMounted(() => {
+  loadData()
+})
+
+async function loadData() {
+  await fetchSomething()
+  // ...
+}
 </script>
 
 <style scoped>
+.home-full {
+  width: 100vw;
+  height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .home {
   padding: 2rem;
   background: #fff;

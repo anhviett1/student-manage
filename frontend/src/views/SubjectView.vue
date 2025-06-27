@@ -240,6 +240,11 @@ import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
+import Tag from 'primevue/tag'
+import InputNumber from 'primevue/inputnumber'
+import InputSwitch from 'primevue/inputswitch'
+import MultiSelect from 'primevue/multiselect'
+import Checkbox from 'primevue/checkbox'
 
 const toast = useToast()
 const {
@@ -282,7 +287,7 @@ onMounted(async () => {
 const loadDepartments = async () => {
   try {
     const response = await api.get(endpoints.departments)
-    departments.value = response.data
+    departments.value = Array.isArray(response.data.results) ? response.data.results : response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
   }
@@ -291,7 +296,7 @@ const loadDepartments = async () => {
 const loadSemesters = async () => {
   try {
     const response = await api.get(endpoints.semesters)
-    semesters.value = response.data
+    semesters.value = Array.isArray(response.data.results) ? response.data.results : response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
   }

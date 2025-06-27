@@ -6,6 +6,13 @@ import HomeView from '../views/HomeView.vue'
 // Định nghĩa các tuyến đường
 const routes = [
   // --- Tuyến đường không yêu cầu xác thực ---
+  
+  {
+    path: '/',
+    name: 'home',
+    component: HomeView,
+    meta: { title: 'Trang Chủ' },
+  },
   {
     path: '/login',
     name: 'login',
@@ -19,12 +26,7 @@ const routes = [
     component: BaseLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: '',
-        name: 'home',
-        component: HomeView,
-        meta: { title: 'Trang Chủ' },
-      },
+      
       {
         path: 'users',
         name: 'users',
@@ -126,40 +128,49 @@ const router = createRouter({
 
 // --- Navigation Guard Toàn Cục ---
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore      = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
+  const isAdmin         = authStore.isAdmin
 
-  // Tải thông tin người dùng nếu đã đăng nhập nhưng chưa có trong store
-  if (authStore.isAuthenticated && !authStore.user) {
-    try {
-      await authStore.fetchCurrentUser()
-    } catch {
-      await authStore.logout() // Đăng xuất nếu token hỏng
-    }
+  // 1) Khi user truy cập '/', chuyển tuỳ trạng thái đăng nhập
+  if (to.path === '/') {
+    return isAuthenticated
+      ? next({ name: 'profile' })
+      : next({ name: 'home' })
   }
 
-  const isAuthenticated = authStore.isAuthenticated
-  const isAdmin = authStore.isAdmin
+  // 2) Nếu route yêu cầu auth nhưng chưa login → chuyển về login
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
 
-  if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
-      // Nếu yêu cầu đăng nhập nhưng chưa đăng nhập -> chuyển về /login
-      return next({ name: 'login', query: { redirect: to.fullPath } })
-    }
-
-    if (to.meta.requiresAdmin && !isAdmin) {
-      // Nếu yêu cầu quyền admin nhưng không phải admin -> chuyển về /
-      return next({ name: 'home' })
-    }
-  } else if (to.name === 'login' && isAuthenticated) {
-    // Nếu đã đăng nhập mà vào /login -> chuyển về /
+  // 3) Nếu route yêu cầu admin nhưng không phải admin → home
+  if (to.meta.requiresAdmin && !isAdmin) {
     return next({ name: 'home' })
   }
 
-  // Cập nhật tiêu đề trang
+  // 4) Nếu đã login mà vào /login → chuyển về profile (hoặc home tuỳ bạn)
+  if (to.name === 'login' && isAuthenticated) {
+    return next({ name: 'profile' })
+  }
+
+  // 5) Fetch current user nếu cần (sau hết các redirect để tránh fetch thừa)
+  if (isAuthenticated && !authStore.user) {
+    try {
+      await authStore.fetchCurrentUser()
+    } catch {
+      await authStore.logout()
+      return next({ name: 'login' })
+    }
+  }
+
+  // 6) Cập nhật title và cho phép nav tiếp
   document.title = to.meta.title
     ? `${to.meta.title} - Quản Lý Sinh Viên`
     : 'Hệ Thống Quản Lý Sinh Viên'
+
   next()
 })
+
 
 export default router

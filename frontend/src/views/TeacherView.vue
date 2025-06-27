@@ -400,6 +400,12 @@ import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
+import Dropdown from 'primevue/dropdown';
+import TabView from 'primevue/tabview';
+import TabPanel from 'primevue/tabpanel';
+import Tag from 'primevue/tag';
+import InputNumber from 'primevue/inputnumber';
+
 
 const toast = useToast()
 const {

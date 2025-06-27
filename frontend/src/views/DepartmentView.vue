@@ -184,6 +184,12 @@ import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
+import Tag from 'primevue/tag'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+import InputNumber from 'primevue/inputnumber'
+import InputSwitch from 'primevue/inputswitch'
+import MultiSelect from 'primevue/multiselect'
 
 const toast = useToast()
 const { canViewDepartments, canEditDepartments, canDeleteDepartments, canImportDepartments, canExportDepartments } = usePermissions()
@@ -205,9 +211,10 @@ const statusOptions = [
   { label: 'Không hoạt động', value: 'inactive' }
 ]
 
-onMounted(async () => {
+onMounted(() => {
   if (canViewDepartments.value) {
-    await Promise.all([loadDepartments(), loadUsers()])
+    loadDepartments()
+    loadUsers()
   }
 })
 
@@ -215,7 +222,7 @@ const loadDepartments = async () => {
   try {
     loading.value = true
     const response = await api.get(endpoints.departments)
-    departments.value = response.data
+    departments.value = Array.isArray(response.data.results) ? response.data.results : response.data
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
   } finally {
@@ -236,7 +243,7 @@ const loadActiveDepartments = async () => {
   try {
     loading.value = true
     const response = await api.get(endpoints.departments, { params: { status: 'active' } })
-    departments.value = response.data
+    departments.value = Array.isArray(response.data.results) ? response.data.results : response.data
     toast.add({ severity: 'info', summary: 'Thành công', detail: 'Hiển thị các khoa đang hoạt động', life: 3000 })
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải khoa đang hoạt động', life: 3000 })

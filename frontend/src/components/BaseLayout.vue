@@ -1,7 +1,6 @@
 <template>
   <div class="layout-wrapper">
     <Toast />
-    <!-- Sidebar -->
     <aside class="sidebar" :class="{ 'sidebar-collapsed': isSidebarCollapsed }">
       <div class="sidebar-header">
         <div class="logo-container">
@@ -23,9 +22,9 @@
           <template #item="{ item }">
             <router-link
               v-if="item.visible"
-              :to="item.to"
+              :to="item.to.name"
               class="menu-item"
-              :class="{ 'active': $route.path === item.to }"
+              :class="{ active: $route.name === item.to.name }"
             >
               <i :class="item.icon" class="mr-2"></i>
               <span>{{ item.label }}</span>
@@ -35,9 +34,9 @@
       </div>
       <div class="sidebar-footer" v-if="authStore.isAuthenticated && !isSidebarCollapsed">
         <div class="user-profile">
-          <router-link to="/profile" class="profile-link">
+          <router-link :to="{ name: 'profile' }" class="profile-link">
             <i class="pi pi-user mr-2"></i>
-            {{ authStore.user?.username || 'Profile' }}
+            {{ authStore.user?.username || 'profile' }}
           </router-link>
         </div>
         <Button
@@ -51,7 +50,6 @@
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content" :class="{ 'main-content-full': isSidebarCollapsed }">
       <div class="topbar">
         <div class="topbar-title">
@@ -112,62 +110,63 @@ const menuItems = computed(() =>
     {
       label: 'Trang Chủ',
       icon: 'pi pi-home',
-      to: '/home',
+      to: { name: 'home' },
       visible: true,
     },
     {
       label: 'Sinh Viên',
       icon: 'pi pi-users',
-      to: '/students',
+      to: { name: 'students' },
       visible: canViewStudents.value,
     },
     {
       label: 'Giảng Viên',
       icon: 'pi pi-briefcase',
-      to: '/teachers',
+      to: { name: 'teachers'},
       visible: canViewTeachers.value,
     },
     {
       label: 'Lớp Học',
       icon: 'pi pi-building',
-      to: '/classes',
+      to: { name: 'classes' },
       visible: canViewClasses.value,
     },
     {
       label: 'Môn Học',
       icon: 'pi pi-book',
-      to: '/subjects',
+      to: { name: 'subjects' },
       visible: canViewSubjects.value,
     },
     {
       label: 'Ghi Danh',
       icon: 'pi pi-check-square',
-      to: '/enrollments',
+      to: { name: 'enrollments' },
       visible: canViewEnrollments.value,
     },
     {
       label: 'Học Kỳ',
       icon: 'pi pi-calendar',
-      to: '/semesters',
+      to: { name: 'semesters' },
       visible: canViewSemesters.value,
     },
     {
       label: 'Điểm Số',
       icon: 'pi pi-chart-bar',
-      to: '/scores',
+      to: { name: 'scores' },
       visible: canViewScores.value || isStudent.value,
     },
     {
       label: 'Lịch Học',
       icon: 'pi pi-calendar-alt',
-      to: '/schedules',
+      to: { name: 'schedules' },
       visible: canViewSchedules.value,
     },
     {
       label: 'Quản lý người dùng',
       icon: 'pi pi-cog',
-      to: '/users',
-      visible: isAdmin.value,
+      to: { name: 'users' },
+      visible: false,
+      //visible: isAdmin.value,
     },
   ].filter((item) => item.visible),
 )

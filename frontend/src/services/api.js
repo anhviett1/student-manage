@@ -28,7 +28,7 @@ export const endpoints = {
   userProfile: `${API_PREFIX}/users/profile/`,
   users: `${API_PREFIX}/users/`,
   changePassword: `${API_PREFIX}/users/change-password/`,
-  uploadAvatar: `${API_PREFIX}/users/avatar-upload/`,
+  uploadAvatar: `${API_PREFIX}/users/avatar/`,
   scoreManagement: `${API_PREFIX}/users/score-management/`,
 
   students: `${API_PREFIX}/students/`,
@@ -42,9 +42,7 @@ export const endpoints = {
   departments: `${API_PREFIX}/departments/`,
   schedules: `${API_PREFIX}/schedules/`,
 
-  
-
-
+  djangoAdmin: '/admin/', 
 }
 
 // Interceptor cho request: Thêm token vào header, trừ endpoint Django Admin

@@ -91,3 +91,5 @@ class StudentViewSet(viewsets.ModelViewSet):
             self.gpa = round(total_points / total_credits, 2)
             self.save(update_fields=["gpa"])
         return self.gpa
+    
+

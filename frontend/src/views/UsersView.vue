@@ -4,7 +4,7 @@
       <Toast />
       <ConfirmDialog></ConfirmDialog>
 
-      <div class="header">
+    <div class="header">
         <h2>Quản Lý Người Dùng</h2>
         <Button
           icon="pi pi-plus"
@@ -13,7 +13,7 @@
           @click="openNew"
           v-tooltip="'Thêm người dùng mới'"
         />
-      </div>
+    </div>
 
       <div class="filter-bar">
         <div class="filter-group">
@@ -26,15 +26,15 @@
             class="filter-dropdown"
             showClear
             @change="loadUsers"
-          />
+      />
           <InputText
             v-model="filters.search"
             placeholder="Tìm theo tên, email..."
             class="filter-search"
             @input="onSearchInput"
           />
-        </div>
-      </div>
+    </div>
+    </div>
 
       <DataTable
         :value="userStore.users"
@@ -100,12 +100,12 @@
           <label for="username">Tên Đăng Nhập</label>
           <InputText id="username" v-model.trim="form.username" required :class="{ 'p-invalid': errors.username }" />
           <small class="p-error" v-if="errors.username">{{ errors.username }}</small>
-        </div>
+          </div>
         <div class="field">
           <label for="email">Email</label>
           <InputText id="email" v-model.trim="form.email" type="email" required :class="{ 'p-invalid': errors.email }" />
           <small class="p-error" v-if="errors.email">{{ errors.email }}</small>
-        </div>
+          </div>
         <div class="field">
           <label for="role">Vai Trò</label>
           <Dropdown
@@ -119,7 +119,7 @@
             :class="{ 'p-invalid': errors.role }"
           />
           <small class="p-error" v-if="errors.role">{{ errors.role }}</small>
-        </div>
+          </div>
         <div class="field">
           <label for="password">Mật Khẩu</label>
           <Password
@@ -132,11 +132,11 @@
             :class="{ 'p-invalid': errors.password }"
           />
           <small class="p-error" v-if="errors.password">{{ errors.password }}</small>
-        </div>
+          </div>
         <div class="field-checkbox">
           <Checkbox id="is_active" v-model="form.is_active" :binary="true" />
           <label for="is_active" class="ml-2">Hoạt động</label>
-        </div>
+          </div>
         <template #footer>
           <Button label="Hủy" icon="pi pi-times" text @click="hideDialog" />
           <Button :label="isEditing ? 'Cập Nhật' : 'Tạo'" icon="pi pi-check" @click="handleSubmit" />
@@ -279,7 +279,7 @@ const confirmDeleteUser = (user) => {
     icon: 'pi pi-exclamation-triangle',
     acceptClass: 'p-button-danger',
     accept: async () => {
-      try {
+    try {
         await userStore.deleteUser(user.id);
         toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xóa người dùng thành công', life: 3000 });
         loadUsers();

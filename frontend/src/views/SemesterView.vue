@@ -415,6 +415,12 @@ import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
+import Tag from 'primevue/tag'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+import InputNumber from 'primevue/inputnumber'
+import InputSwitch from 'primevue/inputswitch'
+import MultiSelect from 'primevue/multiselect'
 
 const toast = useToast()
 const {
@@ -457,7 +463,8 @@ const loadSemesters = async () => {
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.global) params.search = filters.value.global
     const response = await api.get(endpoints.semesters, { params })
-    semesters.value = response.data
+    semesters.value = Array.isArray(response.data.results) ? response.data.results : response.data
+    console.log('semesters.value:', semesters.value)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
   } finally {

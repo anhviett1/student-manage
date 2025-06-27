@@ -155,7 +155,14 @@ class ProfileAPIView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_update(self, serializer):
+        """Cập nhật người dùng và lưu last_login_ip nếu có."""
+        user = serializer.save()
+        if "last_login_ip" in self.request.data:
+            user.update_last_login_ip(self.request.data["last_login_ip"])
+        return user
 
+    
 @extend_schema(tags=["Users"])
 class ChangePasswordAPIView(APIView):
     permission_classes = [IsAuthenticated]
