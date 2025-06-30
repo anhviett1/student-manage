@@ -237,6 +237,33 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function fetchAllUsers() {
+    const response = await api.get('/api/v1/users/')
+    return response.data
+  }
+
+  async function fetchUserById(userId) {
+    const response = await api.get(`/api/v1//users/${userId}/`)
+    return response.data
+  }
+
+  async function updateUserProfile(userId, payload) {
+    const response = await api.put(`/api/v1//users/${userId}/`, payload)
+    return response.data
+  }
+
+  async function uploadAvatar(formData) {
+    const response = await api.post(endpoints.uploadAvatar, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
+  }
+
+  async function deleteAvatar() {
+    const response = await api.delete(endpoints.uploadAvatar)
+    return response.data
+  }
+
   return {
     users,
     currentUser,
@@ -253,5 +280,10 @@ export const useUserStore = defineStore('user', () => {
     getCurrentUser,
     updateProfile,
     changePassword,
+    fetchAllUsers,
+    fetchUserById,
+    updateUserProfile,
+    uploadAvatar,
+    deleteAvatar,
   }
 })

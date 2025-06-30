@@ -98,6 +98,11 @@ export function usePermissions() {
     return isOwnerOrAdmin(scoreObject) // Tận dụng lại logic isOwnerOrAdmin
   }
 
+  // Lấy role từ user hiện tại, fallback là 'guest'
+  const userRole = computed(() => authStore.user?.role || 'guest')
+  const canEditProfile = computed(() => userRole.value !== 'guest')
+  const canUploadAvatar = computed(() => userRole.value !== 'guest')
+
   return {
     // Trạng thái xác thực
     isAuthenticated,
@@ -130,5 +135,10 @@ export function usePermissions() {
 
     // Quyền đặc biệt
     canViewOwnScores,
+
+    // New computed properties
+    canEditProfile,
+    canUploadAvatar,
+    userRole,
   }
 }
