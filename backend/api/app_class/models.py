@@ -48,7 +48,7 @@ class Class(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật", null=False, blank=False)
 
     def __str__(self):
-        return f"{self.name} ({self.class_id})"
+        return f"{self.class_name} ({self.class_id})"
 
     class Meta:
         app_label = "app_class"

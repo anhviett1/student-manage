@@ -233,9 +233,20 @@ const loadDepartments = async () => {
 const loadUsers = async () => {
   try {
     const response = await api.get(endpoints.users, { params: { role: 'department_head,admin' } })
-    users.value = response.data
+    
+    // Ensure users.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      users.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      users.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      users.value = response.data.data
+    } else {
+      users.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách người dùng', life: 3000 })
+    users.value = []
   }
 }
 

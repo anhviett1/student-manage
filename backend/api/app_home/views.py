@@ -42,34 +42,47 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Lọc người dùng dựa trên tham số truy vấn."""
-        queryset = User.objects.none()
-        if self.request.user.is_authenticated:
-            filters = Q()
-            search_term = self.request.query_params.get("searchTerm", "")
-            role_filter = self.request.query_params.get("role", "")
-            department_filter = self.request.query_params.get("department", "")
-            status_filter = self.request.query_params.get("status", "")
+        if not self.request.user.is_authenticated:
+            return User.objects.none()
+            
+        # Admin có thể xem tất cả users
+        if self.request.user.is_admin or self.request.user.is_staff or self.request.user.is_superuser:
+            queryset = User.objects.filter(is_deleted=False)
+        else:
+            # Non-admin chỉ có thể xem chính mình
+            queryset = User.objects.filter(id=self.request.user.id, is_deleted=False)
+            
+        # Apply filters
+        filters = Q()
+        search_term = self.request.query_params.get("search", "")
+        role_filter = self.request.query_params.get("role", "")
+        department_filter = self.request.query_params.get("department", "")
+        status_filter = self.request.query_params.get("status", "")
 
+        if search_term:
+            filters &= (
+                Q(username__icontains=search_term)
+                | Q(first_name__icontains=search_term)
+                | Q(last_name__icontains=search_term)
+                | Q(email__icontains=search_term)
+            )
+            
+        if role_filter:
             role_list = role_filter.split(",") if role_filter else []
-            department_list = [int(id) for id in department_filter.split(",") if id.isdigit()]
-            status_list = status_filter.split(",") if status_filter else ["active"]
-
-            if status_list:
-                filters &= Q(is_active__in=[s == "active" for s in status_list])
-            if search_term:
-                filters &= (
-                    Q(username__icontains=search_term)
-                    | Q(first_name__icontains=search_term)
-                    | Q(last_name__icontains=search_term)
-                    | Q(email__icontains=search_term)
-                )
             if role_list:
                 filters &= Q(role__in=role_list)
+                
+        if department_filter:
+            department_list = [int(id) for id in department_filter.split(",") if id.isdigit()]
             if department_list:
                 filters &= Q(department__id__in=department_list)
+                
+        if status_filter:
+            status_list = status_filter.split(",") if status_filter else ["active"]
+            if status_list:
+                filters &= Q(is_active__in=[s == "active" for s in status_list])
 
-            queryset = User.objects.filter(filters).distinct().order_by("-created_at")
-        return queryset
+        return queryset.filter(filters).distinct().order_by("-created_at")
 
     def perform_create(self, serializer):
         """Tạo người dùng mới và mã hóa mật khẩu nếu có."""

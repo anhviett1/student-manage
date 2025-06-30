@@ -459,27 +459,60 @@ onMounted(async () => {
 const loadSemesters = async () => {
   try {
     const response = await api.get(endpoints.semesters, { params: { active: true } })
-    semesters.value = response.data
+    
+    // Ensure semesters.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      semesters.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      semesters.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      semesters.value = response.data.data
+    } else {
+      semesters.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải học kỳ', life: 3000 })
+    semesters.value = []
   }
 }
 
 const loadStudents = async () => {
   try {
     const response = await api.get(endpoints.students)
-    students.value = response.data
+    
+    // Ensure students.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      students.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      students.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      students.value = response.data.data
+    } else {
+      students.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách sinh viên', life: 3000 })
+    students.value = []
   }
 }
 
 const loadSubjects = async () => {
   try {
     const response = await api.get(endpoints.subjects)
-    subjects.value = response.data
+    
+    // Ensure subjects.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      subjects.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      subjects.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      subjects.value = response.data.data
+    } else {
+      subjects.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách môn học', life: 3000 })
+    subjects.value = []
   }
 }
 

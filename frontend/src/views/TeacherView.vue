@@ -161,7 +161,7 @@
         </div>
 
         <DataTable
-          v-if="canViewTeachers"
+          v-if="(teachers.length > 0 || loading) && canViewTeachers"
           :value="teachers"
           :loading="loading"
           dataKey="teacher_id"
@@ -243,6 +243,17 @@
             </template>
           </Column>
         </DataTable>
+
+        <!-- Fallback when no data and not loading -->
+        <div v-else-if="!loading && teachers.length === 0 && canViewTeachers" class="no-data-message">
+          <p>Không có dữ liệu giảng viên để hiển thị.</p>
+          <Button 
+            label="Tải lại" 
+            icon="pi pi-refresh" 
+            @click="loadTeachers"
+            severity="secondary"
+          />
+        </div>
 
         <!-- Dialog for Adding/Editing Teacher -->
         <Dialog
@@ -473,9 +484,20 @@ onMounted(async () => {
 const loadDepartments = async () => {
   try {
     const response = await api.get(endpoints.departments)
-    departments.value = response.data
+    
+    // Ensure departments.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      departments.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      departments.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      departments.value = response.data.data
+    } else {
+      departments.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
+    departments.value = []
   }
 }
 
@@ -499,9 +521,20 @@ const loadTeachers = async () => {
     if (filters.value.department) params.department_id = filters.value.department
     if (filters.value.global) params.search = filters.value.global
     const response = await api.get(endpoints.teachers, { params })
-    teachers.value = response.data.data
+    
+    // Ensure teachers.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      teachers.value = response.data
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      teachers.value = response.data.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      teachers.value = response.data.results
+    } else {
+      teachers.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách giảng viên', life: 3000 })
+    teachers.value = []
   } finally {
     loading.value = false
   }
@@ -786,5 +819,19 @@ const getDegreeLabel = (degree) => {
   padding: 2rem;
   font-size: 1.2rem;
   color: #ef4444;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.no-data-message p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
 }
 </style>

@@ -44,7 +44,7 @@ class Semester(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")
 
     def __str__(self):
-        return f"{self.name} - {self.academic_year}"
+        return f"{self.semester_name} - {self.academic_year}"
 
     class Meta:
         app_label = 'app_semester'

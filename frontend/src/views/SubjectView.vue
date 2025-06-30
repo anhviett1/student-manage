@@ -54,6 +54,7 @@
     </div>
 
     <DataTable
+      v-if="subjects.length > 0 || loading"
       :value="subjects"
       :loading="loading"
       dataKey="subject_id"
@@ -132,6 +133,17 @@
         </template>
       </Column>
     </DataTable>
+
+    <!-- Fallback when no data and not loading -->
+    <div v-else-if="!loading && subjects.length === 0" class="no-data-message">
+      <p>Không có dữ liệu môn học để hiển thị.</p>
+      <Button 
+        label="Tải lại" 
+        icon="pi pi-refresh" 
+        @click="loadSubjects"
+        severity="secondary"
+      />
+    </div>
 
     <!-- Dialog for Adding/Editing Subject -->
     <Dialog
@@ -287,18 +299,40 @@ onMounted(async () => {
 const loadDepartments = async () => {
   try {
     const response = await api.get(endpoints.departments)
-    departments.value = Array.isArray(response.data.results) ? response.data.results : response.data
+    
+    // Ensure departments.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      departments.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      departments.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      departments.value = response.data.data
+    } else {
+      departments.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
+    departments.value = []
   }
 }
 
 const loadSemesters = async () => {
   try {
     const response = await api.get(endpoints.semesters)
-    semesters.value = Array.isArray(response.data.results) ? response.data.results : response.data
+    
+    // Ensure semesters.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      semesters.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      semesters.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      semesters.value = response.data.data
+    } else {
+      semesters.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách học kỳ', life: 3000 })
+    semesters.value = []
   }
 }
 
@@ -310,9 +344,18 @@ const loadSubjects = async () => {
     if (filters.value.department) params.department__id = filters.value.department
     if (filters.value.global) params.search = filters.value.global
     const response = await api.get(endpoints.subjects, { params })
-    subjects.value = response.data
+    
+    // Ensure subjects.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      subjects.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      subjects.value = response.data.results
+    } else {
+      subjects.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách môn học', life: 3000 })
+    subjects.value = []
   } finally {
     loading.value = false
   }
@@ -565,5 +608,19 @@ const getStatusSeverity = (status) => {
   padding: 2rem;
   font-size: 1.2rem;
   color: #ef4444;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.no-data-message p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
 }
 </style>

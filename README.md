@@ -187,3 +187,166 @@ MIT License
 ## 📞 Liên hệ
 
 Nếu bạn có câu hỏi hoặc góp ý, vui lòng liên hệ: example@example.com
+
+## Overview
+A comprehensive student management system built with Django (backend) and Vue.js (frontend) using PrimeVue components.
+
+## Recent Updates - Integrated ProfileView
+
+### 🎯 **Major Code Improvement: Unified ProfileView**
+
+We have successfully integrated `AdminView` and `UsersView` functionality into `ProfileView.vue` to create a unified, more maintainable codebase.
+
+#### **What's New:**
+
+##### **1. Integrated Admin Interface**
+- **Tab-based Navigation**: Admin users now see a tabbed interface with:
+  - **Hồ Sơ Cá Nhân** (Personal Profile)
+  - **Quản Lý Người Dùng** (User Management)
+  - **Cấu Hình Hệ Thống** (System Configuration)
+
+##### **2. Enhanced User Management**
+- **Complete CRUD Operations**: Create, Read, Update, Delete users
+- **Advanced Filtering**: Filter by role and search by name/email
+- **Real-time Search**: Debounced search functionality
+- **Role-based Tags**: Visual indicators for different user roles
+- **Confirmation Dialogs**: Safe delete operations with confirmation
+
+##### **3. System Configuration**
+- **Field Visibility Control**: Configure which fields are visible per role
+- **Bulk Operations**: Select all/none for role permissions
+- **Django Admin Access**: Direct link to Django admin interface
+
+##### **4. Improved User Experience**
+- **Nested Routes**: Change password view integrated as sub-route
+- **Responsive Design**: Mobile-friendly interface
+- **Consistent Styling**: Unified design language across all features
+
+#### **Files Removed:**
+- ❌ `AdminView.vue` - Functionality integrated into ProfileView
+- ❌ `UsersView.vue` - User management integrated into ProfileView
+
+#### **Files Updated:**
+- ✅ `ProfileView.vue` - Now contains all admin and user management features
+- ✅ `router/index.js` - Removed standalone users route
+- ✅ `ChangePasswordView.vue` - Enhanced for nested routing
+
+## Features
+
+### **For All Users:**
+- Personal profile management
+- Password change functionality
+- Avatar upload and cropping
+- Role-based field visibility
+
+### **For Admin Users:**
+- **Tab 1: Personal Profile**
+  - View and edit personal information
+  - Upload profile picture
+  - Change password
+  
+- **Tab 2: User Management**
+  - View all users in a data table
+  - Add new users
+  - Edit existing users
+  - Delete users with confirmation
+  - Filter by role and search
+  - Real-time updates
+  
+- **Tab 3: System Configuration**
+  - Configure field visibility per role
+  - Bulk permission management
+  - Access to Django admin
+
+## Technical Implementation
+
+### **Component Structure:**
+```
+ProfileView.vue
+├── Regular User Interface
+│   ├── Profile Display/Edit
+│   ├── Avatar Management
+│   └── Password Change
+└── Admin Interface (TabView)
+    ├── Tab 1: Personal Profile
+    ├── Tab 2: User Management
+    │   ├── DataTable
+    │   ├── Create/Edit Dialogs
+    │   └── Filter/Search
+    └── Tab 3: System Configuration
+        ├── Field Configuration Table
+        └── Django Admin Access
+```
+
+### **Key Features:**
+- **Reactive Data Management**: Real-time updates across all components
+- **Role-based Access Control**: Different interfaces for different user roles
+- **Nested Routing**: Seamless navigation between profile and change password
+- **Responsive Design**: Works on all device sizes
+- **Error Handling**: Comprehensive error handling and user feedback
+
+### **State Management:**
+- Uses Pinia stores for user data
+- Reactive computed properties for dynamic content
+- Watchers for automatic data loading
+- Form validation and error handling
+
+## Usage
+
+### **For Regular Users:**
+1. Navigate to `/profile`
+2. View and edit personal information
+3. Click "Đổi mật khẩu" to change password
+4. Upload profile picture by clicking on avatar
+
+### **For Admin Users:**
+1. Navigate to `/profile`
+2. Use tabs to switch between different functions:
+   - **Hồ Sơ Cá Nhân**: Manage personal profile
+   - **Quản Lý Người Dùng**: Manage all users in the system
+   - **Cấu Hình Hệ Thống**: Configure system settings
+
+### **User Management (Admin Only):**
+1. Click "Thêm Người Dùng" to create new users
+2. Use filter dropdown to filter by role
+3. Use search box to find users by name or email
+4. Click edit/delete buttons in the table for user operations
+5. All changes are saved automatically
+
+## Benefits of This Integration
+
+### **Code Quality:**
+- ✅ **Reduced Complexity**: Fewer files to maintain
+- ✅ **Better Organization**: Related functionality grouped together
+- ✅ **Consistent UI**: Unified design and user experience
+- ✅ **Easier Testing**: Single component to test
+
+### **User Experience:**
+- ✅ **Seamless Navigation**: No page jumps between related functions
+- ✅ **Context Preservation**: User stays in the same interface
+- ✅ **Faster Loading**: No need to load separate pages
+- ✅ **Better Mobile Experience**: Tabbed interface works well on mobile
+
+### **Development:**
+- ✅ **Easier Maintenance**: Single source of truth for user-related features
+- ✅ **Reduced Bundle Size**: Fewer components to load
+- ✅ **Better State Management**: Shared state between related features
+- ✅ **Simplified Routing**: Fewer routes to manage
+
+## Future Enhancements
+
+This unified approach provides a solid foundation for future enhancements:
+
+- **Advanced User Analytics**: Dashboard with user statistics
+- **Bulk Operations**: Import/export user data
+- **Audit Logs**: Track user changes and system access
+- **Advanced Permissions**: Granular permission system
+- **User Groups**: Group-based user management
+
+## Conclusion
+
+The integration of AdminView and UsersView into ProfileView represents a significant improvement in code organization and user experience. This unified approach makes the system more maintainable, provides a better user experience, and sets the foundation for future enhancements.
+
+---
+
+*This update demonstrates our commitment to continuous improvement and code quality while maintaining all existing functionality.*

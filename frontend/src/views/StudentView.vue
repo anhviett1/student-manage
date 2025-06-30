@@ -176,7 +176,7 @@
         </div>
 
         <DataTable
-          v-if="canViewStudents"
+          v-if="(students.length > 0 || loading) && canViewStudents"
           :value="students"
           :loading="loading"
           dataKey="id"
@@ -255,6 +255,17 @@
             </template>
           </Column>
         </DataTable>
+
+        <!-- Fallback when no data and not loading -->
+        <div v-else-if="!loading && students.length === 0 && canViewStudents" class="no-data-message">
+          <p>Không có dữ liệu sinh viên để hiển thị.</p>
+          <Button 
+            label="Tải lại" 
+            icon="pi pi-refresh" 
+            @click="loadStudents"
+            severity="secondary"
+          />
+        </div>
 
         <!-- Dialog for Adding/Editing Student -->
         <Dialog
@@ -507,9 +518,20 @@ onMounted(async () => {
 const loadDepartments = async () => {
   try {
     const response = await api.get(endpoints.departments)
-    departments.value = response.data
+    
+    // Ensure departments.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      departments.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      departments.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      departments.value = response.data.data
+    } else {
+      departments.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
+    departments.value = []
   }
 }
 
@@ -541,9 +563,20 @@ const loadStudents = async () => {
     if (filters.department) params.department_id = filters.department
     if (filters.global) params.search = filters.global
     const response = await api.get(endpoints.students, { params })
-    students.value = response.data.data
+    
+    // Ensure students.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      students.value = response.data
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      students.value = response.data.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      students.value = response.data.results
+    } else {
+      students.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách sinh viên', life: 3000 })
+    students.value = []
   } finally {
     loading.value = false
   }
@@ -860,5 +893,19 @@ const getStatusSeverity = (status) => {
   padding: 2rem;
   font-size: 1.2rem;
   color: #ef4444;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.no-data-message p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
 }
 </style>

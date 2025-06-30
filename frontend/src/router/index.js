@@ -26,24 +26,19 @@ const routes = [
     component: BaseLayout,
     meta: { requiresAuth: true },
     children: [
-      
-      {
-        path: 'users',
-        name: 'users',
-        component: () => import('../views/UsersView.vue'),
-        meta: { title: 'Quản Lý Người Dùng', requiresAdmin: true },
-      },
       {
         path: 'profile',
         name: 'profile',
         component: () => import('../views/ProfileView.vue'),
         meta: { title: 'Hồ Sơ Của Tôi' },
-      },
-      {
-        path: 'change-password',
-        name: 'change-password',
-        component: () => import('../views/ChangePasswordView.vue'),
-        meta: { title: 'Đổi Mật Khẩu' },
+        children: [
+          {
+            path: 'change-password',
+            name: 'profile-change-password',
+            component: () => import('../views/ChangePasswordView.vue'),
+            meta: { title: 'Đổi Mật Khẩu' },
+          }
+        ]
       },
       {
         path: 'students',

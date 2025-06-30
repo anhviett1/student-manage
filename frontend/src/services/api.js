@@ -26,7 +26,7 @@ export const endpoints = {
   refreshToken: `${API_PREFIX}/token/refresh/`,
   // User Management
   userProfile: `${API_PREFIX}/users/profile/`,
-  users: `${API_PREFIX}/users/`,
+  users: `${API_PREFIX}/users/users/`,
   changePassword: `${API_PREFIX}/users/change-password/`,
   uploadAvatar: `${API_PREFIX}/users/avatar/`,
   scoreManagement: `${API_PREFIX}/users/score-management/`,

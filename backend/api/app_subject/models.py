@@ -30,7 +30,7 @@ class Subject(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")
 
     def __str__(self):
-        return f"{self.name} ({self.subject_id})"
+        return f"{self.subject_name} ({self.subject_id})"
 
     class Meta:
         app_label = "app_subject"

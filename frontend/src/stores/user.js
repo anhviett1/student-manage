@@ -28,13 +28,25 @@ export const useUserStore = defineStore('user', () => {
         detail: 'Bạn không có quyền truy cập danh sách người dùng',
         life: 3000,
       })
-      return
+      return []
     }
     isLoading.value = true
     errorMessage.value = null
     try {
       const response = await api.get(endpoints.users, { params })
-      users.value = response.data.results || response.data
+      
+      // Handle different response formats
+      let userData = []
+      if (Array.isArray(response.data)) {
+        userData = response.data
+      } else if (response.data && Array.isArray(response.data.results)) {
+        userData = response.data.results
+      } else if (response.data && typeof response.data === 'object') {
+        // If it's an object, try to extract users from it
+        userData = Object.values(response.data).filter(item => Array.isArray(item)).flat()
+      }
+      
+      users.value = userData
       return users.value
     } catch (error) {
       errorMessage.value = error.response?.data?.detail || 'Không thể tải danh sách người dùng'
@@ -44,6 +56,7 @@ export const useUserStore = defineStore('user', () => {
         detail: errorMessage.value,
         life: 3000,
       })
+      users.value = [] // Ensure users is always an array
       throw error
     } finally {
       isLoading.value = false
@@ -165,14 +178,14 @@ export const useUserStore = defineStore('user', () => {
 
   async function getCurrentUser() {
     if (!authStore.isAuthenticated) return null
-    isLoading.value = true;
-    errorMessage.value = null;
+    isLoading.value = true
+    errorMessage.value = null
     try {
       const response = await api.get(endpoints.userProfile)
       currentUser.value = response.data
-      return response.data;
+      return response.data
     } catch (error) {
-      errorMessage.value = error.response?.data?.detail || 'Không thể tải hồ sơ người dùng';
+      errorMessage.value = error.response?.data?.detail || 'Không thể tải hồ sơ người dùng'
       addToast({
         severity: 'error',
         summary: 'Lỗi',
@@ -181,16 +194,16 @@ export const useUserStore = defineStore('user', () => {
       })
       throw error
     } finally {
-      isLoading.value == false;
+      isLoading.value = false
     }
   }
 
   async function updateProfile(userData) {
-    isLoading.value == true;
-    errorMessage.value = null;
+    isLoading.value = true
+    errorMessage.value = null
     try {
       const response = await api.put(endpoints.userProfile, userData)
-      currentUser.value = response.data;
+      currentUser.value = response.data
       addToast({
         severity: 'success',
         summary: 'Thành Công',
@@ -199,7 +212,7 @@ export const useUserStore = defineStore('user', () => {
       })
       return response.data
     } catch (error) {
-      errorMessage.value = error.response?.data?.detail || 'Không thể cập nhật hồ sơ';
+      errorMessage.value = error.response?.data?.detail || 'Không thể cập nhật hồ sơ'
       addToast({
         severity: 'error',
         summary: 'Lỗi',
@@ -208,13 +221,13 @@ export const useUserStore = defineStore('user', () => {
       })
       throw error
     } finally {
-      isLoading.value == false;
+      isLoading.value = false
     }
   }
 
   async function changePassword(passwordData) {
-    isLoading.value == true;
-    errorMessage.value = null;
+    isLoading.value = true
+    errorMessage.value = null
     try {
       await api.post(endpoints.changePassword, passwordData)
       addToast({
@@ -224,7 +237,7 @@ export const useUserStore = defineStore('user', () => {
         life: 3000,
       })
     } catch (error) {
-      errorMessage.value = error.response?.data?.detail || 'Không thể đổi mật khẩu';
+      errorMessage.value = error.response?.data?.detail || 'Không thể đổi mật khẩu'
       addToast({
         severity: 'error',
         summary: 'Lỗi',
@@ -233,23 +246,47 @@ export const useUserStore = defineStore('user', () => {
       })
       throw error
     } finally {
-      isLoading.value == false;
+      isLoading.value = false
     }
   }
 
   async function fetchAllUsers() {
-    const response = await api.get('/api/v1/users/')
-    return response.data
+    try {
+      const response = await api.get(endpoints.users, { params: { page_size: 9999 } })
+      
+      // Handle different response formats
+      let userData = []
+      if (Array.isArray(response.data)) {
+        userData = response.data
+      } else if (response.data && Array.isArray(response.data.results)) {
+        userData = response.data.results
+      } else if (response.data && typeof response.data === 'object') {
+        // If it's an object, try to extract users from it
+        userData = Object.values(response.data).filter(item => Array.isArray(item)).flat()
+      }
+      
+      return userData
+    } catch (error) {
+      return []
+    }
   }
 
   async function fetchUserById(userId) {
-    const response = await api.get(`/api/v1//users/${userId}/`)
-    return response.data
+    try {
+      const response = await api.get(`${endpoints.users}${userId}/`)
+      return response.data
+    } catch (error) {
+      throw error
+    }
   }
 
   async function updateUserProfile(userId, payload) {
-    const response = await api.put(`/api/v1//users/${userId}/`, payload)
-    return response.data
+    try {
+      const response = await api.put(`${endpoints.users}${userId}/`, payload)
+      return response.data
+    } catch (error) {
+      throw error
+    }
   }
 
   async function uploadAvatar(formData) {

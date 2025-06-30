@@ -414,9 +414,20 @@ const loadTeachers = async () => {
 const loadDepartments = async () => {
   try {
     const response = await api.get(endpoints.departments)
-    departments.value = response.data
+    
+    // Ensure departments.value is always an array
+    if (response.data && Array.isArray(response.data)) {
+      departments.value = response.data
+    } else if (response.data && response.data.results && Array.isArray(response.data.results)) {
+      departments.value = response.data.results
+    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      departments.value = response.data.data
+    } else {
+      departments.value = []
+    }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách khoa', life: 3000 })
+    departments.value = []
   } finally {
     loading.value = false
   }
