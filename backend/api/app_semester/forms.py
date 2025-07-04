@@ -8,25 +8,7 @@ from django.core.validators import RegexValidator
 class SemesterForm(forms.ModelForm):
     class Meta:
         model = Semester
-        fields = [
-            "semester_name",
-            "academic_year",
-            "start_date",
-            "end_date",
-            "registration_start",
-            "registration_end",
-            "add_drop_deadline",
-            "status",
-            "total_credits",
-            "min_credits",
-            "max_credits",
-            "tuition_deadline",
-            "late_fee_start",
-            "late_fee_amount",
-            "description",
-            "notes",
-            "is_active",
-        ]
+        fields = '__all__'
         widgets = {
             "semester_name": forms.TextInput(
                 attrs={

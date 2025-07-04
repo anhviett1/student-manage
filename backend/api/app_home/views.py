@@ -305,7 +305,7 @@ class ViewOwnScoresAPIView(APIView):
         serializer = ScoreSerializer(scores, many=True)  
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-@extend_schema(tags=["Statistics"])
+@extend_schema(tags=["Users"])
 class StatisticsAPIView(APIView):
     permission_classes = [IsAdminOrTeacher]
     serializer_class = None

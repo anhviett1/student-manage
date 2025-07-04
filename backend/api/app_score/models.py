@@ -9,18 +9,14 @@ from ..app_semester.models import Semester
 
 User = get_user_model()
 
-
 def get_default_student():
     return Student.objects.first().student_id if Student.objects.exists() else 1
-
 
 def get_default_subject():
     return Subject.objects.first().subject_id if Subject.objects.exists() else 1
 
-
 def get_default_semester():
     return Semester.objects.first().semester_id if Semester.objects.exists() else 1
-
 
 class Score(models.Model):
     STATUS_CHOICES = [
@@ -50,7 +46,6 @@ class Score(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.subject} - {self.semester}"
-
     
     class Meta:
         app_label = "app_score"

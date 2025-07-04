@@ -1,108 +1,109 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.db.models import Q
+from django.utils import timezone
+from django.http import HttpResponse
+from openpyxl import Workbook
 from .models import Department
 from .serializers import DepartmentSerializer
-from ..app_home.permissions import IsAdmin, IsAdminOrReadOnly
+from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-import csv
-from django.http import HttpResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 @extend_schema(tags=["Departments"])
 class DepartmentViewSet(viewsets.ModelViewSet):
-    
-    permission_classes = [IsAdminOrReadOnly]
     serializer_class = DepartmentSerializer
+    permission_classes = [IsAdminOrReadOnly]
     lookup_field = "department_id"
-    
+
     def get_queryset(self):
-        queryset = Department.objects.none()
+        user = self.request.user
+        if not user.is_authenticated:
+            return Department.objects.none()
 
-        if self.request.user.is_authenticated:
-            filters = Q()
+        query = self.request.query_params
+        filters = Q()
 
-            search_term = self.request.query_params.get("searchTerm", "")
-            status_filter = self.request.query_params.get("status", "")
-            head_filter = self.request.query_params.get("head", "")
+        # Lấy các filter
+        search_term = query.get("search", "")
+        is_active_filter = query.get("is_active", "")
 
-            status_list = status_filter.split(",") if status_filter else ["active"]
-            head_list = [int(id) for id in head_filter.split(",") if id.isdigit()]
+        if is_active_filter:
+            is_active = is_active_filter.lower() == "true"
+            filters &= Q(is_active=is_active)
+        else:
+            filters &= Q(is_active=True)
 
-            if status_list:
-                filters &= Q(is_active__in=[s == "active" for s in status_list])
+        if search_term:
+            filters &= (
+                Q(department_name__icontains=search_term)
+                | Q(description__icontains=search_term)
+                | Q(head__full_name__icontains=search_term)
+            )
 
-            if search_term:
-                filters &= (
-                    Q(department_name__icontains=search_term)
-                    | Q(code__icontains=search_term)
-                    | Q(description__icontains=search_term)
-                )
+        return Department.objects.filter(filters).distinct().order_by("department_name")
 
-            if head_list:
-                filters &= Q(head__id__in=head_list)
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._validate_department(instance)
+        return instance
 
-            queryset = Department.objects.filter(filters).distinct().order_by("department_name")
-
-        return queryset
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._validate_department(instance)
+        return instance
 
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
-        return instance
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        if instance.head and not instance.head.is_active:
-            raise ValueError("Trưởng khoa phải là người dùng đang hoạt động.")
-        if instance.code and Department.objects.filter(code=instance.code).exclude(pk=instance.pk).exists():
-            raise ValueError("Mã khoa phải là duy nhất.")
-        return instance
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        if instance.head and not instance.head.is_active:
-            raise ValueError("Trưởng khoa phải là người dùng đang hoạt động.")
-        if instance.code and Department.objects.filter(code=instance.code).exists():
-            raise ValueError("Mã khoa phải là duy nhất.")
-        return instance
 
-@extend_schema(tags=["Departments"]) 
-class DepartmentExportAPIView(APIView):
-    permission_classes = [IsAdmin]
-    serializer_class = DepartmentSerializer
-    def get(self, request, *args, **kwargs):
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="departments.csv"'
+    def _validate_department(self, instance):
+        """Kiểm tra logic hợp lệ."""
+        if not instance.department_name:
+            raise ValueError("Tên khoa không được để trống.")
 
-        writer = csv.writer(response)
+    @extend_schema(
+        #summary="Export departments to Excel",
+        responses={200: None},
+    )
+    @action(detail=False, methods=["get"], url_path="export")
+    def export(self, request):
+        try:
+            queryset = self.get_queryset()
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = "Departments"
 
-        # Write header row
-        writer.writerow([
-            'department_id', 'department_name', 'code', 'description', 
-            'is_active', 'created_at', 'updated_at', 'is_deleted', 'head_id', 'head_username'
-        ])
+            headers = [
+                "ID khoa", "Tên khoa", "Mô tả", "Trưởng khoa",
+                "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+            ]
+            sheet.append(headers)
 
-        # Write data rows
-        departments = Department.objects.filter(is_deleted=False).order_by('department_name')
-        for department in departments:
-            writer.writerow([
-                department.department_id,
-                department.department_name,
-                department.code,
-                department.description,
-                department.is_active,
-                department.created_at.isoformat() if department.created_at else '',
-                department.updated_at.isoformat() if department.updated_at else '',
-                department.is_deleted,
-                department.head.id if department.head else '',
-                department.head.username if department.head else ''
-            ])
-        return response
+            for department in queryset:
+                sheet.append([
+                    department.department_id,
+                    department.department_name,
+                    department.description or "",
+                    str(department.head) if department.head else "",
+                    "Có" if department.is_active else "Không",
+                    department.created_at,
+                    department.updated_at
+                ])
 
-
-    
-
-
-
-    
+            response = HttpResponse(
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response["Content-Disposition"] = f'attachment; filename="departments_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            workbook.save(response)
+            return response
+        except Exception as e:
+            logger.error(f"Error exporting departments: {str(e)}")
+            return Response(
+                {"detail": "Không thể xuất danh sách khoa."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

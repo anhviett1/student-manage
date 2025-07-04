@@ -151,8 +151,26 @@
               class="filter-dropdown mr-2"
               @change="loadTeachers"
             />
+            <Dropdown
+              v-model="filters.degree"
+              :options="degreeOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Lọc học vị"
+              class="filter-dropdown mr-2"
+              @change="loadTeachers"
+            />
+            <Dropdown
+              v-model="filters.gender"
+              :options="genderOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Lọc giới tính"
+              class="filter-dropdown mr-2"
+              @change="loadTeachers"
+            />
             <InputText
-              v-model="filters.global"
+              v-model="filters.searchTerm"
               placeholder="Tìm mã, tên, email..."
               class="filter-search"
               @input="filterTeachers"
@@ -442,7 +460,9 @@ const submitted = ref(false)
 const filters = ref({
   status: null,
   department: null,
-  global: '',
+  degree: null,
+  gender: null,
+  searchTerm: '',
 })
 
 const navigateToHome = () => {
@@ -519,7 +539,9 @@ const loadTeachers = async () => {
     const params = {}
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.department) params.department_id = filters.value.department
-    if (filters.value.global) params.search = filters.value.global
+    if (filters.value.degree) params.degree = filters.value.degree
+    if (filters.value.gender) params.gender = filters.value.gender
+    if (filters.value.searchTerm) params.search = filters.value.searchTerm
     const response = await api.get(endpoints.teachers, { params })
     
     // Ensure teachers.value is always an array
@@ -673,7 +695,13 @@ const changeStatus = async () => {
 
 const exportTeachers = async () => {
   try {
-    const response = await api.get(`${endpoints.teachers}export/`, { responseType: 'blob' })
+    const params = {}
+    if (filters.value.status) params.status = filters.value.status
+    if (filters.value.department) params.department_id = filters.value.department
+    if (filters.value.degree) params.degree = filters.value.degree
+    if (filters.value.gender) params.gender = filters.value.gender
+    if (filters.value.searchTerm) params.search = filters.value.searchTerm
+    const response = await api.get(`${endpoints.teachers}export/`, { params, responseType: 'blob' })
     const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     saveAs(blob, `teachers_${new Date().toISOString().split('T')[0]}.xlsx`)
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Xuất danh sách giảng viên thành công', life: 3000 })
@@ -833,5 +861,64 @@ const getDegreeLabel = (degree) => {
 .no-data-message p {
   margin-bottom: 1rem;
   font-size: 1.1rem;
+}
+.action-buttons, .p-datatable-sm :deep(td .p-button) {
+  gap: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button) {
+  min-width: 28px !important;
+  height: 28px !important;
+  width: 28px !important;
+  padding: 0 !important;
+  font-size: 0.9rem !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button:last-child) {
+  margin-right: 0 !important;
+}
+.p-datatable-sm :deep(td .p-button .pi) {
+  font-size: 0.9rem !important;
+}
+.p-datatable-sm :deep(td .p-button:hover) {
+  box-shadow: 0 0 0 2px #c7d2fe;
+}
+.p-datatable-sm :deep(td .p-button + .p-button) {
+  margin-left: 0.15rem !important;
+}
+.p-tag {
+  font-size: 0.95em;
+  padding: 0.2em 0.7em;
+}
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td),
+.p-datatable-sm :deep(.p-datatable-thead > tr > th) {
+  padding: 0.85rem 1.1rem;
+}
+.p-datatable-sm :deep(.p-datatable-thead > tr > th) {
+  background: #f8f9fa;
+  font-size: 1rem;
+  border-right: 1px solid #f1f1f1;
+}
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td) {
+  border-right: 1px solid #f4f4f4;
+}
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td:last-child),
+.p-datatable-sm :deep(.p-datatable-thead > tr > th:last-child) {
+  border-right: none;
+}
+@media (max-width: 768px) {
+  .p-datatable-sm :deep(td .p-button) {
+    min-width: 24px !important;
+    height: 24px !important;
+    width: 24px !important;
+    font-size: 0.8rem !important;
+  }
+  .p-datatable-sm :deep(td),
+  .p-datatable-sm :deep(th) {
+    padding: 0.5em 0.4em;
+  }
 }
 </style>

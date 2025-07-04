@@ -94,6 +94,9 @@ const loadDepartments = async () => {
   const response = await api.get(endpoints.departments)
   departments.value = Array.isArray(response.data.results) ? response.data.results : response.data
 }
+function fetchSomething(){
+  return Promise.resolve({ message: "Success data"})
+}
 
 onMounted(() => {
   loadData()

@@ -9,14 +9,11 @@ from ..app_department.models import Department
 
 User = get_user_model()
 
-
 def get_default_semester():
     return Semester.objects.first().semester_id if Semester.objects.exists() else "HK001"
 
-
 def get_default_subject():
     return Subject.objects.first().subject_id if Subject.objects.exists() else "MH001"
-
 
 class Class(models.Model):
     STATUS_CHOICES = [

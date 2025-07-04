@@ -7,7 +7,6 @@ from ..app_department.models import Department
 
 User = get_user_model()
 
-
 class Teacher(models.Model):
     GENDER_CHOICES = [
         ("M", "Nam"),
@@ -40,7 +39,6 @@ class Teacher(models.Model):
     address = models.TextField(verbose_name="Địa chỉ", default="Địa chỉ mặc định")
 
     # Thông tin chuyên môn
-
     degree = models.CharField(max_length=20, choices=DEGREE_CHOICES, verbose_name="Học vị", default="master")
     specialization = models.CharField(max_length=200, verbose_name="Chuyên ngành", default="Chưa xác định")
     years_of_experience = models.PositiveIntegerField(default=0, verbose_name="Số năm kinh nghiệm")

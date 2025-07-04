@@ -1,9 +1,17 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.db.models import Q
+from django.utils import timezone
+from django.http import HttpResponse
+from openpyxl import Workbook
 from .models import Subject
 from .serializers import SubjectSerializer
 from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
+import logging
+
+logger = logging.getLogger(__name__)
 
 @extend_schema(tags=["Subjects"])
 class SubjectViewSet(viewsets.ModelViewSet):
@@ -12,49 +20,41 @@ class SubjectViewSet(viewsets.ModelViewSet):
     lookup_field = "subject_id"
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated:
+        user = self.request.user
+        if not user.is_authenticated:
             return Subject.objects.none()
 
-        filters = self._build_filters()
-        return Subject.objects.filter(filters).distinct().order_by("subject_name")
-
-    def _build_filters(self):
         query = self.request.query_params
         filters = Q()
 
-        # Params
-        search_term = query.get("searchTerm", "")
+        # Lấy các filter
+        search_term = query.get("search", "")
         status_filter = query.get("status", "")
-        department_filter = query.get("department", "")
-        semester_filter = query.get("semester", "")
+        semester_id = query.get("semester_id", "")
+        department_id = query.get("department_id", "")
 
-        # List
-        status_list = status_filter.split(",") if status_filter else ["active", "pending"]
-        department_list = [int(i) for i in department_filter.split(",") if i.isdigit()]
-        semester_list = semester_filter.split(",") if semester_filter else []
-
-        # Apply filters
-        filters &= Q(status__in=status_list)
+        if status_filter:
+            status_list = status_filter.split(",")
+            filters &= Q(status__in=status_list)
+        else:
+            filters &= Q(status__in=["active", "pending"])
 
         if search_term:
             filters &= (
                 Q(subject_id__icontains=search_term)
-                | Q(name__icontains=search_term)
+                | Q(subject_name__icontains=search_term)
                 | Q(description__icontains=search_term)
+                | Q(department__department_name__icontains=search_term)
+                | Q(semester__semester_name__icontains=search_term)
             )
 
-        if department_list:
-            filters &= Q(department__id__in=department_list)
+        if semester_id:
+            filters &= Q(semester__semester_id=semester_id)
 
-        if semester_list:
-            filters &= Q(semester__semester_id__in=semester_list)
+        if department_id:
+            filters &= Q(department__department_id=department_id)
 
-        return filters
-
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.is_active = False
-        instance.save(update_fields=["is_deleted", "is_active"])
+        return Subject.objects.filter(filters).distinct().order_by("subject_name")
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -66,11 +66,60 @@ class SubjectViewSet(viewsets.ModelViewSet):
         self._validate_subject(instance)
         return instance
 
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.is_active = False
+        instance.save(update_fields=["is_deleted", "is_active"])
+
     def _validate_subject(self, instance):
-        """Đảm bảo mã môn học là duy nhất (code)."""
-        if instance.code:
-            qs = Subject.objects.filter(code=instance.code)
-            if instance.pk:
-                qs = qs.exclude(pk=instance.pk)
-            if qs.exists():
-                raise ValueError("Mã môn học phải là duy nhất.")
+        """Kiểm tra logic hợp lệ."""
+        if not instance.subject_name:
+            raise ValueError("Tên môn học không được để trống.")
+        if instance.credits <= 0:
+            raise ValueError("Số tín chỉ phải lớn hơn 0.")
+
+    @extend_schema(
+        #summary="Export subjects to Excel",
+        responses={200: None},
+    )
+    @action(detail=False, methods=["get"], url_path="export")
+    def export(self, request):
+        try:
+            queryset = self.get_queryset()
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = "Subjects"
+
+            headers = [
+                "Mã môn học", "Tên môn học", "Mô tả", "Số tín chỉ",
+                "Học kỳ", "Khoa", "Trạng thái", "Hoạt động",
+                "Ngày tạo", "Ngày cập nhật"
+            ]
+            sheet.append(headers)
+
+            for subject in queryset:
+                sheet.append([
+                    subject.subject_id,
+                    subject.subject_name,
+                    subject.description or "",
+                    subject.credits,
+                    str(subject.semester) if subject.semester else "",
+                    subject.department.department_name if subject.department else "",
+                    subject.get_status_display(),
+                    "Có" if subject.is_active else "Không",
+                    subject.created_at,
+                    subject.updated_at
+                ])
+
+            response = HttpResponse(
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response["Content-Disposition"] = f'attachment; filename="subjects_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            workbook.save(response)
+            return response
+        except Exception as e:
+            logger.error(f"Error exporting subjects: {str(e)}")
+            return Response(
+                {"detail": "Không thể xuất danh sách môn học."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

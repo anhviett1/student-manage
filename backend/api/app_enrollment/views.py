@@ -1,90 +1,139 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.db.models import Q
+from django.utils import timezone
+from django.http import HttpResponse
+from openpyxl import Workbook
 from .models import Enrollment
 from .serializers import EnrollmentSerializer
-from ..app_home.permissions import IsAdmin, IsAdminOrTeacher, IsOwnerOrAdmin
+from ..app_home.permissions import IsAdminOrReadOnly
 from drf_spectacular.utils import extend_schema
+import logging
+
+logger = logging.getLogger(__name__)
 
 @extend_schema(tags=["Enrollments"])
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminOrReadOnly]
     lookup_field = "enrollment_id"
 
-    def get_permissions(self):
-        if self.action == "list":
-            return [IsAdminOrTeacher()]
-        if self.action == "retrieve":
-            return [IsOwnerOrAdmin()]
-        return super().get_permissions()
-
     def get_queryset(self):
-        queryset = Enrollment.objects.none()  # Empty default queryset
+        user = self.request.user
+        if not user.is_authenticated:
+            return Enrollment.objects.none()
 
-        if self.request.user.is_authenticated:
-            # Base filter without any condition
-            filters = Q()
+        query = self.request.query_params
+        filters = Q()
 
-            # Get request parameters for filtering
-            search_term = self.request.query_params.get("searchTerm", "")
-            status_filter = self.request.query_params.get("status", "")
-            student_filter = self.request.query_params.get("student", "")
-            subject_filter = self.request.query_params.get("subject", "")
-            semester_filter = self.request.query_params.get("semester", "")
-            class_filter = self.request.query_params.get("class", "")
-            start_date = self.request.query_params.get("startDate")
-            end_date = self.request.query_params.get("endDate")
+        # Lấy các filter
+        search_term = query.get("search", "")
+        status_filter = query.get("status", "")
+        academic_year_filter = query.get("academic_year", "")
+        semester_id = query.get("semester_id", "")
+        student_id = query.get("student_id", "")
+        subject_id = query.get("subject_id", "")
 
-            # Split comma-separated values into lists (if applicable)
-            status_list = status_filter.split(",") if status_filter else ["pending", "approved"]
-            student_list = [int(id) for id in student_filter.split(",") if id.isdigit()]
-            subject_list = subject_filter.split(",") if subject_filter else []
-            semester_list = semester_filter.split(",") if semester_filter else []
-            class_list = [int(id) for id in class_filter.split(",") if id.isdigit()]
-
-            # Apply filters using Q objects
+        if status_filter:
+            status_list = status_filter.split(",")
             filters &= Q(status__in=status_list)
+        else:
+            filters &= Q(status__in=["pending", "approved"])
 
-            if search_term:
-                filters &= (
-                    Q(notes__icontains=search_term)
-                    | Q(student__name__icontains=search_term)
-                    | Q(subject__name__icontains=search_term)
-                    | Q(semester__name__icontains=search_term)
-                    | Q(class_obj__name__icontains=search_term)
-                )
+        if search_term:
+            filters &= (
+                Q(enrollment_id__icontains=search_term)
+                | Q(student__full_name__icontains=search_term)
+                | Q(subject__name__icontains=search_term)
+                | Q(semester__semester_name__icontains=search_term)
+                | Q(academic_year__icontains=search_term)
+                | Q(notes__icontains=search_term)
+            )
 
-            if start_date and end_date:
-                filters &= Q(enrollment_date__range=[start_date, end_date])
+        if academic_year_filter:
+            academic_year_list = academic_year_filter.split(",")
+            filters &= Q(academic_year__in=academic_year_list)
 
-            if student_list:
-                filters &= Q(student__id__in=student_list)
+        if semester_id:
+            filters &= Q(semester__semester_id=semester_id)
 
-            if subject_list:
-                filters &= Q(subject__subject_id__in=subject_list)
+        if student_id:
+            filters &= Q(student__student_id=student_id)
 
-            if semester_list:
-                filters &= Q(semester__semester_id__in=semester_list)
+        if subject_id:
+            filters &= Q(subject__subject_id=subject_id)
 
-            if class_list:
-                filters &= Q(class_obj__id__in=class_list)
+        return Enrollment.objects.filter(filters).distinct().order_by("-enrollment_date")
 
-            # Return the filtered queryset
-            queryset = Enrollment.objects.filter(filters).distinct().order_by("-created_at")
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._validate_enrollment(instance)
+        return instance
 
-        return queryset
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._validate_enrollment(instance)
+        return instance
+
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
-        return instance
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        if instance.status not in ["pending", "approved", "rejected"]:
-            raise ValueError("Trạng thái đăng ký không hợp lệ.")
-        return instance
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        if instance.status not in ["pending", "approved", "rejected"]:
-            raise ValueError("Trạng thái đăng ký không hợp lệ.")
-        return instance
+
+    def _validate_enrollment(self, instance):
+        """Kiểm tra logic đăng ký hợp lệ."""
+        if not instance.student or not instance.subject or not instance.semester or not instance.class_obj:
+            raise ValueError("Sinh viên, môn học, học kỳ và lớp học phải được cung cấp.")
+        if instance.enrollment_date > instance.semester.end_date:
+            raise ValueError("Ngày đăng ký không thể sau ngày kết thúc học kỳ.")
+        if instance.enrollment_date < instance.semester.registration_start:
+            raise ValueError("Ngày đăng ký không thể trước ngày bắt đầu đăng ký học kỳ.")
+
+    @extend_schema(
+        #summary="Export enrollments to Excel",
+        responses={200: None},
+    )
+    @action(detail=False, methods=["get"], url_path="export")
+    def export(self, request):
+        try:
+            queryset = self.get_queryset()
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = "Enrollments"
+
+            headers = [
+                "Mã đăng ký", "Sinh viên", "Môn học", "Học kỳ", "Lớp học",
+                "Ngày đăng ký", "Năm học", "Trạng thái", "Ghi chú",
+                "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+            ]
+            sheet.append(headers)
+
+            for enrollment in queryset:
+                sheet.append([
+                    enrollment.enrollment_id,
+                    str(enrollment.student),
+                    str(enrollment.subject),
+                    str(enrollment.semester),
+                    str(enrollment.class_obj),
+                    enrollment.enrollment_date,
+                    enrollment.academic_year,
+                    enrollment.get_status_display(),
+                    enrollment.notes or "",
+                    "Có" if enrollment.is_active else "Không",
+                    enrollment.created_at,
+                    enrollment.updated_at
+                ])
+
+            response = HttpResponse(
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response["Content-Disposition"] = f'attachment; filename="enrollments_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            workbook.save(response)
+            return response
+        except Exception as e:
+            logger.error(f"Error exporting enrollments: {str(e)}")
+            return Response(
+                {"detail": "Không thể xuất danh sách đăng ký."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

@@ -64,5 +64,18 @@ class Student(models.Model):
     subjects = models.ManyToManyField( "app_subject.Subject", related_name="student_subjects", blank=True, verbose_name="Môn học")
     scores = models.ManyToManyField("app_score.Score", related_name="student_score_sets", blank=True, verbose_name="Điểm số")
 
+    def calculate_gpa(self):
+        if not self.scores.exists():
+            return 0.00
+        total_points = 0
+        total_credits = 0
+        for score in self.scores.all():
+            if score.grade_point and score.subject.credits:
+                total_points += score.grade_point * score.subject.credits
+                total_credits += score.subject.credits
+        if total_credits > 0:
+            self.gpa = round(total_points / total_credits, 2)
+            self.save(update_fields=["gpa"])
+        return self.gpa
     class Meta:
         app_label = "app_student"

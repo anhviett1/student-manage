@@ -6,7 +6,6 @@ import HomeView from '../views/HomeView.vue'
 // Định nghĩa các tuyến đường
 const routes = [
   // --- Tuyến đường không yêu cầu xác thực ---
-  
   {
     path: '/',
     name: 'home',
@@ -99,9 +98,7 @@ const routes = [
         path: 'admin',
         name: 'admin',
         beforeEnter: () => {
-          // Luôn mở trong tab mới để không làm gián đoạn SPA
           window.open('http://127.0.0.1:8000/admin/', '_blank')
-          // Quay lại trang trước đó hoặc trang chủ
           return false
         },
         meta: { title: 'Django Admin', requiresAdmin: true },
@@ -123,33 +120,37 @@ const router = createRouter({
 
 // --- Navigation Guard Toàn Cục ---
 router.beforeEach(async (to, from, next) => {
-  const authStore      = useAuthStore()
+  const authStore = useAuthStore()
   const isAuthenticated = authStore.isAuthenticated
-  const isAdmin         = authStore.isAdmin
+  const isAdmin = authStore.isAdmin
 
-  // 1) Khi user truy cập '/', chuyển tuỳ trạng thái đăng nhập
+  // 1) Truy cập '/' → điều hướng theo trạng thái đăng nhập
   if (to.path === '/') {
-    return isAuthenticated
-      ? next({ name: 'profile' })
-      : next({ name: 'home' })
+    if (isAuthenticated && to.name !== 'profile') {
+      return next({ name: 'profile' })
+    }
+    if (!isAuthenticated && to.name !== 'home') {
+      return next({ name: 'home' })
+    }
+    return next() // tránh vòng lặp khi đã ở đúng route
   }
 
-  // 2) Nếu route yêu cầu auth nhưng chưa login → chuyển về login
+  // 2) Yêu cầu đăng nhập nhưng chưa login → chuyển về login
   if (to.meta.requiresAuth && !isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
-  // 3) Nếu route yêu cầu admin nhưng không phải admin → home
+  // 3) Yêu cầu admin nhưng không phải admin → home
   if (to.meta.requiresAdmin && !isAdmin) {
     return next({ name: 'home' })
   }
 
-  // 4) Nếu đã login mà vào /login → chuyển về profile (hoặc home tuỳ bạn)
+  // 4) Nếu đã login mà vào /login → chuyển về profile
   if (to.name === 'login' && isAuthenticated) {
     return next({ name: 'profile' })
   }
 
-  // 5) Fetch current user nếu cần (sau hết các redirect để tránh fetch thừa)
+  // 5) Nếu đã login mà chưa có user (chưa fetch) → fetch user
   if (isAuthenticated && !authStore.user) {
     try {
       await authStore.fetchCurrentUser()
@@ -159,13 +160,12 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // 6) Cập nhật title và cho phép nav tiếp
+  // 6) Cập nhật title trang
   document.title = to.meta.title
     ? `${to.meta.title} - Quản Lý Sinh Viên`
     : 'Hệ Thống Quản Lý Sinh Viên'
 
   next()
 })
-
 
 export default router

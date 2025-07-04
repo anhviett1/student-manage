@@ -908,4 +908,41 @@ const getStatusSeverity = (status) => {
   margin-bottom: 1rem;
   font-size: 1.1rem;
 }
+.action-buttons, .p-datatable-sm :deep(td .p-button) {
+  gap: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button) {
+  min-width: 28px !important;
+  height: 28px !important;
+  width: 28px !important;
+  padding: 0 !important;
+  font-size: 0.9rem !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.p-datatable-sm :deep(td .p-button .pi) {
+  font-size: 0.9rem !important;
+}
+.p-datatable-sm :deep(td .p-button:hover) {
+  box-shadow: 0 0 0 2px #c7d2fe;
+}
+.p-datatable-sm :deep(td .p-button + .p-button) {
+  margin-left: 0.15rem !important;
+}
+.p-datatable-sm :deep(td .p-button) {
+  margin-right: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button:last-child) {
+  margin-right: 0 !important;
+}
+@media (max-width: 768px) {
+  .p-datatable-sm :deep(td .p-button) {
+    min-width: 24px !important;
+    height: 24px !important;
+    width: 24px !important;
+    font-size: 0.8rem !important;
+  }
+}
 </style>

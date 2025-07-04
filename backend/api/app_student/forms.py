@@ -9,35 +9,7 @@ from datetime import date
 class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
-        fields = [
-            "student_id",
-            "first_name",
-            "last_name",
-            "email",
-            "phone",
-            "date_of_birth",
-            "gender",
-            "is_active",
-            "address",
-            "city",
-            "state",
-            "postal_code",
-            "country",
-            "enrollment_date",
-            "graduation_date",
-            "status",
-            "major",
-            "minor",
-            "emergency_contact_name",
-            "emergency_contact_phone",
-            "emergency_contact_relationship",
-            "profile_picture",
-            "student_id_card",
-            "blood_type",
-            "medical_conditions",
-            "allergies",
-            "department",
-        ]
+        fields = '__all__'
         widgets = {
             "student_id": forms.TextInput(
                 attrs={

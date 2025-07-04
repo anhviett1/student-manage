@@ -122,14 +122,6 @@
             @click="restoreSubject(data)"
             v-tooltip="'Khôi phục'"
           />
-          <Button
-            icon="pi pi-refresh"
-            outlined
-            rounded
-            severity="secondary"
-            @click="openChangeStatus(data)"
-            v-tooltip="'Thay đổi trạng thái'"
-          />
         </template>
       </Column>
     </DataTable>
@@ -341,7 +333,7 @@ const loadSubjects = async () => {
     loading.value = true
     const params = {}
     if (filters.value.status) params.status = filters.value.status
-    if (filters.value.department) params.department__id = filters.value.department
+    if (filters.value.department) params.department_id = filters.value.department
     if (filters.value.global) params.search = filters.value.global
     const response = await api.get(endpoints.subjects, { params })
     
@@ -482,7 +474,11 @@ const changeStatus = async () => {
 
 const exportSubjects = async () => {
   try {
-    const response = await api.get(`${endpoints.subjects}export/`, { responseType: 'blob' })
+    const params = {}
+    if (filters.value.status) params.status = filters.value.status
+    if (filters.value.department) params.department_id = filters.value.department
+    if (filters.value.global) params.search = filters.value.global
+    const response = await api.get(`${endpoints.subjects}export/`, { params, responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
@@ -622,5 +618,64 @@ const getStatusSeverity = (status) => {
 .no-data-message p {
   margin-bottom: 1rem;
   font-size: 1.1rem;
+}
+.action-buttons, .p-datatable-sm :deep(td .p-button) {
+  gap: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button) {
+  min-width: 28px !important;
+  height: 28px !important;
+  width: 28px !important;
+  padding: 0 !important;
+  font-size: 0.9rem !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button:last-child) {
+  margin-right: 0 !important;
+}
+.p-datatable-sm :deep(td .p-button .pi) {
+  font-size: 0.9rem !important;
+}
+.p-datatable-sm :deep(td .p-button:hover) {
+  box-shadow: 0 0 0 2px #c7d2fe;
+}
+.p-datatable-sm :deep(td .p-button + .p-button) {
+  margin-left: 0.15rem !important;
+}
+.p-tag {
+  font-size: 0.95em;
+  padding: 0.2em 0.7em;
+}
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td),
+.p-datatable-sm :deep(.p-datatable-thead > tr > th) {
+  padding: 0.85rem 1.1rem;
+}
+.p-datatable-sm :deep(.p-datatable-thead > tr > th) {
+  background: #f8f9fa;
+  font-size: 1rem;
+  border-right: 1px solid #f1f1f1;
+}
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td) {
+  border-right: 1px solid #f4f4f4;
+}
+.p-datatable-sm :deep(.p-datatable-tbody > tr > td:last-child),
+.p-datatable-sm :deep(.p-datatable-thead > tr > th:last-child) {
+  border-right: none;
+}
+@media (max-width: 768px) {
+  .p-datatable-sm :deep(td .p-button) {
+    min-width: 24px !important;
+    height: 24px !important;
+    width: 24px !important;
+    font-size: 0.8rem !important;
+  }
+  .p-datatable-sm :deep(td),
+  .p-datatable-sm :deep(th) {
+    padding: 0.5em 0.4em;
+  }
 }
 </style>

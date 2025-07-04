@@ -31,14 +31,20 @@ export const endpoints = {
   uploadAvatar: `${API_PREFIX}/users/avatar/`,
   scoreManagement: `${API_PREFIX}/users/score-management/`,
 
+  // Student Management
   students: `${API_PREFIX}/students/`,
+  studentProfile: `${API_PREFIX}/students/me/`,
+
+  // Teacher Management (giả định)
   teachers: `${API_PREFIX}/teachers/`,
+  teacherProfile: `${API_PREFIX}/teachers/me/`,
   classes: `${API_PREFIX}/classes/`,
   subjects: `${API_PREFIX}/subjects/`,
   enrollments: `${API_PREFIX}/enrollments/`,
   semesters: `${API_PREFIX}/semesters/`,
   scores: `${API_PREFIX}/scores/`,
   activities: `${API_PREFIX}/activities/`,
+  activitiesExport: `${API_PREFIX}/activities/export/`,
   departments: `${API_PREFIX}/departments/`,
   schedules: `${API_PREFIX}/schedules/`,
 

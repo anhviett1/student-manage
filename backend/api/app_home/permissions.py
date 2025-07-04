@@ -6,10 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 ADMIN_ROLES = ['admin', 'superuser']
 
-# ================================
-# 1. Role-based permissions
-# ================================
-
 class RolePermission(BasePermission):
     """Permission kiểm tra vai trò (role)."""
     roles = []
@@ -37,10 +33,6 @@ IsTeacher = make_role_permission_class(['teacher'], "Only teacher users are allo
 IsStudent = make_role_permission_class(['student'], "Only student users are allowed.")
 IsAdminOrTeacher = make_role_permission_class(ADMIN_ROLES + ['teacher'], "Only admin or teacher users are allowed.")
 
-# ================================
-# 2. Read-only for authenticated users, write for admin
-# ================================
-
 class IsAdminOrReadOnly(BasePermission):
     message = _("Only admin users can modify data.")
 
@@ -52,10 +44,6 @@ class IsAdminOrReadOnly(BasePermission):
             getattr(request.user, 'role', '') in ADMIN_ROLES
         )
 
-# ================================
-# 3. Object-level: is owner or admin
-# ================================
-
 class IsOwnerOrAdmin(BasePermission):
     message = _("Only the owner or admin can access this object.")
 
@@ -66,10 +54,6 @@ class IsOwnerOrAdmin(BasePermission):
             getattr(obj, 'user', None) == request.user or
             is_admin
         )
-
-# ================================
-# 4. Model permission (dynamic by codename)
-# ================================
 
 @lru_cache(maxsize=128)
 def get_permission(codename, model_cls):
@@ -96,9 +80,6 @@ class HasModelPermission(BasePermission):
 
         return request.user.has_perm(f"{perm.content_type.app_label}.{self.codename}")
 
-# ================================
-# 5. Factory tạo các quyền cụ thể theo codename
-# ================================
 
 def make_model_permission_class(name, codename, message=None):
     return type(
@@ -114,10 +95,6 @@ def make_model_permission_class(name, codename, message=None):
 CanManageScores = make_model_permission_class("CanManageScores", "can_manage_scores")
 CanManageSubjects = make_model_permission_class("CanManageSubjects", "can_manage_subjects")
 CanViewSubjectScores = make_model_permission_class("CanViewSubjectScores", "can_view_subject_scores")
-
-# ================================
-# 6. Sinh viên xem điểm của chính mình
-# ================================
 
 class CanViewOwnScores(BasePermission):
     message = _("Only students can view their own scores.")

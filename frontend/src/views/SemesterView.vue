@@ -43,94 +43,193 @@
       </div>
     </div>
 
-    <DataTable
-      :value="semesters"
-      :loading="loading"
-      dataKey="semester_id"
-      :paginator="true"
-      :rows="10"
-      :rowsPerPageOptions="[5, 10, 20]"
-      responsiveLayout="scroll"
-      class="p-datatable-sm"
-    >
-      <template #empty>
-        <div class="empty-message">
-          <i class="pi pi-info-circle" />
-          <span>Không tìm thấy học kỳ nào.</span>
-        </div>
-      </template>
-      <template #loading>
-        <div class="loading-message">
-          <i class="pi pi-spin pi-spinner" />
-          <span>Đang tải dữ liệu...</span>
-        </div>
-      </template>
-      <Column field="semester_id" header="Mã Học Kỳ" sortable style="width: 12%" />
-      <Column field="name" header="Tên Học Kỳ" sortable style="width: 18%" />
-      <Column field="academic_year" header="Năm Học" sortable style="width: 12%" />
-      <Column field="start_date" header="Ngày Bắt Đầu" sortable style="width: 12%" align="center">
-        <template #body="{ data }">
-          {{ formatDate(data.start_date) }}
-        </template>
-      </Column>
-      <Column field="end_date" header="Ngày Kết Thúc" sortable style="width: 12%" align="center">
-        <template #body="{ data }">
-          {{ formatDate(data.end_date) }}
-        </template>
-      </Column>
-      <Column field="status" header="Trạng Thái" sortable style="width: 12%" align="center">
-        <template #body="{ data }">
-          <Tag :severity="getStatusSeverity(data.status)" :value="getStatusLabel(data.status)" />
-        </template>
-      </Column>
-      <Column field="is_active" header="Đang Hoạt Động" sortable style="width: 12%" align="center">
-        <template #body="{ data }">
-          <Tag :severity="data.is_active ? 'success' : 'warning'" :value="data.is_active ? 'Active' : 'Inactive'" />
-        </template>
-      </Column>
-      <Column header="Hành Động" style="width: 12%" align="center">
-        <template #body="{ data }">
-          <Button
-            v-if="canEditSemesters && !data.is_deleted"
-            icon="pi pi-pencil"
-            outlined
-            rounded
-            class="mr-2"
-            severity="info"
-            @click="editSemester(data)"
-            v-tooltip="'Sửa học kỳ'"
-          />
-          <Button
-            v-if="canDeleteSemesters && !data.is_deleted"
-            icon="pi pi-trash"
-            outlined
-            rounded
-            severity="danger"
-            class="mr-2"
-            @click="confirmDelete(data)"
-            v-tooltip="'Xóa mềm'"
-          />
-          <Button
-            v-if="canDeleteSemesters && data.is_deleted"
-            icon="pi pi-undo"
-            outlined
-            rounded
-            severity="success"
-            @click="restoreSemester(data)"
-            v-tooltip="'Khôi phục'"
-          />
-          <Button
-            v-if="canEditSemesters"
-            icon="pi pi-refresh"
-            outlined
-            rounded
-            severity="secondary"
-            @click="openChangeStatus(data)"
-            v-tooltip="'Thay đổi trạng thái'"
-          />
-        </template>
-      </Column>
-    </DataTable>
+    <TabView>
+      <TabPanel header="Học kỳ đang hoạt động">
+        <DataTable
+          :value="activeSemesters"
+          :loading="loading"
+          dataKey="semester_id"
+          :paginator="true"
+          :rows="10"
+          :rowsPerPageOptions="[5, 10, 20]"
+          responsiveLayout="scroll"
+          class="p-datatable-sm"
+        >
+          <template #empty>
+            <div class="empty-message">
+              <i class="pi pi-info-circle" />
+              <span>Không tìm thấy học kỳ nào.</span>
+            </div>
+          </template>
+          <template #loading>
+            <div class="loading-message">
+              <i class="pi pi-spin pi-spinner" />
+              <span>Đang tải dữ liệu...</span>
+            </div>
+          </template>
+          <Column field="semester_id" header="Mã Học Kỳ" sortable style="width: 12%" />
+          <Column field="name" header="Tên Học Kỳ" sortable style="width: 18%" />
+          <Column field="academic_year" header="Năm Học" sortable style="width: 12%" />
+          <Column field="start_date" header="Ngày Bắt Đầu" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              {{ formatDate(data.start_date) }}
+            </template>
+          </Column>
+          <Column field="end_date" header="Ngày Kết Thúc" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              {{ formatDate(data.end_date) }}
+            </template>
+          </Column>
+          <Column field="status" header="Trạng Thái" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              <Tag :severity="getStatusSeverity(data.status)" :value="getStatusLabel(data.status)" />
+            </template>
+          </Column>
+          <Column field="is_active" header="Đang Hoạt Động" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              <Tag :severity="data.is_active ? 'success' : 'warning'" :value="data.is_active ? 'Active' : 'Inactive'" />
+            </template>
+          </Column>
+          <Column header="Hành Động" style="width: 12%" align="center">
+            <template #body="{ data }">
+              <Button
+                v-if="canEditSemesters && !data.is_deleted"
+                icon="pi pi-pencil"
+                outlined
+                rounded
+                class="mr-2"
+                severity="info"
+                @click="editSemester(data)"
+                v-tooltip="'Sửa học kỳ'"
+              />
+              <Button
+                v-if="canDeleteSemesters && !data.is_deleted"
+                icon="pi pi-trash"
+                outlined
+                rounded
+                severity="danger"
+                class="mr-2"
+                @click="confirmDelete(data)"
+                v-tooltip="'Xóa mềm'"
+              />
+              <Button
+                v-if="canDeleteSemesters && data.is_deleted"
+                icon="pi pi-undo"
+                outlined
+                rounded
+                severity="success"
+                @click="restoreSemester(data)"
+                v-tooltip="'Khôi phục'"
+              />
+              <Button
+                v-if="canEditSemesters"
+                icon="pi pi-refresh"
+                outlined
+                rounded
+                severity="secondary"
+                @click="openChangeStatus(data)"
+                v-tooltip="'Thay đổi trạng thái'"
+              />
+            </template>
+          </Column>
+        </DataTable>
+      </TabPanel>
+      <TabPanel header="Học kỳ đã kết thúc">
+        <DataTable
+          :value="finishedSemesters"
+          :loading="loading"
+          dataKey="semester_id"
+          :paginator="true"
+          :rows="10"
+          :rowsPerPageOptions="[5, 10, 20]"
+          responsiveLayout="scroll"
+          class="p-datatable-sm"
+        >
+          <template #empty>
+            <div class="empty-message">
+              <i class="pi pi-info-circle" />
+              <span>Không tìm thấy học kỳ nào.</span>
+            </div>
+          </template>
+          <template #loading>
+            <div class="loading-message">
+              <i class="pi pi-spin pi-spinner" />
+              <span>Đang tải dữ liệu...</span>
+            </div>
+          </template>
+          <Column field="semester_id" header="Mã Học Kỳ" sortable style="width: 12%" />
+          <Column field="name" header="Tên Học Kỳ" sortable style="width: 18%" />
+          <Column field="academic_year" header="Năm Học" sortable style="width: 12%" />
+          <Column field="start_date" header="Ngày Bắt Đầu" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              {{ formatDate(data.start_date) }}
+            </template>
+          </Column>
+          <Column field="end_date" header="Ngày Kết Thúc" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              {{ formatDate(data.end_date) }}
+            </template>
+          </Column>
+          <Column field="status" header="Trạng Thái" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              <Tag :severity="getStatusSeverity(data.status)" :value="getStatusLabel(data.status)" />
+            </template>
+          </Column>
+          <Column field="is_active" header="Đang Hoạt Động" sortable style="width: 12%" align="center">
+            <template #body="{ data }">
+              <Tag :severity="data.is_active ? 'success' : 'warning'" :value="data.is_active ? 'Active' : 'Inactive'" />
+            </template>
+          </Column>
+          <Column header="Hành Động" style="width: 12%" align="center">
+            <template #body="{ data }">
+              <Button
+                v-if="canEditSemesters && !data.is_deleted"
+                icon="pi pi-pencil"
+                outlined
+                rounded
+                class="mr-2"
+                severity="info"
+                @click="editSemester(data)"
+                v-tooltip="'Sửa học kỳ'"
+              />
+              <Button
+                v-if="canDeleteSemesters && !data.is_deleted"
+                icon="pi pi-trash"
+                outlined
+                rounded
+                severity="danger"
+                class="mr-2"
+                @click="confirmDelete(data)"
+                v-tooltip="'Xóa mềm'"
+              />
+              <Button
+                v-if="canDeleteSemesters && data.is_deleted"
+                icon="pi pi-undo"
+                outlined
+                rounded
+                severity="success"
+                @click="restoreSemester(data)"
+                v-tooltip="'Khôi phục'"
+              />
+              <Button
+                v-if="canEditSemesters"
+                icon="pi pi-refresh"
+                outlined
+                rounded
+                severity="secondary"
+                @click="openChangeStatus(data)"
+                v-tooltip="'Thay đổi trạng thái'"
+              />
+            </template>
+          </Column>
+        </DataTable>
+      </TabPanel>
+      <TabPanel header="Thêm mới học kỳ">
+        <form @submit.prevent="addSemester">
+          <!-- ... -->
+        </form>
+      </TabPanel>
+    </TabView>
 
     <!-- Dialog for Adding/Editing Semester -->
     <Dialog

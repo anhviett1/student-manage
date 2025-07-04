@@ -1,11 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import DepartmentViewSet, DepartmentExportAPIView
+from .views import DepartmentViewSet
 
 router = DefaultRouter()
 router.register(r"", DepartmentViewSet, basename="departments")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("export/", DepartmentExportAPIView.as_view(), name="department-export"),
 ]
