@@ -512,7 +512,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import Tag from 'primevue/tag'
 import TabView from 'primevue/tabview'
@@ -522,11 +521,6 @@ import InputSwitch from 'primevue/inputswitch'
 import MultiSelect from 'primevue/multiselect'
 
 const toast = useToast()
-const {
-  canViewSemesters,
-  canEditSemesters,
-  canDeleteSemesters,
-} = usePermissions()
 
 const semesters = ref([])
 const semesterDialog = ref(false)
@@ -550,9 +544,9 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  if (canViewSemesters.value) {
+  // Removed: if (canViewSemesters.value) {
     await loadSemesters()
-  }
+  // }
 })
 
 const loadSemesters = async () => {

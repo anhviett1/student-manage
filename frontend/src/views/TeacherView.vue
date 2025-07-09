@@ -426,7 +426,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import Dropdown from 'primevue/dropdown';
@@ -437,15 +436,6 @@ import InputNumber from 'primevue/inputnumber';
 
 
 const toast = useToast()
-const {
-  isAdmin,
-  isTeacher,
-  canViewTeachers,
-  canEditTeachers,
-  canDeleteTeachers,
-  canExportData
-} = usePermissions()
-
 const teachers = ref([])
 const teacher = ref({})
 const departments = ref([])

@@ -74,11 +74,9 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
-import { usePermissions } from '@/composables/usePermissions'
 import { onMounted, ref } from 'vue'
 
 const router = useRouter()
-const { isAdmin } = usePermissions()
 
 const navigateTo = (path) => {
   if (path === '/admin') {

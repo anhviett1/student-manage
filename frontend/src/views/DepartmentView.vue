@@ -187,7 +187,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import TabView from 'primevue/tabview'
@@ -196,8 +195,6 @@ import Tag from 'primevue/tag'
 import InputSwitch from 'primevue/inputswitch'
 
 const toast = useToast()
-const permissions = usePermissions()
-const { canViewDepartments, canEditDepartments, canDeleteDepartments, canExportDepartments, isAdmin } = permissions
 const isHead = computed(() => false) // TODO: implement logic if needed
 
 const departments = ref([])

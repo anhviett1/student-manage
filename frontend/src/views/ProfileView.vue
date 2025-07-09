@@ -517,7 +517,6 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
 import { useAuthStore } from '@/stores/auth'
-import { usePermissions } from '@/composables/usePermissions'
 import { useConfirm } from 'primevue/useconfirm'
 
 import FileUpload from 'primevue/fileupload'
@@ -544,7 +543,6 @@ const toast = useToast()
 const userStore = useUserStore()
 const authStore = useAuthStore()
 const confirm = useConfirm()
-const { canEditProfile, canUploadAvatar, userRole } = usePermissions()
 
 const isLoading = ref(false)
 const showDetailListDialog = ref(false)
@@ -785,13 +783,13 @@ const goToDjangoAdmin = () => {
 
 onMounted(async () => {
   await fetchProfile();
-  if (userRole.value === 'admin') {
+  if (userRole === 'admin') {
     await loadUsers();
   }
 });
 
 const fetchUserList = async () => {
-  if (userRole.value === 'admin') {
+  if (userRole === 'admin') {
     try {
       userList.value = await userStore.fetchAllUsers();
       console.log('userList:', userList.value);
@@ -805,7 +803,7 @@ const fetchUserList = async () => {
 const fetchProfile = async (userId = null) => {
   try {
     let user;
-    if (userRole.value === 'admin' && userId) {
+    if (userRole === 'admin' && userId) {
       user = await userStore.fetchUserById(userId);
     } else {
       user = authStore.user || await authStore.fetchCurrentUser();
@@ -839,7 +837,7 @@ const filteredUserProfile = computed(() => {
 
 const isEditable = (key) => {
   const editableFields = ['email', 'first_name', 'last_name', 'phone', 'address', 'birth_date', 'gender'];
-  return editableFields.includes(key) && canEditProfile.value;
+  return editableFields.includes(key) && canEditProfile;
 };
 
 const getInputComponent = (key) => {
@@ -974,7 +972,7 @@ const updateProfile = async () => {
       payload.last_name = editProfile.value.last_name;
     }
 
-    if (userRole.value === 'admin' && selectedUserId.value) {
+    if (userRole === 'admin' && selectedUserId.value) {
       await userStore.updateUserProfile(selectedUserId.value, payload);
       await fetchUserList(); // Cập nhật lại danh sách nếu là admin
     } else {
@@ -998,9 +996,9 @@ const updateProfile = async () => {
 };
 
 const triggerFileInput = () => {
-  if (canUploadAvatar.value && isEditMode.value) {
+  if (canEditProfile && isEditMode.value) {
     fileInput.value && fileInput.value.click();
-  } else if (!canUploadAvatar.value) {
+  } else if (!canEditProfile) {
     toast.add({ severity: 'info', summary: 'Thông báo', detail: 'Bạn không có quyền tải lên ảnh đại diện.', life: 3000 });
   }
 };
@@ -1060,7 +1058,7 @@ const toggleCheckAll = (role, event) => {
 
 // Watcher for activeTabIndex to load users when switching to user management tab
 watch(activeTabIndex, (newIndex) => {
-  if (newIndex === 1 && userRole.value === 'admin') { // User management tab
+  if (newIndex === 1 && userRole === 'admin') { // User management tab
     loadUsers();
   }
 });

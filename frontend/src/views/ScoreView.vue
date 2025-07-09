@@ -205,7 +205,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import { useAuthStore } from '@/stores/auth'
@@ -216,16 +215,6 @@ import InputNumber from 'primevue/inputnumber'
 
 
 const toast = useToast()
-const {
-  isTeacher,
-  isStudent,
-  isAdminOrTeacher,
-  canViewScores,
-  canEditScores,
-  canDeleteScores,
-  canUploadScores,
-  canExportData,
-} = usePermissions()
 const myScores = ref([])
 const scores = ref([])
 const semesters = ref([])

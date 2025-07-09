@@ -24,6 +24,7 @@ urlpatterns = [
     
     # Core API endpoints
     path("api/v1/users/", include("api.app_home.urls")),
+    path("api/v1/activities/", include("api.app_activity.urls")),
     path("api/v1/departments/", include("api.app_department.urls")),
     path("api/v1/students/", include("api.app_student.urls")),
     path("api/v1/teachers/", include("api.app_teacher.urls")),
@@ -31,10 +32,8 @@ urlpatterns = [
     path("api/v1/scores/", include("api.app_score.urls")),
     path("api/v1/subjects/", include("api.app_subject.urls")),
     path("api/v1/enrollments/", include("api.app_enrollment.urls")),
-    path("api/v1/activities/", include("api.app_activity.urls")),
     path("api/v1/semesters/", include("api.app_semester.urls")),
     path("api/v1/schedules/", include("api.app_schedule.urls")),
-    path("api/v1/activities/", include("api.app_activity.urls")),
 
 ]
 

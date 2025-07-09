@@ -215,7 +215,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import TabView from 'primevue/tabview'
@@ -224,8 +223,14 @@ import Tag from 'primevue/tag'
 import InputSwitch from 'primevue/inputswitch'
 
 const toast = useToast()
-const permissions = usePermissions()
-const { isStudent, isAdminOrTeacher, canViewEnrollments, canEditEnrollments, canDeleteEnrollments, canExportData } = permissions
+const { isStudent, isAdminOrTeacher, canViewEnrollments, canEditEnrollments, canDeleteEnrollments, canExportData } = computed(() => ({
+  isStudent: false, // Placeholder, needs actual logic
+  isAdminOrTeacher: false, // Placeholder, needs actual logic
+  canViewEnrollments: false, // Placeholder, needs actual logic
+  canEditEnrollments: false, // Placeholder, needs actual logic
+  canDeleteEnrollments: false, // Placeholder, needs actual logic
+  canExportData: false // Placeholder, needs actual logic
+}))
 
 const myEnrollments = ref([])
 const enrollments = ref([])

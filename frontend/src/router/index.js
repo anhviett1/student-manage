@@ -93,6 +93,12 @@ const routes = [
         component: () => import('../views/DepartmentView.vue'),
         meta: { title: 'Khoa' },
       },
+      {
+        path: 'activities',
+        name: 'activities',
+        component: () => import('../views/ActivityView.vue'),
+        meta: { title: 'Trạng thái' },
+      },
       // Chuyển hướng đến trang admin của Django
       {
         path: 'admin',

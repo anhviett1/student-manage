@@ -95,7 +95,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import PanelMenu from 'primevue/panelmenu'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
@@ -109,20 +108,6 @@ const expandedKeys = ref({})
 const isSidebarCollapsed = ref(false)
 const isMobile = ref(false)
 const isLoading = ref(true)
-
-const {
-  canViewStudents,
-  canViewTeachers,
-  canViewClasses,
-  canViewSubjects,
-  canViewEnrollments,
-  canViewSemesters,
-  canViewScores,
-  canViewSchedules,
-  isStudent,
-  isTeacher,
-  isAdmin,
-} = usePermissions()
 
 // Optimized menu items with better performance
 const menuItems = computed(() => {
@@ -143,49 +128,55 @@ const menuItems = computed(() => {
       label: 'Sinh Viên',
       icon: 'pi pi-users',
       to: { name: 'students' },
-      visible: canViewStudents.value,
+      visible: true, // Assuming students are always visible
     },
     {
       label: 'Giảng Viên',
       icon: 'pi pi-briefcase',
       to: { name: 'teachers'},
-      visible: canViewTeachers.value,
+      visible: authStore.isAdmin, // Assuming teachers are only visible for admins
     },
     {
       label: 'Lớp Học',
       icon: 'pi pi-building',
       to: { name: 'classes' },
-      visible: canViewClasses.value,
+      visible: true, // Assuming classes are always visible
     },
     {
       label: 'Môn Học',
       icon: 'pi pi-book',
       to: { name: 'subjects' },
-      visible: canViewSubjects.value,
+      visible: true, // Assuming subjects are always visible
     },
     {
       label: 'Ghi Danh',
       icon: 'pi pi-check-square',
       to: { name: 'enrollments' },
-      visible: canViewEnrollments.value,
+      visible: true, // Assuming enrollments are always visible
     },
     {
       label: 'Học Kỳ',
       icon: 'pi pi-calendar',
       to: { name: 'semesters' },
-      visible: canViewSemesters.value,
+      visible: true, // Assuming semesters are always visible
     },
     {
       label: 'Điểm Số',
       icon: 'pi pi-chart-bar',
       to: { name: 'scores' },
-      visible: canViewScores.value || isStudent.value,
+      visible: authStore.isAuthenticated, // Assuming scores are visible for authenticated users
     },
     {
       label: 'Lịch Học',
       icon: 'pi pi-calendar-alt',
       to: { name: 'schedules' },
-      visible: canViewSchedules.value,
+      visible: true, // Assuming schedules are always visible
+    },
+    {
+      label: 'Trạng thái',
+      icon: 'pi pi-calendar-alt',
+      to: { name: 'activities' },
+      visible: true, // Assuming schedules are always visible
     },
   ]
   

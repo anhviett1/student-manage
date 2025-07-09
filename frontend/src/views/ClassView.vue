@@ -273,7 +273,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
 import TabView from 'primevue/tabview'
@@ -284,8 +283,6 @@ import InputSwitch from 'primevue/inputswitch'
 import MultiSelect from 'primevue/multiselect'
 
 const toast = useToast()
-const permissions = usePermissions()
-const { canViewClasses, canEditClasses, canDeleteClasses, isTeacher, isStudent, isAdmin } = permissions
 
 const classes = ref([])
 const classObj = ref({})

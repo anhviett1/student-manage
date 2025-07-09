@@ -43,11 +43,12 @@ export const endpoints = {
   enrollments: `${API_PREFIX}/enrollments/`,
   semesters: `${API_PREFIX}/semesters/`,
   scores: `${API_PREFIX}/scores/`,
-  activities: `${API_PREFIX}/activities/`,
+ 
   activitiesExport: `${API_PREFIX}/activities/export/`,
   departments: `${API_PREFIX}/departments/`,
   schedules: `${API_PREFIX}/schedules/`,
 
+  activities: `${API_PREFIX}/activities/`,
   djangoAdmin: '/admin/', 
 }
 

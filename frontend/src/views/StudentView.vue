@@ -449,7 +449,6 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
-import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
 import api, { endpoints } from '@/services/api'
 import { saveAs } from 'file-saver'
@@ -460,7 +459,6 @@ import InputNumber from 'primevue/inputnumber'
 
 const toast = useToast()
 const confirm = useConfirm()
-const permissions = usePermissions()
 const userStore = useUserStore()
 
 const students = ref([])
@@ -480,15 +478,19 @@ const filters = reactive({
   department: null,
 })
 
-const { isStudent, isAdminOrTeacher } = permissions
-const canViewStudents = computed(() => permissions.canViewStudents.value)
+const { isStudent, isAdminOrTeacher } = computed(() => ({
+  isStudent: userStore.currentUser?.is_student,
+  isAdminOrTeacher: userStore.currentUser?.is_admin || userStore.currentUser?.is_teacher,
+}))
+
+const canViewStudents = computed(() => isAdminOrTeacher.value)
 const canEditStudents = computed(
-  () => permissions.isAdmin.value || permissions.hasModelPermission('change_student', 'app_student'),
+  () => isAdminOrTeacher.value,
 )
 const canDeleteStudents = computed(
-  () => permissions.isAdmin.value || permissions.hasModelPermission('delete_student', 'app_student'),
+  () => isAdminOrTeacher.value,
 )
-const canExportData = computed(() => permissions.isAdmin.value)
+const canExportData = computed(() => isAdminOrTeacher.value)
 
 const genderOptions = [
   { label: 'Nam', value: 'M' },

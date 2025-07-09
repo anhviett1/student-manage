@@ -242,7 +242,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import api, { endpoints } from '@/services/api'
 import Tag from 'primevue/tag'
 import InputNumber from 'primevue/inputnumber'
@@ -251,12 +250,6 @@ import MultiSelect from 'primevue/multiselect'
 import Checkbox from 'primevue/checkbox'
 
 const toast = useToast()
-const {
-  canViewSubjects,
-  canEditSubjects,
-  canDeleteSubjects,
-  canExportData
-} = usePermissions()
 
 const subjects = ref([])
 const departments = ref([])
@@ -283,7 +276,7 @@ const statusOptions = [
 ]
 
 onMounted(async () => {
-  if (canViewSubjects.value) {
+  if (canViewSubjects) {
     await Promise.all([loadDepartments(), loadSemesters(), loadSubjects()])
   }
 })

@@ -217,7 +217,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { usePermissions } from '@/composables/usePermissions'
 import { useAuthStore } from '@/stores/auth'
 import api, { endpoints } from '@/services/api'
 import Tag from 'primevue/tag'
@@ -235,16 +234,6 @@ import Tooltip from 'primevue/tooltip'
 
 const toast = useToast()
 const authStore = useAuthStore()
-const {
-  isAdmin,
-  isTeacher,
-  isStudent,
-  canViewSchedules,
-  canEditSchedules,
-  canDeleteSchedules,
-  canImportSchedules,
-  canExportSchedules,
-} = usePermissions()
 
 const schedules = ref([])
 const mySchedules = ref([])
