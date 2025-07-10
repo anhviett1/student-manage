@@ -610,6 +610,7 @@ const getStatusSeverity = (status) => {
   box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
   padding: 2rem;
   margin-bottom: 2rem;
+  width: 200%;
 }
 .header, .card-header {
   display: flex;
@@ -665,7 +666,7 @@ const getStatusSeverity = (status) => {
   }
 }
 .profile-section {
-  max-width: 800px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 .profile-header {
@@ -677,7 +678,7 @@ const getStatusSeverity = (status) => {
 .profile-details {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 2rem;
 }
 .detail-item {
   padding: 0.5rem;
@@ -688,7 +689,7 @@ const getStatusSeverity = (status) => {
 }
 .edit-form {
   display: grid;
-  gap: 1rem;
+  gap: 2rem;
 }
 .field {
   display: flex;
@@ -717,6 +718,7 @@ const getStatusSeverity = (status) => {
   background: #f8f9fa;
   border-radius: 8px;
   margin: 1rem 0;
+  font-size: 1.6rem;
 }
 .no-data-message p {
   margin-bottom: 1rem;
@@ -735,10 +737,6 @@ const getStatusSeverity = (status) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-right: 0.25rem !important;
-}
-.p-datatable-sm :deep(td .p-button:last-child) {
-  margin-right: 0 !important;
 }
 .p-datatable-sm :deep(td .p-button .pi) {
   font-size: 0.9rem !important;
@@ -749,15 +747,13 @@ const getStatusSeverity = (status) => {
 .p-datatable-sm :deep(td .p-button + .p-button) {
   margin-left: 0.15rem !important;
 }
-.p-tag {
-  font-size: 0.95em;
-  padding: 0.2em 0.7em;
+.p-datatable-sm :deep(td .p-button) {
+  margin-right: 0.25rem !important;
+}
+.p-datatable-sm :deep(td .p-button:last-child) {
+  margin-right: 0 !important;
 }
 @media (max-width: 768px) {
-  .p-datatable-sm :deep(td) {
-    font-size: 0.95em;
-    padding: 0.5em 0.2em;
-  }
   .p-datatable-sm :deep(td .p-button) {
     min-width: 24px !important;
     height: 24px !important;

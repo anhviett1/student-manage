@@ -36,75 +36,88 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import api, { endpoints } from '@/services/api';
 import { format } from 'date-fns';
 
-export default {
-  name: 'ActivityView',
-  data() {
-    return {
-      activities: [],
-      filters: {
-        activity_type: '',
-        start_date: '',
-        end_date: '',
-        search: '',
-      },
-      activityTypes: [
-        { value: 'login', label: 'Đăng nhập' },
-        { value: 'logout', label: 'Đăng xuất' },
-        { value: 'create', label: 'Tạo mới' },
-        { value: 'update', label: 'Cập nhật' },
-        { value: 'delete', label: 'Xóa' },
-        { value: 'view', label: 'Xem' },
-      ],
-    };
-  },
-  async created() {
-    await this.fetchActivities();
-  },
-  methods: {
-    async fetchActivities() {
-      try {
-        const params = {};
-        if (this.filters.activity_type) params.activity_type = this.filters.activity_type;
-        if (this.filters.start_date) params.start_date = this.filters.start_date;
-        if (this.filters.end_date) params.end_date = this.filters.end_date;
-        if (this.filters.search) params.search = this.filters.search;
-        const response = await api.get(endpoints.activities, { params });
-        this.activities = response.data;
-      } catch (error) {
-        console.error('Error fetching activities:', error);
-      }
-    },
-    async exportActivities() {
-      try {
-        const params = {};
-        if (this.filters.activity_type) params.activity_type = this.filters.activity_type;
-        if (this.filters.start_date) params.start_date = this.filters.start_date;
-        if (this.filters.end_date) params.end_date = this.filters.end_date;
-        if (this.filters.search) params.search = this.filters.search;
-        const response = await api.get(endpoints.activities + 'export/', {
-          params,
-          responseType: 'blob',
-        });
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `activities_${new Date().toISOString().slice(0, 10)}.xlsx`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error('Error exporting activities:', error);
-      }
-    },
-    formatDate(date) {
-      return format(new Date(date), 'dd/MM/yyyy HH:mm');
-    },
-  },
+interface Activity {
+  id: number;
+  user: {
+    username: string;
+  };
+  activity_type_display: string;
+  description: string | null;
+  ip_address: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const activities = ref<Activity[]>([]);
+
+const filters = ref({
+  activity_type: '',
+  start_date: '',
+  end_date: '',
+  search: '',
+});
+
+const activityTypes = [
+  { value: 'login', label: 'Đăng nhập' },
+  { value: 'logout', label: 'Đăng xuất' },
+  { value: 'create', label: 'Tạo mới' },
+  { value: 'update', label: 'Cập nhật' },
+  { value: 'delete', label: 'Xóa' },
+  { value: 'view', label: 'Xem' },
+];
+
+const fetchActivities = async () => {
+  try {
+    const params: Record<string, string> = {};
+    if (filters.value.activity_type) params.activity_type = filters.value.activity_type;
+    if (filters.value.start_date) params.start_date = filters.value.start_date;
+    if (filters.value.end_date) params.end_date = filters.value.end_date;
+    if (filters.value.search) params.search = filters.value.search;
+
+    const response = await api.get(endpoints.activities, { params });
+    activities.value = response.data;
+  } catch (error) {
+    console.error('Error fetching activities:', error);
+  }
 };
+
+const exportActivities = async () => {
+  try {
+    const params: Record<string, string> = {};
+    if (filters.value.activity_type) params.activity_type = filters.value.activity_type;
+    if (filters.value.start_date) params.start_date = filters.value.start_date;
+    if (filters.value.end_date) params.end_date = filters.value.end_date;
+    if (filters.value.search) params.search = filters.value.search;
+
+    const response = await api.get(endpoints.activities + 'export/', {
+      params,
+      responseType: 'blob',
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `activities_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Error exporting activities:', error);
+  }
+};
+
+const formatDate = (dateStr: string) => {
+  return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
+};
+
+onMounted(() => {
+  fetchActivities();
+});
 </script>
 
 <style scoped>
@@ -131,7 +144,8 @@ table {
   width: 100%;
   border-collapse: collapse;
 }
-th, td {
+th,
+td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;

@@ -35,7 +35,7 @@ export const endpoints = {
   students: `${API_PREFIX}/students/`,
   studentProfile: `${API_PREFIX}/students/me/`,
 
-  // Teacher Management (giả định)
+  // Teacher Management 
   teachers: `${API_PREFIX}/teachers/`,
   teacherProfile: `${API_PREFIX}/teachers/me/`,
   classes: `${API_PREFIX}/classes/`,

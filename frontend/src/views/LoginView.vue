@@ -78,8 +78,17 @@ const handleSubmit = async () => {
   isLoading.value = true
   try {
     await authStore.login(form)
-    const redirectPath = route.query.redirect || '/'
-    router.push(redirectPath)
+    // Redirect based on role
+    const role = authStore.user?.role
+    if (role === 'admin' || role === 'superuser') {
+      router.push('/admin-dashboard')
+    } else if (role === 'teachers') {
+      router.push('/teacher-dashboard')
+    } else if (role === 'students') {
+      router.push('/student-dashboard')
+    } else {
+      router.push('/')
+    }
   } catch (error) {
     // Toast is already handled in the auth store
   } finally {
