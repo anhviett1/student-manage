@@ -9,7 +9,7 @@ from datetime import date
 class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
-        fields = '__all__'
+        fields = "__all__"
         widgets = {
             "student_id": forms.TextInput(
                 attrs={

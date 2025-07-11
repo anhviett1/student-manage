@@ -7,16 +7,17 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Subject
 from .serializers import SubjectSerializer
-from ..app_home.permissions import IsAdminOrReadOnly
+from ..app_home.permissions import SubjectPermission
 from drf_spectacular.utils import extend_schema
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema(tags=["Subjects"])
 class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [SubjectPermission]
     lookup_field = "subject_id"
 
     def get_queryset(self):
@@ -26,6 +27,11 @@ class SubjectViewSet(viewsets.ModelViewSet):
 
         query = self.request.query_params
         filters = Q()
+
+        # Lọc theo quyền: admin thấy tất cả, giáo viên thấy môn họ dạy
+        if not (user.is_superuser or getattr(user, "role", "") == "admin"):
+            if getattr(user, "role", "") == "teacher":
+                filters &= Q(teacher=user)
 
         # Lấy các filter
         search_term = query.get("search", "")
@@ -79,7 +85,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
             raise ValueError("Số tín chỉ phải lớn hơn 0.")
 
     @extend_schema(
-        #summary="Export subjects to Excel",
+        summary="Export subjects to Excel",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -91,35 +97,46 @@ class SubjectViewSet(viewsets.ModelViewSet):
             sheet.title = "Subjects"
 
             headers = [
-                "Mã môn học", "Tên môn học", "Mô tả", "Số tín chỉ",
-                "Học kỳ", "Khoa", "Trạng thái", "Hoạt động",
-                "Ngày tạo", "Ngày cập nhật"
+                "Mã môn học",
+                "Tên môn học",
+                "Mô tả",
+                "Số tín chỉ",
+                "Học kỳ",
+                "Khoa",
+                "Trạng thái",
+                "Hoạt động",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for subject in queryset:
-                sheet.append([
-                    subject.subject_id,
-                    subject.subject_name,
-                    subject.description or "",
-                    subject.credits,
-                    str(subject.semester) if subject.semester else "",
-                    subject.department.department_name if subject.department else "",
-                    subject.get_status_display(),
-                    "Có" if subject.is_active else "Không",
-                    subject.created_at,
-                    subject.updated_at
-                ])
+                sheet.append(
+                    [
+                        subject.subject_id,
+                        subject.subject_name,
+                        subject.description or "",
+                        subject.credits,
+                        str(subject.semester) if subject.semester else "",
+                        subject.department.department_name if subject.department else "",
+                        subject.get_status_display(),
+                        "Có" if subject.is_active else "Không",
+                        subject.created_at,
+                        subject.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="subjects_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="subjects_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            )
             workbook.save(response)
             return response
         except Exception as e:
             logger.error(f"Error exporting subjects: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách môn học."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

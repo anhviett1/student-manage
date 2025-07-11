@@ -7,16 +7,17 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Semester
 from .serializers import SemesterSerializer
-from ..app_home.permissions import IsAdminOrReadOnly
+from ..app_home.permissions import SemesterPermission
 from drf_spectacular.utils import extend_schema
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema(tags=["Semesters"])
 class SemesterViewSet(viewsets.ModelViewSet):
     serializer_class = SemesterSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [SemesterPermission]
     lookup_field = "semester_id"
 
     def get_queryset(self):
@@ -86,7 +87,7 @@ class SemesterViewSet(viewsets.ModelViewSet):
             raise ValueError("Ngày bắt đầu tính phí trễ không thể trước hạn nộp học phí.")
 
     @extend_schema(
-        #summary="Export semesters to Excel",
+        summary="Export semesters to Excel",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -98,47 +99,66 @@ class SemesterViewSet(viewsets.ModelViewSet):
             sheet.title = "Semesters"
 
             headers = [
-                "Mã học kỳ", "Tên học kỳ", "Năm học", "Ngày bắt đầu", "Ngày kết thúc",
-                "Ngày bắt đầu đăng ký", "Ngày kết thúc đăng ký", "Hạn thêm/xóa môn",
-                "Hạn nộp học phí", "Ngày tính phí trễ", "Phí trễ hạn", "Tổng tín chỉ",
-                "Tín chỉ tối thiểu", "Tín chỉ tối đa", "Trạng thái", "Mô tả", "Ghi chú",
-                "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+                "Mã học kỳ",
+                "Tên học kỳ",
+                "Năm học",
+                "Ngày bắt đầu",
+                "Ngày kết thúc",
+                "Ngày bắt đầu đăng ký",
+                "Ngày kết thúc đăng ký",
+                "Hạn thêm/xóa môn",
+                "Hạn nộp học phí",
+                "Ngày tính phí trễ",
+                "Phí trễ hạn",
+                "Tổng tín chỉ",
+                "Tín chỉ tối thiểu",
+                "Tín chỉ tối đa",
+                "Trạng thái",
+                "Mô tả",
+                "Ghi chú",
+                "Hoạt động",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for semester in queryset:
-                sheet.append([
-                    semester.semester_id,
-                    semester.semester_name,
-                    semester.academic_year,
-                    semester.start_date,
-                    semester.end_date,
-                    semester.registration_start,
-                    semester.registration_end,
-                    semester.add_drop_deadline,
-                    semester.tuition_deadline,
-                    semester.late_fee_start,
-                    str(semester.late_fee_amount),
-                    semester.total_credits,
-                    semester.min_credits,
-                    semester.max_credits,
-                    semester.get_status_display(),
-                    semester.description or "",
-                    semester.notes or "",
-                    "Có" if semester.is_active else "Không",
-                    semester.created_at,
-                    semester.updated_at
-                ])
+                sheet.append(
+                    [
+                        semester.semester_id,
+                        semester.semester_name,
+                        semester.academic_year,
+                        semester.start_date,
+                        semester.end_date,
+                        semester.registration_start,
+                        semester.registration_end,
+                        semester.add_drop_deadline,
+                        semester.tuition_deadline,
+                        semester.late_fee_start,
+                        str(semester.late_fee_amount),
+                        semester.total_credits,
+                        semester.min_credits,
+                        semester.max_credits,
+                        semester.get_status_display(),
+                        semester.description or "",
+                        semester.notes or "",
+                        "Có" if semester.is_active else "Không",
+                        semester.created_at,
+                        semester.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="semesters_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="semesters_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            )
             workbook.save(response)
             return response
         except Exception as e:
             logger.error(f"Error exporting semesters: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách học kỳ."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

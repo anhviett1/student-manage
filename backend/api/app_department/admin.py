@@ -1,15 +1,21 @@
 from django.contrib import admin
 from .models import Department
-from .forms import DepartmentForm  
+from .forms import DepartmentForm
 
 from django.utils.translation import gettext_lazy as _
+
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
     form = DepartmentForm  # ✅ thêm dòng này
 
     list_display = (
-        "department_id", "department_name", "is_active", "is_deleted", "created_at", "updated_at"
+        "department_id",
+        "department_name",
+        "is_active",
+        "is_deleted",
+        "created_at",
+        "updated_at",
     )
     list_filter = ("is_active", "is_deleted")
     search_fields = ("department_id", "department_name")

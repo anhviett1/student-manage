@@ -17,27 +17,35 @@ from .serializers import UserSerializer, DepartmentSerializer
 import csv
 from io import StringIO
 import os
+
 User = get_user_model()
+
 
 class ViewTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
         # Tạo người dùng với các vai trò khác nhau
         self.admin_user = User.objects.create_user(
-            username="admin", password="pass123", role="admin", email="admin@example.com",
-            first_name="Admin", last_name="User"
+            username="admin",
+            password="pass123",
+            role="admin",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
         )
         self.student_user = User.objects.create_user(
-            username="student", password="pass123", role="student", email="student@example.com",
-            first_name="Student", last_name="User"
+            username="student",
+            password="pass123",
+            role="student",
+            email="student@example.com",
+            first_name="Student",
+            last_name="User",
         )
 
         # File ảnh mẫu để test AvatarUploadView
         self.image_content = self.create_test_image()
         self.image_file = SimpleUploadedFile(
-            name="test_image.jpg",
-            content=self.image_content,
-            content_type="image/jpeg"
+            name="test_image.jpg", content=self.image_content, content_type="image/jpeg"
         )
 
     def create_test_image(self):
@@ -132,7 +140,7 @@ class ViewTests(APITestCase):
         data = {
             "old_password": "pass123",
             "new_password": "newpass123",
-            "confirm_password": "newpass123"
+            "confirm_password": "newpass123",
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, 200)
@@ -147,7 +155,7 @@ class ViewTests(APITestCase):
         data = {
             "old_password": "wrongpass",
             "new_password": "newpass123",
-            "confirm_password": "newpass123"
+            "confirm_password": "newpass123",
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, 400)
@@ -160,7 +168,7 @@ class ViewTests(APITestCase):
         data = {
             "old_password": "pass123",
             "new_password": "newpass123",
-            "confirm_password": "differentpass123"
+            "confirm_password": "differentpass123",
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, 400)
@@ -170,11 +178,7 @@ class ViewTests(APITestCase):
         """Kiểm tra đổi mật khẩu với mật khẩu mới quá ngắn."""
         url = reverse("change_password")
         self.client.force_authenticate(user=self.admin_user)
-        data = {
-            "old_password": "pass123",
-            "new_password": "short",
-            "confirm_password": "short"
-        }
+        data = {"old_password": "pass123", "new_password": "short", "confirm_password": "short"}
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["error"], "New password must be at least 8 characters long")
@@ -226,8 +230,14 @@ class ViewTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["message"], "Avatar uploaded successfully")
         self.student_user.refresh_from_db()
-        self.assertTrue(self.student_user.profile_picture.name.startswith("profile_pictures/student_test_image"))
-        self.assertTrue(os.path.exists(os.path.join(settings.MEDIA_ROOT, self.student_user.profile_picture.name)))
+        self.assertTrue(
+            self.student_user.profile_picture.name.startswith("profile_pictures/student_test_image")
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(settings.MEDIA_ROOT, self.student_user.profile_picture.name)
+            )
+        )
 
     def test_avatar_upload_api_view_invalid_format(self):
         """Kiểm tra tải lên file không phải ảnh."""
@@ -237,7 +247,9 @@ class ViewTests(APITestCase):
         data = {"avatar": invalid_file}
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error"], "Invalid file format. Only JPG, JPEG, PNG, GIF are allowed")
+        self.assertEqual(
+            response.data["error"], "Invalid file format. Only JPG, JPEG, PNG, GIF are allowed"
+        )
 
     def test_avatar_upload_api_view_no_file(self):
         """Kiểm tra tải lên mà không có file."""
@@ -259,12 +271,16 @@ class ViewTests(APITestCase):
         old_path = self.student_user.profile_picture.path
 
         # Tải lên ảnh mới
-        new_image = SimpleUploadedFile("new_image.jpg", self.image_content, content_type="image/jpeg")
+        new_image = SimpleUploadedFile(
+            "new_image.jpg", self.image_content, content_type="image/jpeg"
+        )
         data = {"avatar": new_image}
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, 200)
         self.student_user.refresh_from_db()
-        self.assertTrue(self.student_user.profile_picture.name.startswith("profile_pictures/student_new_image"))
+        self.assertTrue(
+            self.student_user.profile_picture.name.startswith("profile_pictures/student_new_image")
+        )
         # Kiểm tra ảnh cũ đã bị xóa
         self.assertFalse(os.path.exists(old_path))
 
@@ -294,26 +310,43 @@ class ViewTests(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["error"], "No avatar to delete")
 
+
 class AdditionalViewTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
         # Tạo người dùng
         self.admin_user = User.objects.create_user(
-            username="admin", password="pass123", role="admin", email="admin@example.com",
-            is_active=True, is_deleted=False
+            username="admin",
+            password="pass123",
+            role="admin",
+            email="admin@example.com",
+            is_active=True,
+            is_deleted=False,
         )
         self.student_user = User.objects.create_user(
-            username="student", password="pass123", role="student", email="student@example.com",
-            is_active=True, is_deleted=False
+            username="student",
+            password="pass123",
+            role="student",
+            email="student@example.com",
+            is_active=True,
+            is_deleted=False,
         )
         self.deleted_user = User.objects.create_user(
-            username="deleted", password="pass123", role="student", email="deleted@example.com",
-            is_active=False, is_deleted=True
+            username="deleted",
+            password="pass123",
+            role="student",
+            email="deleted@example.com",
+            is_active=False,
+            is_deleted=True,
         )
 
         # Tạo khoa
         self.department = Department.objects.create(
-            name="Computer Science", code="CS", is_active=True, is_deleted=False, head=self.admin_user
+            name="Computer Science",
+            code="CS",
+            is_active=True,
+            is_deleted=False,
+            head=self.admin_user,
         )
         self.deleted_department = Department.objects.create(
             name="Math", code="MATH", is_active=False, is_deleted=True
@@ -333,11 +366,11 @@ class AdditionalViewTests(APITestCase):
         """Kiểm tra API thống kê."""
         url = reverse("statistics")
         self.client.force_authenticate(user=self.admin_user)
-        
+
         # Tạo thêm dữ liệu để kiểm tra thống kê
         User.objects.create_user(username="teacher", password="pass123", role="teacher")
         Department.objects.create(name="Physics", code="PHY", is_active=True)
-        
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["users"]["total_users"], 3)  # admin, student, teacher
@@ -440,10 +473,23 @@ class AdditionalViewTests(APITestCase):
         content = response.content.decode("utf-8")
         csv_reader = csv.reader(StringIO(content))
         header = next(csv_reader)
-        self.assertEqual(header, ["ID", "Username", "Full Name", "Email", "Role", "Department", "Is Active"])
+        self.assertEqual(
+            header, ["ID", "Username", "Full Name", "Email", "Role", "Department", "Is Active"]
+        )
         rows = list(csv_reader)
         self.assertEqual(len(rows), 2)  # admin, student (deleted_user bị lọc bởi is_deleted=False)
-        self.assertIn([str(self.admin_user.id), "admin", "Admin User", "admin@example.com", "Quản trị viên", "Computer Science", "True"], rows)
+        self.assertIn(
+            [
+                str(self.admin_user.id),
+                "admin",
+                "Admin User",
+                "admin@example.com",
+                "Quản trị viên",
+                "Computer Science",
+                "True",
+            ],
+            rows,
+        )
 
     def test_user_export_api_view_unauthenticated(self):
         """Kiểm tra xuất người dùng khi chưa đăng nhập."""
@@ -498,7 +544,9 @@ class AdditionalViewTests(APITestCase):
         self.assertEqual(header, ["ID", "Code", "Name", "Head", "Is Active"])
         rows = list(csv_reader)
         self.assertEqual(len(rows), 1)  # Chỉ có CS (MATH bị lọc bởi is_deleted=False)
-        self.assertIn([str(self.department.id), "CS", "Computer Science", "Admin User", "True"], rows)
+        self.assertIn(
+            [str(self.department.id), "CS", "Computer Science", "Admin User", "True"], rows
+        )
 
     def test_department_export_api_view_unauthenticated(self):
         """Kiểm tra xuất khoa khi chưa đăng nhập."""
@@ -528,7 +576,9 @@ class AdditionalViewTests(APITestCase):
     def test_score_management_api_view_unauthenticated(self):
         """Kiểm tra tạo điểm số khi chưa đăng nhập."""
         url = reverse("score-management")
-        response = self.client.post(url, {"user_id": self.student_user.id, "value": 90.0}, format="json")
+        response = self.client.post(
+            url, {"user_id": self.student_user.id, "value": 90.0}, format="json"
+        )
         self.assertEqual(response.status_code, 401)
 
     def test_score_management_api_view_no_permission(self):

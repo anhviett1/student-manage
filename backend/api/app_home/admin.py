@@ -8,14 +8,18 @@ from ..app_department.models import Department
 from ..app_student.models import Student
 from ..app_teacher.models import Teacher
 
+
 class UserAdminForm(forms.ModelForm):
     student_id = forms.CharField(max_length=20, required=False, label=_("Mã sinh viên"))
     enrollment_date = forms.DateField(required=False, label=_("Ngày nhập học"), initial=date.today)
-    department = forms.ModelChoiceField(queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa"))
-    
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa")
+    )
+
     teacher_id = forms.CharField(max_length=20, required=False, label=_("Mã giảng viên"))
-    department = forms.ModelChoiceField(queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa"))
-    
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_deleted=False), required=False, label=_("Khoa")
+    )
 
     class Meta:
         model = User
@@ -28,10 +32,10 @@ class UserAdminForm(forms.ModelForm):
         enrollment_date = cleaned_data.get("enrollment_date")
         department = cleaned_data.get("department")
         teacher_id = cleaned_data.get("teacher_id")
-        
+
         if role == "admin":
             pass
-            
+
         elif role == "teacher":
             if not teacher_id:
                 self.add_error(
@@ -39,7 +43,7 @@ class UserAdminForm(forms.ModelForm):
                 )
             if not department:
                 self.add_error("department", _("Khoa là bắt buộc khi vai trò là giảng viên."))
-        
+
         elif role == "student":
             if not student_id:
                 self.add_error(
@@ -170,5 +174,3 @@ class UserAdmin(BaseUserAdmin):
             student.is_active = obj.is_active
             student.save()
         super().save_model(request, obj, form, change)
-    
-    

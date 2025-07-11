@@ -11,17 +11,21 @@ from ..app_class.models import Class
 
 User = get_user_model()
 
+
 def get_default_student():
     student = Student.objects.first()
     return student.student_id if student else None
+
 
 def get_default_subject():
     subject = Subject.objects.first()
     return subject.subject_id if subject else None
 
+
 def get_default_semester():
     semester = Semester.objects.first()
     return semester.semester_id if semester else None
+
 
 class Enrollment(models.Model):
     STATUS_CHOICES = [
@@ -30,13 +34,39 @@ class Enrollment(models.Model):
         ("pending", "Đang chờ duyệt"),
     ]
 
-    student = models.ForeignKey( Student, on_delete=models.CASCADE, related_name="student_enrollments", verbose_name="Sinh viên", default=get_default_student, null=True, blank=True)
-    subject = models.ForeignKey( Subject, on_delete=models.CASCADE, related_name="subject_enrollments", verbose_name="Môn học", default=get_default_subject, null=True, blank=True)
-    semester = models.ForeignKey( Semester, on_delete=models.CASCADE, related_name="semester_enrollments",verbose_name="Học kỳ", default=get_default_semester, null=True,blank=True)
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="student_enrollments",
+        verbose_name="Sinh viên",
+        default=get_default_student,
+        null=True,
+        blank=True,
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name="subject_enrollments",
+        verbose_name="Môn học",
+        default=get_default_subject,
+        null=True,
+        blank=True,
+    )
+    semester = models.ForeignKey(
+        Semester,
+        on_delete=models.CASCADE,
+        related_name="semester_enrollments",
+        verbose_name="Học kỳ",
+        default=get_default_semester,
+        null=True,
+        blank=True,
+    )
     class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="class_enrollments")
 
     # Thông tin đăng ký
-    enrollment_id = models.CharField(max_length=20, primary_key=True, unique=True, verbose_name="Mã đăng ký", default="ENR001")
+    enrollment_id = models.CharField(
+        max_length=20, primary_key=True, unique=True, verbose_name="Mã đăng ký", default="ENR001"
+    )
     enrollment_date = models.DateField(verbose_name="Ngày đăng ký", default=date.today)
     academic_year = models.CharField(max_length=10, verbose_name="Năm học", default="2023-2024")
 
@@ -53,7 +83,9 @@ class Enrollment(models.Model):
     notes = models.TextField(blank=True, null=True, verbose_name="Ghi chú")
 
     # Thông tin hệ thống
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo", null=False, blank=False)
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Ngày tạo", null=False, blank=False
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")
     is_deleted = models.BooleanField(default=False, verbose_name="Đã xóa")
 
@@ -62,4 +94,3 @@ class Enrollment(models.Model):
 
     class Meta:
         app_label = "app_enrollment"
-        

@@ -7,16 +7,17 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Enrollment
 from .serializers import EnrollmentSerializer
-from ..app_home.permissions import IsAdminOrReadOnly
+from ..app_home.permissions import EnrollmentPermission
 from drf_spectacular.utils import extend_schema
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema(tags=["Enrollments"])
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [EnrollmentPermission]
     lookup_field = "enrollment_id"
 
     def get_queryset(self):
@@ -26,6 +27,13 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
         query = self.request.query_params
         filters = Q()
+
+        # Lọc theo quyền: admin thấy tất cả, giáo viên thấy đăng ký của môn họ dạy, học sinh thấy đăng ký của họ
+        if not (user.is_superuser or getattr(user, "role", "") == "admin"):
+            if getattr(user, "role", "") == "teacher":
+                filters &= Q(subject__teacher=user)
+            elif getattr(user, "role", "") == "student":
+                filters &= Q(student=user)
 
         # Lấy các filter
         search_term = query.get("search", "")
@@ -83,7 +91,12 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
     def _validate_enrollment(self, instance):
         """Kiểm tra logic đăng ký hợp lệ."""
-        if not instance.student or not instance.subject or not instance.semester or not instance.class_obj:
+        if (
+            not instance.student
+            or not instance.subject
+            or not instance.semester
+            or not instance.class_obj
+        ):
             raise ValueError("Sinh viên, môn học, học kỳ và lớp học phải được cung cấp.")
         if instance.enrollment_date > instance.semester.end_date:
             raise ValueError("Ngày đăng ký không thể sau ngày kết thúc học kỳ.")
@@ -91,7 +104,7 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
             raise ValueError("Ngày đăng ký không thể trước ngày bắt đầu đăng ký học kỳ.")
 
     @extend_schema(
-        #summary="Export enrollments to Excel",
+        summary="Export enrollments to Excel",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -103,37 +116,50 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
             sheet.title = "Enrollments"
 
             headers = [
-                "Mã đăng ký", "Sinh viên", "Môn học", "Học kỳ", "Lớp học",
-                "Ngày đăng ký", "Năm học", "Trạng thái", "Ghi chú",
-                "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+                "Mã đăng ký",
+                "Sinh viên",
+                "Môn học",
+                "Học kỳ",
+                "Lớp học",
+                "Ngày đăng ký",
+                "Năm học",
+                "Trạng thái",
+                "Ghi chú",
+                "Hoạt động",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for enrollment in queryset:
-                sheet.append([
-                    enrollment.enrollment_id,
-                    str(enrollment.student),
-                    str(enrollment.subject),
-                    str(enrollment.semester),
-                    str(enrollment.class_obj),
-                    enrollment.enrollment_date,
-                    enrollment.academic_year,
-                    enrollment.get_status_display(),
-                    enrollment.notes or "",
-                    "Có" if enrollment.is_active else "Không",
-                    enrollment.created_at,
-                    enrollment.updated_at
-                ])
+                sheet.append(
+                    [
+                        enrollment.enrollment_id,
+                        str(enrollment.student),
+                        str(enrollment.subject),
+                        str(enrollment.semester),
+                        str(enrollment.class_obj),
+                        enrollment.enrollment_date,
+                        enrollment.academic_year,
+                        enrollment.get_status_display(),
+                        enrollment.notes or "",
+                        "Có" if enrollment.is_active else "Không",
+                        enrollment.created_at,
+                        enrollment.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="enrollments_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="enrollments_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            )
             workbook.save(response)
             return response
         except Exception as e:
             logger.error(f"Error exporting enrollments: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách đăng ký."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

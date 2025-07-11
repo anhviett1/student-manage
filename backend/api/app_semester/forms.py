@@ -8,7 +8,7 @@ from django.core.validators import RegexValidator
 class SemesterForm(forms.ModelForm):
     class Meta:
         model = Semester
-        fields = '__all__'
+        fields = "__all__"
         widgets = {
             "semester_name": forms.TextInput(
                 attrs={

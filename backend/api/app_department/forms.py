@@ -2,6 +2,7 @@ from django import forms
 from ..app_department.models import Department
 from django.utils.translation import gettext_lazy as _
 
+
 class DepartmentForm(forms.ModelForm):
     class Meta:
         model = Department

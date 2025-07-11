@@ -7,20 +7,31 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Activity
 from .serializers import ActivitySerializer
-from rest_framework.permissions import IsAuthenticated
+from ..app_home.permissions import ActivityPermission
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema_view(
     list=extend_schema(
         tags=["Activities"],
         parameters=[
-            OpenApiParameter(name="activity_type", type=str, description="Lọc theo loại hoạt động (login, logout, create, update, delete, view)"),
-            OpenApiParameter(name="start_date", type=str, description="Lọc theo ngày bắt đầu (YYYY-MM-DD)"),
-            OpenApiParameter(name="end_date", type=str, description="Lọc theo ngày kết thúc (YYYY-MM-DD)"),
-            OpenApiParameter(name="search", type=str, description="Tìm kiếm theo mô tả hoặc tên người dùng"),
+            OpenApiParameter(
+                name="activity_type",
+                type=str,
+                description="Lọc theo loại hoạt động (login, logout, create, update, delete, view)",
+            ),
+            OpenApiParameter(
+                name="start_date", type=str, description="Lọc theo ngày bắt đầu (YYYY-MM-DD)"
+            ),
+            OpenApiParameter(
+                name="end_date", type=str, description="Lọc theo ngày kết thúc (YYYY-MM-DD)"
+            ),
+            OpenApiParameter(
+                name="search", type=str, description="Tìm kiếm theo mô tả hoặc tên người dùng"
+            ),
         ],
     ),
     retrieve=extend_schema(tags=["Activities"]),
@@ -28,7 +39,7 @@ logger = logging.getLogger(__name__)
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Activity.objects.all().order_by("-created_at")
     serializer_class = ActivitySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ActivityPermission]
 
     def get_queryset(self):
         user = self.request.user
@@ -38,9 +49,12 @@ class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
         query = self.request.query_params
         filters = Q()
 
-        # Lọc theo quyền: admin/staff thấy tất cả, người dùng thường thấy của họ
-        if not (user.is_staff or user.is_superuser):
-            filters &= Q(user=user)
+        # Lọc theo quyền: admin thấy tất cả, giáo viên/học sinh thấy hoạt động liên quan
+        if not (user.is_superuser or getattr(user, "role", "") == "admin"):
+            if getattr(user, "role", "") == "teacher":
+                filters &= Q(created_by=user) | Q(participants=user)
+            elif getattr(user, "role", "") == "student":
+                filters &= Q(participants=user)
 
         # Lọc nâng cao
         activity_type = query.get("activity_type", "")
@@ -80,26 +94,35 @@ class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
             sheet.title = "Activities"
 
             headers = [
-                "ID", "Người dùng", "Loại hoạt động", "Mô tả",
-                "IP Address", "Ngày tạo", "Ngày cập nhật"
+                "ID",
+                "Người dùng",
+                "Loại hoạt động",
+                "Mô tả",
+                "IP Address",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for activity in queryset:
-                sheet.append([
-                    activity.id,
-                    activity.user.username,
-                    activity.get_activity_type_display(),
-                    activity.description or "",
-                    activity.ip_address or "",
-                    activity.created_at,
-                    activity.updated_at
-                ])
+                sheet.append(
+                    [
+                        activity.id,
+                        activity.user.username if activity.user else "",
+                        activity.get_activity_type_display(),
+                        activity.description or "",
+                        activity.ip_address or "",
+                        activity.created_at,
+                        activity.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="activities_{timezone.now().strftime("%Y%m%d")}.xlsx'
+            response["Content-Disposition"] = (
+                f'attachment; filename="activities_{timezone.now().strftime("%Y%m%d")}.xlsx'
+            )
             workbook.save(response)
             logger.info("Exported activity list to Excel")
             return response
@@ -107,5 +130,5 @@ class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
             logger.error(f"Error exporting activities: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách hoạt động."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

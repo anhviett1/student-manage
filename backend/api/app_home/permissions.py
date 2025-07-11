@@ -4,64 +4,107 @@ from django.contrib.auth.models import Permission
 from functools import lru_cache
 from django.utils.translation import gettext_lazy as _
 
-ADMIN_ROLES = ['admin', 'superuser']
+# Định nghĩa các role
+ADMIN_ROLES = ["admin"]
+TEACHER_ROLES = ["teacher"]
+STUDENT_ROLES = ["student"]
 
+
+# ===== Role-based Permission =====
 class RolePermission(BasePermission):
-    """Permission kiểm tra vai trò (role)."""
     roles = []
 
     def has_permission(self, request, view):
-        # Superuser của Django có mọi quyền, không cần kiểm tra vai trò
-        if request.user.is_superuser:
-            return True
-        return (
-            request.user.is_authenticated and
-            getattr(request.user, 'role', None) in self.roles
+        return request.user.is_authenticated and (
+            request.user.is_superuser or getattr(request.user, "role", None) in self.roles
         )
 
+
 def make_role_permission_class(role_list, message):
-    """Factory tạo permission theo role."""
     return type(
         f"Is{'Or'.join(r.capitalize() for r in role_list)}",
         (RolePermission,),
-        {"roles": role_list, "message": _(message)}
+        {"roles": role_list, "message": _(message)},
     )
 
-# Cụ thể hóa
-IsAdmin = make_role_permission_class(ADMIN_ROLES, "Only admin users are allowed.")
-IsTeacher = make_role_permission_class(['teacher'], "Only teacher users are allowed.")
-IsStudent = make_role_permission_class(['student'], "Only student users are allowed.")
-IsAdminOrTeacher = make_role_permission_class(ADMIN_ROLES + ['teacher'], "Only admin or teacher users are allowed.")
 
+IsAdmin = make_role_permission_class(ADMIN_ROLES, "Chỉ admin được phép.")
+IsTeacher = make_role_permission_class(TEACHER_ROLES, "Chỉ giáo viên được phép.")
+IsStudent = make_role_permission_class(STUDENT_ROLES, "Chỉ học sinh được phép.")
+IsAdminOrTeacher = make_role_permission_class(
+    ADMIN_ROLES + TEACHER_ROLES, "Chỉ admin hoặc giáo viên."
+)
+IsAdminOrStudent = make_role_permission_class(
+    ADMIN_ROLES + STUDENT_ROLES, "Chỉ admin hoặc học sinh."
+)
+IsTeacherOrStudent = make_role_permission_class(
+    TEACHER_ROLES + STUDENT_ROLES, "Chỉ giáo viên hoặc học sinh."
+)
+IsAllRoles = make_role_permission_class(
+    ADMIN_ROLES + TEACHER_ROLES + STUDENT_ROLES, "Chỉ admin, giáo viên hoặc học sinh."
+)
+
+
+# ===== Admin or ReadOnly =====
 class IsAdminOrReadOnly(BasePermission):
-    message = _("Only admin users can modify data.")
+    message = _("Chỉ admin được chỉnh sửa.")
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return request.user.is_authenticated
         return request.user.is_authenticated and (
-            request.user.is_superuser or
-            getattr(request.user, 'role', '') in ADMIN_ROLES
+            request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
         )
 
+
+# ===== Owner or Admin =====
 class IsOwnerOrAdmin(BasePermission):
-    message = _("Only the owner or admin can access this object.")
+    message = _("Chỉ chủ sở hữu hoặc admin.")
 
     def has_object_permission(self, request, view, obj):
-        is_admin = request.user.is_superuser or getattr(request.user, 'role', '') in ADMIN_ROLES
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
         return request.user.is_authenticated and (
-            obj == request.user or
-            getattr(obj, 'user', None) == request.user or
-            is_admin
+            obj == request.user or getattr(obj, "user", None) == request.user or is_admin
         )
 
+
+# ===== Teacher or Admin for Specific Objects =====
+class IsTeacherOrAdminForAssigned(BasePermission):
+    message = _("Chỉ admin hoặc giáo viên được phân công.")
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_assigned_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES
+            and hasattr(obj, "teacher")
+            and obj.teacher == request.user
+        )
+        return request.user.is_authenticated and (is_admin or is_assigned_teacher)
+
+
+# ===== Student or Admin for Specific Objects =====
+class IsStudentOrAdminForAssigned(BasePermission):
+    message = _("Chỉ admin hoặc học sinh được phân công.")
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_assigned_student = (
+            getattr(request.user, "role", "") in STUDENT_ROLES
+            and hasattr(obj, "student")
+            and obj.student == request.user
+        )
+        return request.user.is_authenticated and (is_admin or is_assigned_student)
+
+
+# ===== Django-style Model Permission =====
 @lru_cache(maxsize=128)
 def get_permission(codename, model_cls):
     content_type = ContentType.objects.get_for_model(model_cls)
     return Permission.objects.filter(codename=codename, content_type=content_type).first()
 
+
 class HasModelPermission(BasePermission):
-    message = _("You do not have the required permission.")
+    message = _("Không có quyền.")
 
     def __init__(self, codename=None):
         self.codename = codename
@@ -70,7 +113,7 @@ class HasModelPermission(BasePermission):
         if not (request.user.is_authenticated and self.codename):
             return False
 
-        model = getattr(getattr(view, 'queryset', None), 'model', None)
+        model = getattr(getattr(view, "queryset", None), "model", None)
         if not model:
             return False
 
@@ -87,20 +130,187 @@ def make_model_permission_class(name, codename, message=None):
         (HasModelPermission,),
         {
             "__init__": lambda self: super(type(self), self).__init__(codename=codename),
-            "message": _(message or f"You need `{codename}` permission.")
-        }
+            "message": _(message or f"Cần quyền `{codename}`."),
+        },
     )
 
-# Các quyền cụ thể
-CanManageScores = make_model_permission_class("CanManageScores", "can_manage_scores")
-CanManageSubjects = make_model_permission_class("CanManageSubjects", "can_manage_subjects")
-CanViewSubjectScores = make_model_permission_class("CanViewSubjectScores", "can_view_subject_scores")
 
-class CanViewOwnScores(BasePermission):
-    message = _("Only students can view their own scores.")
+# ===== Application-specific Permissions =====
+# 1. app_home – Quản lý hồ sơ người dùng
+class ProfilePermission(BasePermission):
+    message = _("Chỉ admin hoặc chủ sở hữu hồ sơ được phép chỉnh sửa.")
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and getattr(request.user, 'role', '') == 'student'
+        return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        return hasattr(obj, 'user') and obj.user == request.user
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_owner = obj == request.user or getattr(obj, "user", None) == request.user
+        return request.user.is_authenticated and (is_admin or is_owner)
+
+
+# 2. app_student – Quản lý học sinh
+StudentAddPermission = make_model_permission_class(
+    "StudentAddPermission", "add_student", "Cần quyền thêm học sinh."
+)
+StudentChangePermission = make_model_permission_class(
+    "StudentChangePermission", "change_student", "Cần quyền sửa học sinh."
+)
+StudentDeletePermission = make_model_permission_class(
+    "StudentDeletePermission", "delete_student", "Cần quyền xóa học sinh."
+)
+
+# 3. app_teacher – Quản lý giáo viên
+TeacherAddPermission = make_model_permission_class(
+    "TeacherAddPermission", "add_teacher", "Cần quyền thêm giáo viên."
+)
+TeacherChangePermission = make_model_permission_class(
+    "TeacherChangePermission", "change_teacher", "Cần quyền sửa giáo viên."
+)
+TeacherDeletePermission = make_model_permission_class(
+    "TeacherDeletePermission", "delete_teacher", "Cần quyền xóa giáo viên."
+)
+
+
+# 4. app_class – Quản lý lớp học
+class ClassPermission(BasePermission):
+    message = _("Chỉ admin, giáo viên hoặc học sinh được phân công.")
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.is_superuser
+            or getattr(request.user, "role", "") in (ADMIN_ROLES + TEACHER_ROLES + STUDENT_ROLES)
+        )
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES and obj.teacher == request.user
+        )
+        is_student = (
+            getattr(request.user, "role", "") in STUDENT_ROLES
+            and request.user in obj.students.all()
+        )
+        return request.user.is_authenticated and (is_admin or is_teacher or is_student)
+
+
+# 5. app_department – Quản lý khoa
+class DepartmentPermission(IsAdminOrReadOnly):
+    message = _("Chỉ admin được chỉnh sửa, các vai trò khác chỉ được xem.")
+
+
+# 6. app_subject – Quản lý môn học
+class SubjectPermission(BasePermission):
+    message = _("Chỉ admin hoặc giáo viên được phân công.")
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return request.user.is_authenticated
+        return request.user.is_authenticated and (
+            request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        )
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES and obj.teacher == request.user
+        )
+        return request.user.is_authenticated and (
+            is_admin or is_teacher or request.method in SAFE_METHODS
+        )
+
+
+# 7. app_score – Quản lý điểm
+class ScorePermission(BasePermission):
+    message = _("Chỉ admin, giáo viên hoặc học sinh được phân công.")
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES
+            and obj.subject.teacher == request.user
+        )
+        is_student = (
+            getattr(request.user, "role", "") in STUDENT_ROLES and obj.student == request.user
+        )
+        if request.method in SAFE_METHODS:
+            return request.user.is_authenticated and (is_admin or is_teacher or is_student)
+        return request.user.is_authenticated and (is_admin or is_teacher)
+
+
+# 8. app_schedule – Lịch học và lịch thi
+class SchedulePermission(BasePermission):
+    message = _("Chỉ admin, giáo viên hoặc học sinh được phân công.")
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return request.user.is_authenticated
+        return request.user.is_authenticated and (
+            request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        )
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES
+            and obj.subject.teacher == request.user
+        )
+        is_student = (
+            getattr(request.user, "role", "") in STUDENT_ROLES
+            and request.user in obj.class_room.students.all()
+        )
+        return request.user.is_authenticated and (is_admin or is_teacher or is_student)
+
+
+# 9. app_enrollment – Đăng ký học
+class EnrollmentPermission(BasePermission):
+    message = _("Chỉ admin, giáo viên hoặc học sinh được phép.")
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.is_superuser
+            or getattr(request.user, "role", "") in (ADMIN_ROLES + TEACHER_ROLES + STUDENT_ROLES)
+        )
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES
+            and obj.subject.teacher == request.user
+        )
+        is_student = (
+            getattr(request.user, "role", "") in STUDENT_ROLES and obj.student == request.user
+        )
+        return request.user.is_authenticated and (is_admin or is_teacher or is_student)
+
+
+# 10. app_semester – Quản lý học kỳ
+class SemesterPermission(IsAdminOrReadOnly):
+    message = _("Chỉ admin được chỉnh sửa, các vai trò khác chỉ được xem.")
+
+
+# 11. app_activity – Hoạt động ngoại khóa
+class ActivityPermission(BasePermission):
+    message = _("Chỉ admin, giáo viên hoặc học sinh được phân công.")
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.is_superuser
+            or getattr(request.user, "role", "") in (ADMIN_ROLES + TEACHER_ROLES + STUDENT_ROLES)
+        )
+
+    def has_object_permission(self, request, view, obj):
+        is_admin = request.user.is_superuser or getattr(request.user, "role", "") in ADMIN_ROLES
+        is_teacher = (
+            getattr(request.user, "role", "") in TEACHER_ROLES and obj.created_by == request.user
+        )
+        is_student = (
+            getattr(request.user, "role", "") in STUDENT_ROLES
+            and request.user in obj.participants.all()
+        )
+        if request.method in SAFE_METHODS:
+            return request.user.is_authenticated and (is_admin or is_teacher or is_student)
+        return request.user.is_authenticated and (is_admin or is_teacher)

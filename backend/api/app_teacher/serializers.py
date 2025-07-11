@@ -2,10 +2,11 @@ from rest_framework import serializers
 from .models import Teacher
 import re
 
+
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
-        fields = '__all__'
+        fields = "__all__"
         read_only_fields = ["teacher_id", "created_at", "updated_at"]
 
     # def validate_email(self, value):
@@ -62,13 +63,13 @@ class TeacherSerializer(serializers.ModelSerializer):
     #     if not self.instance and 'teacher_id' in data:
     #         if Teacher.objects.filter(teacher_id=data['teacher_id']).exists():
     #             raise serializers.ValidationError({"teacher_id": "Mã giảng viên đã tồn tại."})
-        
+
     #     # Kiểm tra email duy nhất
     #     if 'email' in data and Teacher.objects.exclude(teacher_id=data.get('teacher_id', '')).filter(email=data['email']).exists():
     #         raise serializers.ValidationError({"email": "Email đã được sử dụng."})
-        
+
     #     # Kiểm tra phone duy nhất
     #     if 'phone' in data and Teacher.objects.exclude(teacher_id=data.get('teacher_id', '')).filter(phone=data['phone']).exists():
     #         raise serializers.ValidationError({"phone": "Số điện thoại đã được sử dụng."})
-        
+
     #     return data

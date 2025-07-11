@@ -20,8 +20,12 @@ class Activity(models.Model):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo", null=False, blank=False)
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật", null=False, blank=False)
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Ngày tạo", null=False, blank=False
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="Ngày cập nhật", null=False, blank=False
+    )
 
     class Meta:
         app_label = "app_activity"

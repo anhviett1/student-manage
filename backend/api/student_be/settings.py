@@ -72,7 +72,6 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework.authtoken",
     "drf_spectacular",
-    
     "api.app_student",
     "api.app_teacher",
     "api.app_home",
@@ -216,10 +215,7 @@ SPECTACULAR_SETTINGS = {
         "defaultModelExpandDepth": 1,
     },
     "TAGS": [
-        {
-            "name": "Departments", 
-            "description": "Quản lý khoa", 
-            "x-displayName": "📚 Quản lý khoa"},
+        {"name": "Departments", "description": "Quản lý khoa", "x-displayName": "📚 Quản lý khoa"},
         {
             "name": "Students",
             "description": "Quản lý sinh viên",
@@ -244,21 +240,14 @@ SPECTACULAR_SETTINGS = {
             "name": "Schedules",
             "description": "Quản lý thời khóa biểu",
             "x-displayName": "🗓️ Quản lý thời khóa biểu",
-
         },
-        {   
-            "name": "Semesters",
-            "description": "Quản lý học kỳ",
-            "x-displayName": "🗓️ Quản lý học kỳ"},
+        {"name": "Semesters", "description": "Quản lý học kỳ", "x-displayName": "🗓️ Quản lý học kỳ"},
         {
             "name": "Enrollments",
             "description": "Quản lý đăng ký học",
             "x-displayName": "📋 Quản lý đăng ký học",
         },
-        {
-            "name": "Scores",
-            "description": "Quản lý điểm số",
-            "x-displayName": "📊 Quản lý điểm số"},
+        {"name": "Scores", "description": "Quản lý điểm số", "x-displayName": "📊 Quản lý điểm số"},
         {
             "name": "Activities",
             "description": "Quản lý hoạt động",

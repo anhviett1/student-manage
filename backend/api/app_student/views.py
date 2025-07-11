@@ -7,13 +7,21 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Student
 from .serializers import StudentSerializer
-from ..app_home.permissions import IsAdmin, IsAdminOrTeacher, IsOwnerOrAdmin, HasModelPermission
+from ..app_home.permissions import (
+    IsAdmin,
+    IsAdminOrTeacher,
+    ProfilePermission,
+    StudentAddPermission,
+    StudentChangePermission,
+    StudentDeletePermission,
+)
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 import logging
 import re
 
 logger = logging.getLogger(__name__)
+
 
 @extend_schema(tags=["Students"])
 class StudentViewSet(viewsets.ModelViewSet):
@@ -25,13 +33,13 @@ class StudentViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return [IsAdminOrTeacher()]
         if self.action == "retrieve":
-            return [IsOwnerOrAdmin()]
-        elif self.action in ["create", "update", "partial_update"]:
-            return [IsAdmin(), HasModelPermission(codename="change_student")]
+            return [ProfilePermission()]
+        elif self.action == "create":
+            return [IsAdmin(), StudentAddPermission()]
+        elif self.action in ["update", "partial_update", "restore", "change_status"]:
+            return [IsAdmin(), StudentChangePermission()]
         elif self.action == "destroy":
-            return [IsAdmin(), HasModelPermission(codename="delete_student")]
-        elif self.action in ["restore", "change_status"]:
-            return [IsAdmin(), HasModelPermission(codename="change_student")]
+            return [IsAdmin(), StudentDeletePermission()]
         elif self.action in ["export", "me"]:
             return [IsAuthenticated()]
         return super().get_permissions()
@@ -102,13 +110,15 @@ class StudentViewSet(viewsets.ModelViewSet):
             raise ValueError("Họ và tên không được để trống.")
         if instance.gpa is not None and (instance.gpa < 0 or instance.gpa > 4.0):
             raise ValueError("GPA phải nằm trong khoảng từ 0 đến 4.0.")
-        if instance.email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', instance.email):
+        if instance.email and not re.match(
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", instance.email
+        ):
             raise ValueError("Email không hợp lệ.")
-        if instance.phone and not re.match(r'^(0|\+84)\d{9}$', instance.phone):
+        if instance.phone and not re.match(r"^(0|\+84)\d{9}$", instance.phone):
             raise ValueError("Số điện thoại không hợp lệ.")
 
     @extend_schema(
-        #summary="Get current student's profile",
+        summary="Get current student's profile",
         responses={200: StudentSerializer},
     )
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
@@ -121,18 +131,18 @@ class StudentViewSet(viewsets.ModelViewSet):
             logger.error(f"Student profile not found for user {request.user.id}")
             return Response(
                 {"detail": "Không tìm thấy thông tin sinh viên cho người dùng này."},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
             logger.error(f"Error fetching student profile: {str(e)}")
             return Response(
                 {"detail": "Có lỗi xảy ra khi lấy thông tin sinh viên."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     @extend_schema(
-        #summary="Khôi phục sinh viên",
-        #description="Khôi phục sinh viên xóa mềm.",
+        summary="Khôi phục sinh viên",
+        description="Khôi phục sinh viên xóa mềm.",
         responses={200: StudentSerializer},
     )
     @action(detail=True, methods=["post"], url_path="restore")
@@ -143,9 +153,11 @@ class StudentViewSet(viewsets.ModelViewSet):
             student.is_active = True
             student.deleted_at = None
             student.save(update_fields=["is_deleted", "is_active", "deleted_at"])
-            #logger.info(f"Restored student: {student.student_id}")
             return Response(
-                {"message": "Khôi phục sinh viên thành công", "data": StudentSerializer(student).data},
+                {
+                    "message": "Khôi phục sinh viên thành công",
+                    "data": StudentSerializer(student).data,
+                },
                 status=status.HTTP_200_OK,
             )
         except Student.DoesNotExist:
@@ -156,8 +168,8 @@ class StudentViewSet(viewsets.ModelViewSet):
             )
 
     @extend_schema(
-        #summary="Thay đổi trạng thái sinh viên",
-        #description="Thay đổi trạng thái sinh viên (active, inactive, graduated, suspended, on_leave).",
+        summary="Thay đổi trạng thái sinh viên",
+        description="Thay đổi trạng thái sinh viên (active, inactive, graduated, suspended, on_leave).",
         parameters=[
             OpenApiParameter(name="status", type=str, description="Trạng thái mới của sinh viên")
         ],
@@ -176,9 +188,11 @@ class StudentViewSet(viewsets.ModelViewSet):
             student = Student.objects.get(pk=pk)
             student.status = status_value
             student.save(update_fields=["status"])
-            #logger.info(f"Changed status of student {student.student_id} to {status_value}")
             return Response(
-                {"message": "Cập nhật trạng thái thành công", "data": StudentSerializer(student).data},
+                {
+                    "message": "Cập nhật trạng thái thành công",
+                    "data": StudentSerializer(student).data,
+                },
                 status=status.HTTP_200_OK,
             )
         except Student.DoesNotExist:
@@ -189,8 +203,8 @@ class StudentViewSet(viewsets.ModelViewSet):
             )
 
     @extend_schema(
-        #summary="Xuất danh sách sinh viên",
-        #description="Xuất danh sách sinh viên dưới dạng file Excel.",
+        summary="Xuất danh sách sinh viên",
+        description="Xuất danh sách sinh viên dưới dạng file Excel.",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -202,10 +216,26 @@ class StudentViewSet(viewsets.ModelViewSet):
             worksheet.title = "Students"
 
             headers = [
-                "Mã Sinh Viên", "Họ", "Tên", "Email", "Số Điện Thoại", "Ngày Sinh",
-                "Giới Tính", "Địa Chỉ", "Thành Phố", "Tỉnh/Thành", "Quốc Gia",
-                "Chuyên Ngành", "GPA", "Trạng Thái", "Khoa", "Ngày Nhập Học",
-                "Ngày Tốt Nghiệp", "Người Liên Hệ Khẩn Cấp", "SĐT Khẩn Cấp", "Mối Quan Hệ",
+                "Mã Sinh Viên",
+                "Họ",
+                "Tên",
+                "Email",
+                "Số Điện Thoại",
+                "Ngày Sinh",
+                "Giới Tính",
+                "Địa Chỉ",
+                "Thành Phố",
+                "Tỉnh/Thành",
+                "Quốc Gia",
+                "Chuyên Ngành",
+                "GPA",
+                "Trạng Thái",
+                "Khoa",
+                "Ngày Nhập Học",
+                "Ngày Tốt Nghiệp",
+                "Người Liên Hệ Khẩn Cấp",
+                "SĐT Khẩn Cấp",
+                "Mối Quan Hệ",
             ]
             worksheet.append(headers)
 
@@ -217,7 +247,11 @@ class StudentViewSet(viewsets.ModelViewSet):
                     student.email or "",
                     student.phone or "",
                     student.date_of_birth,
-                    dict(Student.GENDER_CHOICES).get(student.gender, student.gender) if student.gender else "",
+                    (
+                        dict(Student.GENDER_CHOICES).get(student.gender, student.gender)
+                        if student.gender
+                        else ""
+                    ),
                     student.address or "",
                     student.city or "",
                     student.state or "",
@@ -237,13 +271,14 @@ class StudentViewSet(viewsets.ModelViewSet):
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f"attachment; filename=students_{timezone.now().strftime('%Y%m%d')}.xlsx"
+            response["Content-Disposition"] = (
+                f"attachment; filename=students_{timezone.now().strftime('%Y%m%d')}.xlsx"
+            )
             workbook.save(response)
-            #logger.info("Exported student list to Excel")
             return response
         except Exception as e:
             logger.error(f"Error exporting students: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách sinh viên."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

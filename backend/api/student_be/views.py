@@ -36,6 +36,7 @@ class BaseDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailView):
     template_name = None
     context_object_name = "object"
 
+
 class BaseCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
     template_name = None
     success_url = None
@@ -45,6 +46,7 @@ class BaseCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
         messages.success(self.request, f"{self.model.__name__} đã được tạo thành công.")
         return super().form_valid(form)
 
+
 class BaseUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
     template_name = None
     success_url = None
@@ -52,6 +54,7 @@ class BaseUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, f"{self.model.__name__} đã được cập nhật thành công.")
         return super().form_valid(form)
+
 
 class BaseDeleteView(LoginRequiredMixin, StaffRequiredMixin, DeleteView):
     template_name = None

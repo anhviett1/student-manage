@@ -7,17 +7,18 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Teacher
 from .serializers import TeacherSerializer
-from ..app_home.permissions import IsAdmin, IsAdminOrTeacher, IsOwnerOrAdmin,  HasModelPermission
-from drf_spectacular.utils import extend_schema,  OpenApiParameter
+from ..app_home.permissions import IsAdmin, IsAdminOrTeacher, IsOwnerOrAdmin, HasModelPermission
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 @extend_schema(tags=["Teachers"])
 class TeacherViewSet(viewsets.ModelViewSet):
     serializer_class = TeacherSerializer
     permission_classes = [IsAdmin]
-    lookup_field = 'teacher_id'
+    lookup_field = "teacher_id"
 
     def get_permissions(self):
         if self.action == "list":
@@ -25,19 +26,19 @@ class TeacherViewSet(viewsets.ModelViewSet):
         if self.action == ["retrieve", "me"]:
             return [IsOwnerOrAdmin()]
         elif self.action in ["create", "update", "partial_update"]:
-            return [IsAdmin() , HasModelPermission(codename="change_teacher")]
+            return [IsAdmin(), HasModelPermission(codename="change_teacher")]
         elif self.action == "destroy":
-            return [IsAdmin() , HasModelPermission(codename="delete_teacher")]
+            return [IsAdmin(), HasModelPermission(codename="delete_teacher")]
         elif self.action in ["restore", "change_status"]:
-            return [IsAdmin() , HasModelPermission(codename="change_teacher")]
+            return [IsAdmin(), HasModelPermission(codename="change_teacher")]
         elif self.action == "export":
             return [IsAdmin()]
-        
+
         return super().get_permissions()
 
     def get_queryset(self):
         queryset = Teacher.objects.none()
-        
+
         if self.request.user.is_authenticated:
             filters = Q()
             search_term = self.request.query_params.get("searchTerm", "")
@@ -45,19 +46,19 @@ class TeacherViewSet(viewsets.ModelViewSet):
             department_filter = self.request.query_params.get("department", "")
             degree_filter = self.request.query_params.get("degree", "")
             gender_filter = self.request.query_params.get("gender", "")
-            
+
             status_list = status_filter.split(",") if status_filter else ["active"]
             department_list = [int(id) for id in department_filter.split(",") if id.isdigit()]
             degree_list = degree_filter.split(",") if degree_filter else []
             gender_list = gender_filter.split(",") if gender_filter else []
-            
+
             filters &= Q(status__in=status_list)
 
             if search_term:
                 filters &= (
-                    Q(teacher_id__icontains=search_term)  
-                    | Q(first_name__icontains=search_term)                  
-                    | Q(last_name__icontains=search_term)                  
+                    Q(teacher_id__icontains=search_term)
+                    | Q(first_name__icontains=search_term)
+                    | Q(last_name__icontains=search_term)
                     | Q(email__icontains=search_term)
                     | Q(specialization__icontains=search_term)
                 )
@@ -68,30 +69,27 @@ class TeacherViewSet(viewsets.ModelViewSet):
                 filters &= Q(degree__in=degree_list)
             if gender_list:
                 filters &= Q(gender__in=gender_list)
-            queryset = (
-                Teacher.objects.filter(filters).distinct().order_by("teacher_id")
-            )
+            queryset = Teacher.objects.filter(filters).distinct().order_by("teacher_id")
         return queryset
 
     def perform_create(self, serializer):
         instance = serializer.save()
         logger.info(f"Created teacher: { instance.teacher_id}")
-        
-   
+
     def perform_update(self, serializer):
         instance = serializer.save()
         logger.info(f"Updated teacher: { instance.teacher_id}")
-    
+
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.is_active = False
         instance.save(update_fields=["is_deleted", "is_active"])
         logger.info(f"Soft delete teacher: { instance.teacher_id}")
-    
+
     @action(detail=False, methods=["get"], url_path="me")
     @extend_schema(
-        #summary="Lấy thông tin giảng viên hiện tại",
-        #description="Trả về thông tin chi tiết của giảng viên hiện tại dựa trên user đang đăng nhập.",
+        # summary="Lấy thông tin giảng viên hiện tại",
+        # description="Trả về thông tin chi tiết của giảng viên hiện tại dựa trên user đang đăng nhập.",
         responses={200: TeacherSerializer},
     )
     def me(self, request):
@@ -100,14 +98,17 @@ class TeacherViewSet(viewsets.ModelViewSet):
             teacher = Teacher.objects.get(user=request.user, is_deleted=False)
             serializer = TeacherSerializer(teacher)
             logger.info(f"Retrieved profile for teacher: {teacher.teacher_id}")
-            return Response({"message": "Lấy thông tin giảng viên thành công", "data": serializer.data}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Lấy thông tin giảng viên thành công", "data": serializer.data},
+                status=status.HTTP_200_OK,
+            )
         except Teacher.DoesNotExist:
             logger.error(f"No teacher profile found for user: {request.user.username}")
             return Response(
                 {"detail": "Không tìm thấy thông tin giảng viên"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-            
+
     @action(detail=True, methods=["post"], url_path="restore")
     @extend_schema(
         summary="Khôi phục giáo viên",
@@ -116,14 +117,17 @@ class TeacherViewSet(viewsets.ModelViewSet):
     )
     def restore(self, request, pk=None):
         try:
-            teacher= Teacher.objects.get(pk=pk, is_delete=True)
+            teacher = Teacher.objects.get(pk=pk, is_delete=True)
             teacher.is_deleted = False
             teacher.is_active = True
             teacher.deleted_at = None
             teacher.save(update_fields=["is_delete", "is_active", "deleted_at"])
             logger.info(f"Restored teacher: {teacher.teacher_id}")
             return Response(
-                {"message": "Khôi phục giáo viên thành công", "data": TeacherSerializer(teacher).data},
+                {
+                    "message": "Khôi phục giáo viên thành công",
+                    "data": TeacherSerializer(teacher).data,
+                },
                 status=status.HTTP_200_OK,
             )
         except Teacher.DoesNotExist:
@@ -132,17 +136,16 @@ class TeacherViewSet(viewsets.ModelViewSet):
                 {"detail": "Giáo viên không tồn tại hoặc chưa bị xóa"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-    
+
     @action(detail=True, methods=["post"], url_path="change-status")
     @extend_schema(
         summary="Thay đổi trạng thái giáo viên",
         description="Thay đổi trạng thái giáo viên (active, inactive, graduated, suspended, on_leave).",
         parameters=[
-            OpenApiParameter(name="status", type=str, description="Trạng thái mới của giáo viên")         
+            OpenApiParameter(name="status", type=str, description="Trạng thái mới của giáo viên")
         ],
         responses={200: TeacherSerializer},
     )
-    
     def change_status(self, request, pk=None):
         status_value = request.data.get("status")
         if not status_value or status_value not in dict(Teacher.STATUS_CHOICES).key():
@@ -157,16 +160,19 @@ class TeacherViewSet(viewsets.ModelViewSet):
             teacher.save(update_fields=["status"])
             logger.info(f"Changed status of student {teacher.teacher_id} to {status_value}")
             return Response(
-                {"message": "Cập nhật trang thái thành công", "data": TeacherSerializer(teacher).data},
+                {
+                    "message": "Cập nhật trang thái thành công",
+                    "data": TeacherSerializer(teacher).data,
+                },
                 status=status.HTTP_200_OK,
-            )  
+            )
         except Teacher.DoesNotExist:
             logger.error(f"Teacher with id {pk} not found")
             return Response(
                 {"detail": "Giáo viên không tồn tại"},
                 status=status.HTTP_404_NOT_FOUND,
-            )  
-        
+            )
+
     @action(detail=False, methods=["get"], url_path="export")
     @extend_schema(
         summary="Xuất danh sách giảng viên",
@@ -180,9 +186,20 @@ class TeacherViewSet(viewsets.ModelViewSet):
         worksheet.title = "Teachers"
 
         headers = [
-            "Mã Giảng Viên", "Họ", "Tên", "Email", "Số Điện Thoại", "Ngày Sinh",
-            "Giới Tính", "Địa Chỉ", "Học Vị", "Chuyên Ngành", "Số Năm Kinh Nghiệm",
-            "Tiểu Sử", "Trạng Thái", "Khoa",
+            "Mã Giảng Viên",
+            "Họ",
+            "Tên",
+            "Email",
+            "Số Điện Thoại",
+            "Ngày Sinh",
+            "Giới Tính",
+            "Địa Chỉ",
+            "Học Vị",
+            "Chuyên Ngành",
+            "Số Năm Kinh Nghiệm",
+            "Tiểu Sử",
+            "Trạng Thái",
+            "Khoa",
         ]
         worksheet.append(headers)
 
@@ -208,7 +225,9 @@ class TeacherViewSet(viewsets.ModelViewSet):
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response["Content-Disposition"] = f"attachment; filename=teachers_{timezone.now().strftime('%Y%m%d')}.xlsx"
+        response["Content-Disposition"] = (
+            f"attachment; filename=teachers_{timezone.now().strftime('%Y%m%d')}.xlsx"
+        )
         workbook.save(response)
-        #logger.info("Exported teacher list to Excel")
+        # logger.info("Exported teacher list to Excel")
         return response

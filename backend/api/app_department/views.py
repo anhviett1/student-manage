@@ -7,16 +7,17 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Department
 from .serializers import DepartmentSerializer
-from ..app_home.permissions import IsAdminOrReadOnly
+from ..app_home.permissions import DepartmentPermission
 from drf_spectacular.utils import extend_schema
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema(tags=["Departments"])
 class DepartmentViewSet(viewsets.ModelViewSet):
     serializer_class = DepartmentSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [DepartmentPermission]
     lookup_field = "department_id"
 
     def get_queryset(self):
@@ -67,7 +68,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             raise ValueError("Tên khoa không được để trống.")
 
     @extend_schema(
-        #summary="Export departments to Excel",
+        summary="Export departments to Excel",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -79,31 +80,40 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             sheet.title = "Departments"
 
             headers = [
-                "ID khoa", "Tên khoa", "Mô tả", "Trưởng khoa",
-                "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+                "ID khoa",
+                "Tên khoa",
+                "Mô tả",
+                "Trưởng khoa",
+                "Hoạt động",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for department in queryset:
-                sheet.append([
-                    department.department_id,
-                    department.department_name,
-                    department.description or "",
-                    str(department.head) if department.head else "",
-                    "Có" if department.is_active else "Không",
-                    department.created_at,
-                    department.updated_at
-                ])
+                sheet.append(
+                    [
+                        department.department_id,
+                        department.department_name,
+                        department.description or "",
+                        str(department.head) if department.head else "",
+                        "Có" if department.is_active else "Không",
+                        department.created_at,
+                        department.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="departments_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="departments_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            )
             workbook.save(response)
             return response
         except Exception as e:
             logger.error(f"Error exporting departments: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách khoa."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

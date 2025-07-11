@@ -1,18 +1,21 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    AvatarUploadView, LogoutAPIView, ProfileAPIView,
-    ChangePasswordAPIView, UserViewSet,
-    StatisticsAPIView, UserExportAPIView,
-    ScoreManagementAPIView  
+    AvatarUploadView,
+    LogoutAPIView,
+    ProfileAPIView,
+    ChangePasswordAPIView,
+    UserViewSet,
+    StatisticsAPIView,
+    UserExportAPIView,
+    ScoreManagementAPIView,
 )
-
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="users")
 
 urlpatterns = [
-    path("", include(router.urls)),  
+    path("", include(router.urls)),
     path("profile/", ProfileAPIView.as_view(), name="profile"),
     path("change-password/", ChangePasswordAPIView.as_view(), name="change_password"),
     path("avatar/", AvatarUploadView.as_view(), name="profile_picture"),

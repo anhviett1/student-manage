@@ -7,16 +7,17 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Class
 from .serializers import ClassSerializer
-from ..app_home.permissions import IsAdminOrReadOnly
+from ..app_home.permissions import ClassPermission
 from drf_spectacular.utils import extend_schema
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema(tags=["Classes"])
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [ClassPermission]
     lookup_field = "class_id"
 
     def get_queryset(self):
@@ -26,6 +27,13 @@ class ClassViewSet(viewsets.ModelViewSet):
 
         query = self.request.query_params
         filters = Q()
+
+        # Lọc theo quyền: admin thấy tất cả, giáo viên thấy lớp họ dạy, học sinh thấy lớp họ học
+        if not (user.is_superuser or getattr(user, "role", "") == "admin"):
+            if getattr(user, "role", "") == "teacher":
+                filters &= Q(teacher=user)
+            elif getattr(user, "role", "") == "student":
+                filters &= Q(students=user)
 
         # Lấy các filter
         search_term = query.get("search", "")
@@ -92,7 +100,7 @@ class ClassViewSet(viewsets.ModelViewSet):
             raise ValueError("Số tín chỉ phải lớn hơn 0.")
 
     @extend_schema(
-        #summary="Export classes to Excel",
+        summary="Export classes to Excel",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -104,37 +112,54 @@ class ClassViewSet(viewsets.ModelViewSet):
             sheet.title = "Classes"
 
             headers = [
-                "Mã lớp", "Tên lớp", "Mô tả", "Khoa", "Số tín chỉ",
-                "Trạng thái", "Học kỳ", "Môn học", "Giảng viên",
-                "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+                "Mã lớp",
+                "Tên lớp",
+                "Mô tả",
+                "Khoa",
+                "Số tín chỉ",
+                "Trạng thái",
+                "Học kỳ",
+                "Môn học",
+                "Giảng viên",
+                "Hoạt động",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for class_obj in queryset:
-                sheet.append([
-                    class_obj.class_id,
-                    class_obj.class_name,
-                    class_obj.description or "",
-                    class_obj.department.department_name if class_obj.department else "",
-                    class_obj.credits,
-                    class_obj.get_status_display(),
-                    str(class_obj.semester),
-                    str(class_obj.subject),
-                    f"{class_obj.teacher.last_name} {class_obj.teacher.first_name}" if class_obj.teacher else "",
-                    "Có" if class_obj.is_active else "Không",
-                    class_obj.created_at,
-                    class_obj.updated_at
-                ])
+                sheet.append(
+                    [
+                        class_obj.class_id,
+                        class_obj.class_name,
+                        class_obj.description or "",
+                        class_obj.department.department_name if class_obj.department else "",
+                        class_obj.credits,
+                        class_obj.get_status_display(),
+                        str(class_obj.semester),
+                        str(class_obj.subject),
+                        (
+                            f"{class_obj.teacher.last_name} {class_obj.teacher.first_name}"
+                            if class_obj.teacher
+                            else ""
+                        ),
+                        "Có" if class_obj.is_active else "Không",
+                        class_obj.created_at,
+                        class_obj.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="classes_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="classes_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            )
             workbook.save(response)
             return response
         except Exception as e:
             logger.error(f"Error exporting classes: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách lớp học."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

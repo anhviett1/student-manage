@@ -7,16 +7,17 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from .models import Schedule
 from .serializers import ScheduleSerializer
-from ..app_home.permissions import IsAdminOrReadOnly
+from ..app_home.permissions import SchedulePermission
 from drf_spectacular.utils import extend_schema
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema(tags=["Schedules"])
 class ScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [SchedulePermission]
     lookup_field = "schedule_id"
 
     def get_queryset(self):
@@ -26,6 +27,13 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         query = self.request.query_params
         filters = Q()
+
+        # Lọc theo quyền: admin thấy tất cả, giáo viên thấy lịch của môn họ dạy, học sinh thấy lịch của lớp họ học
+        if not (user.is_superuser or getattr(user, "role", "") == "admin"):
+            if getattr(user, "role", "") == "teacher":
+                filters &= Q(subject__teacher=user)
+            elif getattr(user, "role", "") == "student":
+                filters &= Q(class_assigned__students=user)
 
         # Lấy các filter
         search_term = query.get("search", "")
@@ -94,7 +102,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             raise ValueError("Phòng học không được để trống.")
 
     @extend_schema(
-        #summary="Export schedules to Excel",
+        summary="Export schedules to Excel",
         responses={200: None},
     )
     @action(detail=False, methods=["get"], url_path="export")
@@ -106,38 +114,52 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             sheet.title = "Schedules"
 
             headers = [
-                "Mã lịch học", "Lớp học", "Giảng viên", "Học kỳ", "Khoa",
-                "Ngày trong tuần", "Giờ bắt đầu", "Giờ kết thúc", "Phòng học",
-                "Trạng thái", "Hoạt động", "Ngày tạo", "Ngày cập nhật"
+                "Mã lịch học",
+                "Lớp học",
+                "Giảng viên",
+                "Học kỳ",
+                "Khoa",
+                "Ngày trong tuần",
+                "Giờ bắt đầu",
+                "Giờ kết thúc",
+                "Phòng học",
+                "Trạng thái",
+                "Hoạt động",
+                "Ngày tạo",
+                "Ngày cập nhật",
             ]
             sheet.append(headers)
 
             for schedule in queryset:
-                sheet.append([
-                    schedule.schedule_id,
-                    str(schedule.class_assigned),
-                    str(schedule.teacher) if schedule.teacher else "",
-                    str(schedule.semester),
-                    schedule.department.department_name if schedule.department else "",
-                    schedule.get_day_of_week_display(),
-                    str(schedule.start_time),
-                    str(schedule.end_time),
-                    schedule.room,
-                    schedule.get_status_display(),
-                    "Có" if schedule.is_active else "Không",
-                    schedule.created_at,
-                    schedule.updated_at
-                ])
+                sheet.append(
+                    [
+                        schedule.schedule_id,
+                        str(schedule.class_assigned),
+                        str(schedule.teacher) if schedule.teacher else "",
+                        str(schedule.semester),
+                        schedule.department.department_name if schedule.department else "",
+                        schedule.get_day_of_week_display(),
+                        str(schedule.start_time),
+                        str(schedule.end_time),
+                        schedule.room,
+                        schedule.get_status_display(),
+                        "Có" if schedule.is_active else "Không",
+                        schedule.created_at,
+                        schedule.updated_at,
+                    ]
+                )
 
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            response["Content-Disposition"] = f'attachment; filename="schedules_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            response["Content-Disposition"] = (
+                f'attachment; filename="schedules_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+            )
             workbook.save(response)
             return response
         except Exception as e:
             logger.error(f"Error exporting schedules: {str(e)}")
             return Response(
                 {"detail": "Không thể xuất danh sách lịch học."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
