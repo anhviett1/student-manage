@@ -6,7 +6,7 @@ const routes = [
     path: '/',
     redirect: (to) => {
       const authStore = useAuthStore();
-      const role = authStore.user?.role || 'student'; // Mặc định là student nếu role không xác định
+      const role = authStore.user?.role || 'student'; 
       if (role === 'admin') return '/admin-dashboard';
       if (role === 'teacher') return '/teacher-dashboard';
       return '/student-dashboard';
@@ -17,6 +17,12 @@ const routes = [
     name: 'Login',
     component: () => import('../views/LoginView.vue'),
     meta: { requiresAuth: false, title: 'Đăng nhập' },
+  },
+  {
+    path: '/changepassword',
+    name: 'Changepassword',
+    component: () => import('../views/ChangePasswordView.vue'),
+    meta: { requiresAuth: false, title: 'Đổi mật khẩu' },
   },
   {
     path: '/admin-dashboard',

@@ -323,7 +323,7 @@ class ViewOwnScoresAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@extend_schema(tags=["Users"])
+@extend_schema(tags=["Statistics"])
 class StatisticsAPIView(APIView):
     permission_classes = [IsAdminOrTeacher]  # Admin hoặc giáo viên
     serializer_class = None

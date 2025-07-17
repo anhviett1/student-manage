@@ -10,11 +10,6 @@
 <script setup>
 import { useAuthStore } from '@/stores/auth'
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import TabView from 'primevue/tabview'
-import TabPanel from 'primevue/tabpanel'
-import Tag from 'primevue/tag'
-import InputNumber from 'primevue/inputnumber'
 
 // Khởi tạo auth store để kiểm tra trạng thái đăng nhập
 const authStore = useAuthStore()

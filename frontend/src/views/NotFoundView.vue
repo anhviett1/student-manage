@@ -6,50 +6,22 @@
         Trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển. Vui lòng kiểm tra lại URL hoặc quay về trang chính.
       </p>
       <div class="action-buttons">
-        <Button
-          v-if="isAuthenticated"
-          label="Quay về Bảng điều khiển"
-          severity="primary"
-          icon="pi pi-home"
-          @click="goToDashboard"
-          class="action-button"
-          aria-label="Quay về bảng điều khiển"
-        />
-        <Button
-          v-else
-          label="Đăng nhập"
-          severity="primary"
-          icon="pi pi-sign-in"
-          @click="goToLogin"
-          class="action-button"
-          aria-label="Đăng nhập"
-        />
-        <Button
-          label="Trang chủ"
-          severity="secondary"
-          icon="pi pi-arrow-left"
-          @click="goToHome"
-          class="action-button"
-          aria-label="Quay về trang chủ"
-        />
+        <Button v-if="isAuthenticated" label="Quay về Bảng điều khiển" severity="primary" icon="pi pi-home" @click="goToDashboard" class="action-button" aria-label="Quay về bảng điều khiển" />
+        <Button v-else label="Đăng nhập" severity="primary" icon="pi pi-sign-in" @click="goToLogin" class="action-button" aria-label="Đăng nhập" />
+        <Button label="Trang chủ" severity="secondary" icon="pi pi-arrow-left" @click="goToHome" class="action-button" aria-label="Quay về trang chủ" />
       </div>
     </div>
   </template>
-  
+
   <script setup>
   import { computed } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuthStore } from '@/stores/auth';
   import Button from 'primevue/button';
   
-  // Router và Auth Store
   const router = useRouter();
   const authStore = useAuthStore();
-  
-  // Kiểm tra trạng thái đăng nhập
   const isAuthenticated = computed(() => authStore.isAuthenticated);
-  
-  // Điều hướng đến dashboard dựa trên vai trò
   const goToDashboard = () => {
     const role = authStore.user?.role || 'student';
     router.push(
@@ -58,12 +30,10 @@
     );
   };
   
-  // Điều hướng đến trang đăng nhập
   const goToLogin = () => {
     router.push('/login');
   };
   
-  // Điều hướng đến trang chủ
   const goToHome = () => {
     router.push('/');
   };
@@ -83,7 +53,7 @@
   .error-code {
     font-size: 96px;
     font-weight: bold;
-    color: #dc3545; /* Màu đỏ cho mã lỗi */
+    color: #dc3545;
     margin-bottom: 16px;
   }
   

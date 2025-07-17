@@ -82,35 +82,9 @@
               </Column>
               <Column header="Hành Động" style="width: 15%" align="center">
                 <template #body="{ data }">
-                  <Button
-                    v-if="canEditEnrollments && !data.is_deleted"
-                    icon="pi pi-pencil"
-                    outlined
-                    rounded
-                    class="mr-2"
-                    severity="info"
-                    @click="editEnrollment(data)"
-                    v-tooltip="'Sửa thông tin'"
-                  />
-                  <Button
-                    v-if="canDeleteEnrollments && !data.is_deleted"
-                    icon="pi pi-trash"
-                    outlined
-                    rounded
-                    severity="danger"
-                    class="mr-2"
-                    @click="confirmDelete(data)"
-                    v-tooltip="'Xóa mềm'"
-                  />
-                  <Button
-                    v-if="canDeleteEnrollments && data.is_deleted"
-                    icon="pi pi-undo"
-                    outlined
-                    rounded
-                    severity="success"
-                    @click="restoreEnrollment(data)"
-                    v-tooltip="'Khôi phục'"
-                  />
+                  <Button v-if="canEditEnrollments && !data.is_deleted" icon="pi pi-pencil" outlined rounded class="mr-2" severity="info" @click="editEnrollment(data)" v-tooltip="'Sửa thông tin'"/>
+                  <Button v-if="canDeleteEnrollments && !data.is_deleted" icon="pi pi-trash" outlined rounded severity="danger" class="mr-2" @click="confirmDelete(data)" v-tooltip="'Xóa mềm'"/>
+                  <Button v-if="canDeleteEnrollments && data.is_deleted" icon="pi pi-undo" outlined rounded severity="success" @click="restoreEnrollment(data)" v-tooltip="'Khôi phục'"/>
                 </template>
               </Column>
             </DataTable>
@@ -224,12 +198,12 @@ import InputSwitch from 'primevue/inputswitch'
 
 const toast = useToast()
 const { isStudent, isAdminOrTeacher, canViewEnrollments, canEditEnrollments, canDeleteEnrollments, canExportData } = computed(() => ({
-  isStudent: false, // Placeholder, needs actual logic
-  isAdminOrTeacher: false, // Placeholder, needs actual logic
-  canViewEnrollments: false, // Placeholder, needs actual logic
-  canEditEnrollments: false, // Placeholder, needs actual logic
-  canDeleteEnrollments: false, // Placeholder, needs actual logic
-  canExportData: false // Placeholder, needs actual logic
+  isStudent: false, 
+  isAdminOrTeacher: false, 
+  canViewEnrollments: false, 
+  canEditEnrollments: false, 
+  canDeleteEnrollments: false, 
+  canExportData: false 
 }))
 
 const myEnrollments = ref([])
@@ -499,7 +473,6 @@ const getStatusSeverity = (status) => {
 </script>
 
 <style scoped>
-/* Style tương tự StudentView.vue, bổ sung cho EnrollmentView */
 .card, .content {
   background: #fff;
   border-radius: 10px;

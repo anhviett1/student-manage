@@ -7,14 +7,7 @@
         <div class="profile-section">
           <div class="profile-header">
             <h2>Thông Tin Khoa</h2>
-            <Button
-              icon="pi pi-pencil"
-              label="Chỉnh Sửa"
-              severity="primary"
-              @click="openEdit"
-              v-if="!isEditing && canEditDepartments"
-              v-tooltip="'Chỉnh sửa thông tin khoa'"
-            />
+            <Button icon="pi pi-pencil" label="Chỉnh Sửa" severity="primary" @click="openEdit" v-if="!isEditing && canEditDepartments" v-tooltip="'Chỉnh sửa thông tin khoa'" />
           </div>
           <div v-if="!isEditing" class="profile-details">
             <div class="detail-item"><label>Mã Khoa:</label><span>{{ departmentDetail.department_id }}</span></div>
@@ -86,35 +79,9 @@
           </Column>
           <Column header="Hành Động" style="width: 15%" align="center">
             <template #body="{ data }">
-              <Button
-                v-if="canEditDepartments && !data.is_deleted"
-                icon="pi pi-pencil"
-                outlined
-                rounded
-                class="mr-2"
-                severity="info"
-                @click="editDepartment(data)"
-                v-tooltip="'Sửa thông tin'"
-              />
-              <Button
-                v-if="canDeleteDepartments && !data.is_deleted"
-                icon="pi pi-trash"
-                outlined
-                rounded
-                severity="danger"
-                class="mr-2"
-                @click="confirmDelete(data)"
-                v-tooltip="'Xóa mềm'"
-              />
-              <Button
-                v-if="canDeleteDepartments && data.is_deleted"
-                icon="pi pi-undo"
-                outlined
-                rounded
-                severity="success"
-                @click="restoreDepartment(data)"
-                v-tooltip="'Khôi phục'"
-              />
+              <Button v-if="canEditDepartments && !data.is_deleted" icon="pi pi-pencil" outlined rounded class="mr-2" severity="info" @click="editDepartment(data)" v-tooltip="'Sửa thông tin'"/>
+              <Button v-if="canDeleteDepartments && !data.is_deleted" icon="pi pi-trash" outlined rounded severity="danger" class="mr-2" @click="confirmDelete(data)" v-tooltip="'Xóa mềm'" />
+              <Button v-if="canDeleteDepartments && data.is_deleted" icon="pi pi-undo" outlined rounded severity="success" @click="restoreDepartment(data)" v-tooltip="'Khôi phục'"/>
             </template>
           </Column>
         </DataTable>
@@ -195,7 +162,7 @@ import Tag from 'primevue/tag'
 import InputSwitch from 'primevue/inputswitch'
 
 const toast = useToast()
-const isHead = computed(() => false) // TODO: implement logic if needed
+const isHead = computed(() => false) 
 
 const departments = ref([])
 const departmentObj = ref({})
@@ -221,7 +188,6 @@ onMounted(async () => {
     loadDepartments(),
     loadUsers()
   ])
-  // Nếu là trưởng khoa hoặc admin, load departmentDetail (ví dụ lấy khoa đầu tiên)
   if (isHead.value || isAdmin.value) {
     if (departments.value.length > 0) {
       departmentDetail.value = { ...departments.value[0] }
@@ -376,10 +342,7 @@ const cancelEdit = () => {
 }
 
 const saveDepartmentDetail = async () => {
-  // Tương tự saveDepartment nhưng cho departmentDetail
   try {
-    // validate và gửi API update
-    // ...
     isEditing.value = false
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật thông tin khoa thành công', life: 3000 })
   } catch (error) {
@@ -400,7 +363,6 @@ const exportDepartments = async () => {
 </script>
 
 <style scoped>
-/* Style tương tự StudentView.vue, bổ sung cho DepartmentView */
 .card, .content {
   background: #fff;
   border-radius: 10px;

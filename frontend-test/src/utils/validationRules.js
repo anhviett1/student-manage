@@ -1,0 +1,1 @@
+//Các hàm/quy tắc kiểm tra form (email, password strength...)

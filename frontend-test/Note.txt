@@ -1,0 +1,7 @@
+Bạn không viết lại toàn bộ logic xử lý dữ liệu phức tạp của backend. Thay vào đó, bạn xây dựng các lớp quản lý trạng thái ở front-end (như Pinia stores) để:
+
+Lấy dữ liệu từ backend và lưu trữ tạm thời (state).
+
+Cung cấp cách truy cập dữ liệu (getters).
+
+Gửi yêu cầu thao tác dữ liệu lên backend (gọi API) và sau đó cập nhật trạng thái cục bộ (actions) để đảm bảo UI luôn đồng bộ với dữ liệu.

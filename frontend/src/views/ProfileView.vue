@@ -127,25 +127,8 @@
                 </tbody>
               </table>
               <div class="form-actions" v-if="isEditMode">
-                <Button
-                  type="submit"
-                  label="Lưu"
-                  icon="pi pi-check"
-                  :loading="isLoading"
-                  @click="updateProfile"
-                  class="save-button"
-                  :disabled="!canEditProfile"
-                  aria-label="Lưu thông tin hồ sơ"
-                />
-                <Button
-                  type="submit"
-                  label="Hủy"
-                  icon="pi pi-check"
-                  :loading="isLoading"
-                  class="delete-button"
-                  :disabled="!canEditProfile"
-                  aria-label="Hủy thông tin"
-                />
+                <Button type="submit" label="Lưu" icon="pi pi-check" :loading="isLoading" @click="updateProfile" class="save-button" :disabled="!canEditProfile" aria-label="Lưu thông tin hồ sơ" />
+                <Button type="button" label="Hủy" icon="pi pi-times" :loading="false" @click="cancelEdit" class="delete-button" :disabled="!canEditProfile" aria-label="Hủy chỉnh sửa" />
               </div>
             </TabPanel>
 
@@ -901,7 +884,7 @@ const formatValue = (key, value) => {
 };
 
 // Navigation
-const navigateToChangePassword = () => router.push({ name: 'profile-change-password' });
+const navigateToChangePassword = () => router.push({ name: 'Changepassword' });
 const handleProfileViewEditClick = () => {
   isEditMode.value = !isEditMode.value;
   showDetailListDialog.value = !isEditMode.value;
@@ -1298,15 +1281,9 @@ const filteredUserProfile = computed(() => {
 .config-row:hover {
   background-color: #f9fafb;
 }
-.dark-theme .config-row:hover {
-  background-color: #374151;
-}
 .config-td {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
-}
-.dark-theme .config-td {
-  border-bottom-color: #6b7280;
 }
 .config-actions {
   margin-top: 16px;

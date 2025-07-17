@@ -7,14 +7,7 @@
         <div class="profile-section">
           <div class="profile-header">
             <h2>Thông Tin Lớp</h2>
-            <Button
-              icon="pi pi-pencil"
-              label="Chỉnh Sửa"
-              severity="primary"
-              @click="openEdit"
-              v-if="!isEditing && canEditClasses"
-              v-tooltip="'Chỉnh sửa thông tin lớp'"
-            />
+            <Button icon="pi pi-pencil" label="Chỉnh Sửa" severity="primary" @click="openEdit" v-if="!isEditing && canEditClasses" v-tooltip="'Chỉnh sửa thông tin lớp'"/>
           </div>
           <div v-if="!isEditing" class="profile-details">
             <div class="detail-item"><label>Mã Lớp:</label><span>{{ classDetail.class_id }}</span></div>
@@ -122,35 +115,9 @@
       </Column>
           <Column header="Hành Động" style="width: 15%" align="center">
             <template #body="{ data }">
-              <Button
-                v-if="canEditClasses && !data.is_deleted"
-                icon="pi pi-pencil"
-                outlined
-                rounded
-                class="mr-2"
-                severity="info"
-                @click="editClass(data)"
-                v-tooltip="'Sửa thông tin'"
-              />
-              <Button
-                v-if="canDeleteClasses && !data.is_deleted"
-                icon="pi pi-trash"
-                outlined
-                rounded
-                severity="danger"
-                class="mr-2"
-                @click="confirmDelete(data)"
-                v-tooltip="'Xóa mềm'"
-              />
-              <Button
-                v-if="canDeleteClasses && data.is_deleted"
-                icon="pi pi-undo"
-                outlined
-                rounded
-                severity="success"
-                @click="restoreClass(data)"
-                v-tooltip="'Khôi phục'"
-              />
+              <Button v-if="canEditClasses && !data.is_deleted" icon="pi pi-pencil" outlined rounded class="mr-2" severity="info" @click="editClass(data)" v-tooltip="'Sửa thông tin'" />
+              <Button v-if="canDeleteClasses && !data.is_deleted" icon="pi pi-trash" outlined rounded severity="danger" class="mr-2" @click="confirmDelete(data)" v-tooltip="'Xóa mềm'" />
+              <Button v-if="canDeleteClasses && data.is_deleted" icon="pi pi-undo" outlined rounded severity="success" @click="restoreClass(data)"v-tooltip="'Khôi phục'"/>
             </template>
           </Column>
     </DataTable>
