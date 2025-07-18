@@ -1,1 +1,0 @@
-<!-- Trang xem điểm của bản thân -->

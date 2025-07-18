@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!accessToken.value)
   const userRole = computed(() => user.value?.role || null)
-  const isAdmin = computed(() => ['admin', 'superuser'].includes(userRole.value))
+  const isAdmin = computed(() => ['admin'].includes(userRole.value))
   const isTeacher = computed(() => userRole.value === 'teacher')
   const isStudent = computed(() => userRole.value === 'student')
 

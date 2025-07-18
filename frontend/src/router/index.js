@@ -1,148 +1,145 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { createRouter, createWebHistory } from 'vue-router'
+import { usePermissions } from '@/composables/usePermissions'
+import { useAppEvents } from '@/composables/useAppEvents'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   {
     path: '/',
-    redirect: (to) => {
-      const authStore = useAuthStore();
-      const role = authStore.user?.role || 'student'; 
-      if (role === 'admin') return '/admin-dashboard';
-      if (role === 'teacher') return '/teacher-dashboard';
-      return '/student-dashboard';
-    },
+    name: 'Welcome',
+    component: () => import('../components/Welcome.vue'),
+    meta: { requiresAuth: false, title: 'Chào mừng đến với Hệ thống Quản lý' },
   },
   {
     path: '/login',
     name: 'Login',
-    component: () => import('../views/LoginView.vue'),
+    component: () => import('../views/auth/LoginView.vue'),
     meta: { requiresAuth: false, title: 'Đăng nhập' },
   },
   {
-    path: '/changepassword',
-    name: 'Changepassword',
-    component: () => import('../views/ChangePasswordView.vue'),
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: () => import('../views/auth/ChangePasswordView.vue'),
     meta: { requiresAuth: false, title: 'Đổi mật khẩu' },
   },
   {
     path: '/admin-dashboard',
-    name: 'AdminDashboard',
-    component: () => import('../views/AdminDashboardView.vue'),
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Bảng điều khiển quản trị viên' },
+    component: () => import('../views/dashboard/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, title: 'Bảng điều khiển quản trị viên' },
+    children: [
+      { path: '', name: 'AdminDashboard', component: () => import('../components/Welcome.vue') },
+      { path: 'profile', name: 'AdminProfile', component: () => import('../views/profile/ProfileView.vue'), meta: { permission: 'hasProfilePermission' } },
+      { path: 'students', name: 'StudentManagement', component: () => import('../views/student/StudentManagement.vue'), meta: { permission: 'hasStudentChangePermission' } },
+      { path: 'student/:id', name: 'StudentProfile', component: () => import('../views/student/StudentProfile.vue'), meta: { permission: 'hasProfilePermission' } },
+      { path: 'student-view', name: 'StudentView', component: () => import('../views/student/StudentView.vue'), meta: { permission: 'hasStudentChangePermission' } },
+      { path: 'teachers', name: 'TeacherManagement', component: () => import('../views/teacher/TeacherManagement.vue'), meta: { permission: 'hasTeacherChangePermission' } },
+      { path: 'teacher/:id', name: 'TeacherProfile', component: () => import('../views/teacher/TeacherProfile.vue'), meta: { permission: 'hasProfilePermission' } },
+      { path: 'teacher-view', name: 'TeacherView', component: () => import('../views/teacher/TeacherView.vue'), meta: { permission: 'hasTeacherChangePermission' } },
+      { path: 'classes', name: 'ClassManagement', component: () => import('../views/class/ClassManagement.vue'), meta: { permission: 'hasClassPermission' } },
+      { path: 'class/:id', name: 'ClassInfo', component: () => import('../views/class/ClassInfo.vue'), meta: { permission: 'hasClassPermission' } },
+      { path: 'class-view', name: 'ClassView', component: () => import('../views/class/ClassView.vue'), meta: { permission: 'hasClassPermission' } },
+      { path: 'subjects', name: 'SubjectManagement', component: () => import('../views/subject/SubjectManagement.vue'), meta: { permission: 'hasSubjectPermission' } },
+      { path: 'subject-view', name: 'SubjectView', component: () => import('../views/subject/SubjectView.vue'), meta: { permission: 'hasSubjectPermission' } },
+      { path: 'scores', name: 'ScoreManagement', component: () => import('../views/score/ScoreManagement.vue'), meta: { permission: 'hasScorePermission' } },
+      { path: 'score-view', name: 'ScoreView', component: () => import('../views/score/ScoreView.vue'), meta: { permission: 'hasScorePermission' } },
+      { path: 'schedules', name: 'ScheduleManagement', component: () => import('../views/schedule/ScheduleManagement.vue'), meta: { permission: 'hasSchedulePermission' } },
+      { path: 'schedule-view', name: 'ScheduleView', component: () => import('../views/schedule/ScheduleView.vue'), meta: { permission: 'hasSchedulePermission' } },
+      { path: 'enrollments', name: 'EnrollmentManagement', component: () => import('../views/enrollment/EnrollmentManagement.vue'), meta: { permission: 'hasEnrollmentPermission' } },
+      { path: 'enrollment-view', name: 'EnrollmentView', component: () => import('../views/enrollment/EnrollmentView.vue'), meta: { permission: 'hasEnrollmentPermission' } },
+      { path: 'semesters', name: 'SemesterManagement', component: () => import('../views/semester/ActiveSemesters.vue'), meta: { permission: 'hasSemesterPermission' } },
+      { path: 'finished-semesters', name: 'FinishedSemesters', component: () => import('../views/semester/FinishedSemesters.vue'), meta: { permission: 'hasSemesterPermission' } },
+      { path: 'semester-view', name: 'SemesterView', component: () => import('../views/semester/SemesterView.vue'), meta: { permission: 'hasSemesterPermission' } },
+      { path: 'departments', name: 'DepartmentManagement', component: () => import('../views/department/DepartmentView.vue'), meta: { permission: 'hasDepartmentPermission' } },
+      { path: 'activities', name: 'ActivityView', component: () => import('../views/misc/ActivityView.vue'), meta: { permission: 'hasActivityPermission' } },
+    ],
   },
   {
     path: '/teacher-dashboard',
-    name: 'TeacherDashboard',
-    component: () => import('../views/TeacherDashboardView.vue'),
-    meta: { requiresAuth: true, roles: ['teacher', 'admin'], title: 'Bảng điều khiển giảng viên' },
+    component: () => import('../views/dashboard/TeacherDashboardView.vue'),
+    meta: { requiresAuth: true, title: 'Bảng điều khiển giảng viên' },
+    children: [
+      { path: '', name: 'TeacherDashboard', component: () => import('../components/Welcome.vue') },
+      { path: 'profile', name: 'TeacherProfile', component: () => import('../views/profile/ProfileView.vue'), meta: { permission: 'hasProfilePermission' } },
+      { path: 'classes', name: 'TeacherClassManagement', component: () => import('../views/class/ClassManagement.vue'), meta: { permission: 'hasClassPermission' } },
+      { path: 'class/:id', name: 'TeacherClassInfo', component: () => import('../views/class/ClassInfo.vue'), meta: { permission: 'hasClassPermission' } },
+      { path: 'class-view', name: 'TeacherClassView', component: () => import('../views/class/ClassView.vue'), meta: { permission: 'hasClassPermission' } },
+      { path: 'subjects', name: 'TeacherSubjectManagement', component: () => import('../views/subject/SubjectManagement.vue'), meta: { permission: 'hasSubjectPermission' } },
+      { path: 'subject-view', name: 'TeacherSubjectView', component: () => import('../views/subject/SubjectView.vue'), meta: { permission: 'hasSubjectPermission' } },
+      { path: 'scores', name: 'TeacherScoreManagement', component: () => import('../views/score/ScoreManagement.vue'), meta: { permission: 'hasScorePermission' } },
+      { path: 'score-view', name: 'TeacherScoreView', component: () => import('../views/score/ScoreView.vue'), meta: { permission: 'hasScorePermission' } },
+      { path: 'schedules', name: 'TeacherScheduleManagement', component: () => import('../views/schedule/ScheduleManagement.vue'), meta: { permission: 'hasSchedulePermission' } },
+      { path: 'schedule-view', name: 'TeacherScheduleView', component: () => import('../views/schedule/ScheduleView.vue'), meta: { permission: 'hasSchedulePermission' } },
+      { path: 'activities', name: 'TeacherActivityView', component: () => import('../views/misc/ActivityView.vue'), meta: { permission: 'hasActivityPermission' } },
+    ],
   },
   {
     path: '/student-dashboard',
-    name: 'StudentDashboard',
-    component: () => import('../views/StudentDashboardView.vue'),
-    meta: { requiresAuth: true, roles: ['student', 'admin'], title: 'Bảng điều khiển sinh viên' },
-  },
-  {
-    path: '/profile',
-    name: 'profile',
-    component: () => import('../views/ProfileView.vue'),
-    meta: { requiresAuth: true, roles: ['student', 'teacher', 'admin'], title: 'Hồ sơ cá nhân' },
-  },
-  {
-    path: '/students',
-    name: 'students',
-    component: () => import('../views/StudentView.vue'),
-    meta: { requiresAuth: true, roles: ['teacher', 'admin'], title: 'Quản lý Sinh viên' },
-  },
-  {
-    path: '/classes',
-    name: 'classes',
-    component: () => import('../views/ClassView.vue'),
-    meta: { requiresAuth: true, roles: ['teacher', 'admin'], title: 'Quản lý Lớp học' },
-  },
-  {
-    path: '/subjects',
-    name: 'subjects',
-    component: () => import('../views/SubjectView.vue'),
-    meta: { requiresAuth: true, roles: ['teacher', 'admin'], title: 'Quản lý Môn học' },
-  },
-  {
-    path: '/scores',
-    name: 'scores',
-    component: () => import('../views/ScoreView.vue'),
-    meta: { requiresAuth: true, roles: ['student', 'teacher', 'admin'], title: 'Quản lý Điểm số' },
-  },
-  {
-    path: '/schedules',
-    name: 'schedules',
-    component: () => import('../views/ScheduleView.vue'),
-    meta: { requiresAuth: true, roles: ['student', 'teacher', 'admin'], title: 'Thời khóa biểu' },
-  },
-  {
-    path: '/activities',
-    name: 'activities',
-    component: () => import('../views/ActivityView.vue'),
-    meta: { requiresAuth: true, roles: ['teacher', 'admin'], title: 'Lịch sử hoạt động' },
-  },
-  {
-    path: '/enrollments',
-    name: 'enrollments',
-    component: () => import('../views/EnrollmentView.vue'),
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Quản lý Ghi danh' },
-  },
-  {
-    path: '/semesters',
-    name: 'semesters',
-    component: () => import('../views/SemesterView.vue'),
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Quản lý Học kỳ' },
-  },
-  {
-    path: '/departments',
-    name: 'departments',
-    component: () => import('../views/DepartmentView.vue'),
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Quản lý Khoa' },
+    component: () => import('../views/dashboard/StudentDashboardView.vue'),
+    meta: { requiresAuth: true, title: 'Bảng điều khiển sinh viên' },
+    children: [
+      { path: '', name: 'StudentDashboard', component: () => import('../components/Welcome.vue') },
+      { path: 'profile', name: 'StudentProfile', component: () => import('../views/profile/ProfileView.vue'), meta: { permission: 'hasProfilePermission' } },
+      { path: 'my-scores', name: 'MyScores', component: () => import('../views/score/MyScores.vue'), meta: { permission: 'hasScorePermission' } },
+      { path: 'my-schedules', name: 'MySchedules', component: () => import('../views/schedule/MySchedules.vue'), meta: { permission: 'hasSchedulePermission' } },
+      { path: 'my-enrollments', name: 'MyEnrollments', component: () => import('../views/enrollment/MyEnrollments.vue'), meta: { permission: 'hasEnrollmentPermission' } },
+      { path: 'activities', name: 'StudentActivityView', component: () => import('../views/misc/ActivityView.vue'), meta: { permission: 'hasActivityPermission' } },
+    ],
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import('../views/NotFoundView.vue'),
+    component: () => import('../views/misc/NotFoundView.vue'),
     meta: { requiresAuth: false, title: 'Không tìm thấy trang' },
   },
-];
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
-// Navigation Guard để kiểm tra quyền truy cập
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
-  const isAuthenticated = authStore.isAuthenticated;
-  const userRole = authStore.user?.role || null;
+router.beforeEach(async (to, from, next) => {
+  const { isAuthenticated, isAdmin, isTeacher, isStudent, hasPermission } = usePermissions()
+  const { isLoading, notify } = useAppEvents()
+  const authStore = useAuthStore()
 
-  // Ngăn truy cập /login nếu đã đăng nhập
-  if (to.name === 'Login' && isAuthenticated) {
-    const role = userRole || 'student';
-    return next(
-      role === 'admin' ? '/admin-dashboard' :
-      role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard'
-    );
+  isLoading.value = true
+
+  // Redirect authenticated users from Welcome/Login to their dashboard
+  if ((to.name === 'Welcome' || to.name === 'Login') && isAuthenticated.value) {
+    isLoading.value = false
+    if (isAdmin.value) return next('/admin-dashboard')
+    if (isTeacher.value) return next('/teacher-dashboard')
+    return next('/student-dashboard')
   }
 
-  // Kiểm tra yêu cầu đăng nhập
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    return next('/login');
+  // Redirect unauthenticated users to Welcome for protected routes
+  if (to.meta.requiresAuth && !isAuthenticated.value) {
+    isLoading.value = false
+    notify({ severity: 'error', summary: 'Lỗi', detail: 'Vui lòng đăng nhập.' })
+    return next('/')
   }
 
-  // Kiểm tra vai trò
-  if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
-    return next('/'); // Redirect về trang chính nếu không có quyền
+  // Check role-based permissions
+  const requiredPermission = to.meta.permission
+  if (requiredPermission && isAuthenticated.value) {
+    const method = to.meta.method || 'GET'
+    if (!hasPermission(requiredPermission, null, method)) {
+      isLoading.value = false
+      notify({ severity: 'error', summary: 'Lỗi', detail: 'Không có quyền truy cập.' })
+      return next('/')
+    }
   }
 
-  // Cập nhật tiêu đề trang
-  document.title = to.meta.title || 'Hệ thống Quản lý Học tập';
-  next();
-});
+  // Set document title dynamically
+  document.title = to.meta.title.replace('{$username}', authStore.user?.username || 'Hệ thống Quản lý Học tập')
+  isLoading.value = false
+  next()
+})
 
-export default router;
+router.afterEach(() => {
+  const { isLoading } = useAppEvents()
+  isLoading.value = false
+})
+
+export default router

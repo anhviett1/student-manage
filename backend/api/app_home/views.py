@@ -13,7 +13,6 @@ from django.http import HttpResponse
 import csv, os
 import logging
 from drf_spectacular.utils import extend_schema
-
 from ..app_department.models import Department
 from ..app_score.models import Score
 from ..app_score.serializers import ScoreSerializer
@@ -21,11 +20,10 @@ from .models import User
 from .serializers import UserSerializer
 from .permissions import (
     IsAdmin,
-    IsOwnerOrAdmin,
     IsAdminOrTeacher,
     ProfilePermission,
     ScorePermission,
-    DepartmentPermission,
+
 )
 
 logger = logging.getLogger(__name__)
@@ -110,18 +108,6 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         """Xóa mềm người dùng."""
         instance.soft_delete()
-
-    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
-    def register(self, request):
-        """Đăng ký người dùng mới."""
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = self.perform_create(serializer)
-            return Response(
-                {"message": "Registration successful", "user": serializer.data},
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["put"], url_path="change-role")
     def change_role(self, request, pk=None):

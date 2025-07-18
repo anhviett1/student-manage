@@ -1,1 +1,0 @@
-// Các hằng số được sử dụng trong ứng dụng (role_types, status_codes)

@@ -22,34 +22,51 @@ export const endpoints = {
   // Authentication
   login: `${API_PREFIX}/token/`,
   logout: `${API_PREFIX}/users/logout/`,
-  register: `${API_PREFIX}/users/register/`,
   refreshToken: `${API_PREFIX}/token/refresh/`,
   // User Management
-  userProfile: `${API_PREFIX}/users/profile/`,
   users: `${API_PREFIX}/users/users/`,
+  userProfile: `${API_PREFIX}/users/profile/`,
   changePassword: `${API_PREFIX}/users/change-password/`,
   uploadAvatar: `${API_PREFIX}/users/avatar/`,
   scoreManagement: `${API_PREFIX}/users/score-management/`,
 
   // Student Management
   students: `${API_PREFIX}/students/`,
+  studentsExport: `${API_PREFIX}/students/export/`,
   studentProfile: `${API_PREFIX}/students/me/`,
 
   // Teacher Management 
   teachers: `${API_PREFIX}/teachers/`,
+  teachersExport: `${API_PREFIX}/teachers/export/`,
   teacherProfile: `${API_PREFIX}/teachers/me/`,
+
   classes: `${API_PREFIX}/classes/`,
+  classesExport: `${API_PREFIX}/classes/export/`,
+
   subjects: `${API_PREFIX}/subjects/`,
+  subjectsExport: `${API_PREFIX}/subjects/export/`,
+
   enrollments: `${API_PREFIX}/enrollments/`,
+  enrollmentsExport: `${API_PREFIX}/enrollments/export/`,
+
   semesters: `${API_PREFIX}/semesters/`,
+  semestersExport: `${API_PREFIX}/semesters/export/`,
+
   scores: `${API_PREFIX}/scores/`,
- 
-  activitiesExport: `${API_PREFIX}/activities/export/`,
+  scoreExport: `${API_PREFIX}/scores/export/`,
+  scoreManagement: `${API_PREFIX}/users/score-management/`,
+  
   departments: `${API_PREFIX}/departments/`,
+  departmentsExport: `${API_PREFIX}/departments/export/`,
+
   schedules: `${API_PREFIX}/schedules/`,
+  schedulesExport: `${API_PREFIX}/schedules/export/`,
 
   activities: `${API_PREFIX}/activities/`,
+  activitiesExport: `${API_PREFIX}/activities/export/`,
+  
   djangoAdmin: '/admin/', 
+  
 }
 
 // Interceptor cho request: Thêm token vào header, trừ endpoint Django Admin
