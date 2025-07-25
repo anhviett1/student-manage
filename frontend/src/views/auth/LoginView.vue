@@ -109,7 +109,7 @@ const handleSubmit = async () => {
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 800px; /* Gấp đôi kích thước */
+  max-width: 400px;
   margin: auto;
   transition: all 0.3s ease;
   border: 0px solid #e2e8f0;

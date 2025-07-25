@@ -39,8 +39,8 @@ import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
-import TeacherProfile from '@/components/TeacherProfile.vue';
-import TeacherManagement from '@/components/TeacherManagement.vue';
+import TeacherProfile from '@/components/teacher/TeacherProfile.vue';
+import TeacherManagement from '@/components/teacher/TeacherManagement.vue';
 import api, { endpoints } from '@/services/api';
 
 const userStore = useUserStore();

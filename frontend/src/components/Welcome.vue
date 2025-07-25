@@ -91,7 +91,6 @@ function showLoginForm() {
   cursor: not-allowed;
 }
 
-/* Layout hiển thị Login + Banner */
 .login-banner-wrapper {
   width: 380vw;
   height: 100vh;
@@ -102,19 +101,17 @@ function showLoginForm() {
   position: relative;
 }
 
-/* LoginView hiển thị phía trên */
 .login-section {
   z-index: 2;
-  background-color: rgb(129, 23, 190);
+  background-color: rgb(38, 170, 104);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   padding: 0.5rem;
   border-radius: 16px;
-  margin-top: 15rem;
+  margin-top: 10rem;
   width: 90%;
-  max-width: 480px;
+  max-width: 400px;
 }
 
-/* Banner ở dưới chiếm toàn bộ phần còn lại */
 .banner-section {
   position: absolute;
   bottom: 0;
@@ -128,7 +125,6 @@ function showLoginForm() {
   object-fit: cover;
 }
 
-/* Transition mượt */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s ease;
 }
