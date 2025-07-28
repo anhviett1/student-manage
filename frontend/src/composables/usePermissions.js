@@ -1,16 +1,12 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
-/**
- * usePermissions composable: Provides role and permission helpers for the frontend.
- * Mirrors backend permissions.py for role-based, CRUD, object-level, and model-level permissions.
- */
 export function usePermissions() {
   const authStore = useAuthStore()
 
   // --- Role-based permissions ---
   const isAuthenticated = computed(() => authStore.isAuthenticated)
-  const isAdmin = computed(() => authStore.user?.role === 'admin' || authStore.user?.is_superuser)
+  const isAdmin = computed(() => authStore.user?.role === 'admin' )
   const isTeacher = computed(() => authStore.user?.role === 'teacher')
   const isStudent = computed(() => authStore.user?.role === 'student')
   const isAdminOrTeacher = computed(() => isAdmin.value || isTeacher.value)
