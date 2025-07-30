@@ -213,35 +213,75 @@ class AvatarUploadView(APIView):
 
         if not avatar_file:
             return Response(
-                {"error": "No avatar file provided"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Không có file ảnh được cung cấp"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Kiểm tra định dạng file
         allowed_extensions = [".jpg", ".jpeg", ".png", ".gif"]
         file_ext = os.path.splitext(avatar_file.name)[1].lower()
         if file_ext not in allowed_extensions:
             return Response(
-                {"error": "Invalid file format. Only JPG, JPEG, PNG, GIF are allowed"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"error": "Định dạng file không hợp lệ. Chỉ hỗ trợ JPG, JPEG, PNG, GIF"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Kiểm tra kích thước file (tối đa 5MB)
+        max_size = 5 * 1024 * 1024
+        if avatar_file.size > max_size:
+            return Response(
+                {"error": "Kích thước file vượt quá 5MB"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Xóa ảnh cũ nếu tồn tại
         if user.profile_picture:
             try:
                 default_storage.delete(user.profile_picture.path)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error deleting old avatar: {e}")
 
+        # Lưu ảnh mới
         file_name = f"profile_pictures/{user.username}_{avatar_file.name}"
         file_path = default_storage.save(file_name, ContentFile(avatar_file.read()))
 
+        # Cập nhật profile_picture
         user.profile_picture = file_path
         user.save(update_fields=["profile_picture"])
 
-        avatar_url = default_storage.url(file_path)
+        # Trả về đường dẫn tương đối
+        avatar_url = default_storage.url(file_path)  # Ví dụ: /media/profile_pictures/admin_IMG_0709.jpg
         return Response(
-            {"message": "Avatar uploaded successfully", "avatar_url": avatar_url},
+            {
+                "message": "Tải ảnh đại diện thành công",
+                "avatar_url": avatar_url
+            },
             status=status.HTTP_200_OK,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
         )
-
+    
+    def put(self, request):
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            # Xử lý profile_picture nếu được gửi
+            if 'profile_picture' in request.data:
+                profile_picture = request.data['profile_picture']
+                # Kiểm tra định dạng URL tương đối
+                if not profile_picture.startswith('/media/profile_pictures/'):
+                    return Response(
+                        {"error": "Đường dẫn ảnh không hợp lệ"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                # Lưu profile_picture trực tiếp (không cần lưu file mới vì đã xử lý trong /avatar/)
+                user.profile_picture = profile_picture.lstrip('/')
+                user.save(update_fields=['profile_picture'])
+                serializer = UserSerializer(user)  # Cập nhật serializer
+            else:
+                serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+    
     def delete(self, request):
         user = request.user
         if user.profile_picture:
