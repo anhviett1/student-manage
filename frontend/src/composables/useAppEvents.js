@@ -29,9 +29,9 @@ export function useAppEvents() {
       notify({ severity: 'success', summary: 'Đăng nhập', detail: 'Đăng nhập thành công!' })
       // Redirect based on role
       const role = authStore.user?.role
-      if (role === 'admin') router.push('/admin-dashboard')
-      else if (role === 'teacher') router.push('/teacher-dashboard')
-      else if (role === 'student') router.push('/student-dashboard')
+      if (role === 'admin') router.push('/admin')
+      else if (role === 'teacher') router.push('/teacher')
+      else if (role === 'student') router.push('/student')
       else router.push('/')
     } catch (error) {
       notify({ severity: 'error', summary: 'Lỗi', detail: authStore.errorMessage || 'Đăng nhập thất bại!' })

@@ -19,31 +19,41 @@ const routes = [
   {
     path: '/change-password',
     name: 'ChangePassword',
-    component: () => import('../views/auth/ChangePasswordView.vue'),
+    component: () => import('../views/profile/ChangePassword.vue'),
     meta: { requiresAuth: false, title: 'Đổi mật khẩu' },
   },
-  // Admin Dashboard
   {
     path: '/admin',
     component: () => import('../views/dashboard/AdminDashboardView.vue'),
     meta: { requiresAuth: true, title: 'Bảng điều khiển quản trị viên' },
     children: [
       { path: '', name: 'AdminProfile', component: () => import('../views/profile/ProfileView.vue') },
-      { path: 'student', name: 'StudentManagement', component: () => import('../views/student/StudentManagement.vue') },
-      { path: 'student/view', name: 'StudentView', component: () => import('../views/student/StudentView.vue') },
-      { path: 'teacher', name: 'TeacherManagement', component: () => import('../views/teacher/TeacherManagement.vue') },
-      { path: 'teacher/view', name: 'TeacherView', component: () => import('../views/teacher/TeacherView.vue') },
-      { path: 'class', name: 'ClassManagement', component: () => import('../views/class/ClassManagement.vue') },
-      { path: 'class/view', name: 'ClassView', component: () => import('../views/class/ClassView.vue') },
-      { path: 'subject', name: 'SubjectManagement', component: () => import('../views/subject/SubjectManagement.vue') },
-      { path: 'subject/view', name: 'SubjectView', component: () => import('../views/subject/SubjectView.vue') },
-      { path: 'enrollment', name: 'EnrollmentManagement', component: () => import('../views/enrollment/EnrollmentManagement.vue') },
-      { path: 'enrollment/view', name: 'EnrollmentView', component: () => import('../views/enrollment/EnrollmentView.vue') },
-      { path: 'semester', name: 'SemesterManagement', component: () => import('../views/semester/ActiveSemesters.vue') },
-      { path: 'score', name: 'ScoreManagement', component: () => import('../views/score/ScoreManagement.vue') },
-      { path: 'schedule', name: 'ScheduleManagement', component: () => import('../views/schedule/ScheduleManagement.vue') },
-      { path: 'admin/department', name: 'DepartmentManagement', component: () => import('../views/department/DepartmentView.vue') },
-      { path: 'activity', name: 'ActivityView', component: () => import('../views/misc/ActivityView.vue') },
+      { path: 'users', name: 'UserManagement', component: () => import('../views/components/UserManagement.vue') },
+      { path: 'profile', name: 'AdminUserProfile', component: () => import('../views/profile/ProfileView.vue') },
+      { path: 'change-password', name: 'AdminChangePassword', component: () => import('../views/proflie/ChangePassword.vue') },
+      { path: 'upload-avatar', name: 'AdminUploadAvatar', component: () => import('../viewsproflie/UploadAvatar.vue') },
+      { path: 'students', name: 'StudentManagement', component: () => import('../views/student/StudentManagement.vue') },
+      { path: 'students/export', name: 'StudentsExport', component: () => import('../views/student/StudentExport.vue') },
+      { path: 'student/me', name: 'StudentProfile', component: () => import('../views/student/StudentProfile.vue') },
+      { path: 'teachers', name: 'TeacherManagement', component: () => import('../views/teacher/TeacherManagement.vue') },
+      { path: 'teachers/export', name: 'TeachersExport', component: () => import('../views/teacher/TeacherExport.vue') },
+      { path: 'teacher/me', name: 'TeacherProfile', component: () => import('../views/teacher/TeacherProfile.vue') },
+      { path: 'classes', name: 'ClassManagement', component: () => import('../views/class/ClassManagement.vue') },
+      { path: 'classes/export', name: 'ClassesExport', component: () => import('../views/class/ClassExport.vue') },
+      { path: 'subjects', name: 'SubjectManagement', component: () => import('../views/subject/SubjectManagement.vue') },
+      { path: 'subjects/export', name: 'SubjectsExport', component: () => import('../views/subject/SubjectExport.vue') },
+      { path: 'enrollments', name: 'EnrollmentManagement', component: () => import('../views/enrollment/EnrollmentManagement.vue') },
+      { path: 'enrollments/export', name: 'EnrollmentsExport', component: () => import('../views/enrollment/EnrollmentExport.vue') },
+      { path: 'semesters', name: 'SemesterManagement', component: () => import('../views/semester/ActiveSemesters.vue') },
+      { path: 'semesters/export', name: 'SemestersExport', component: () => import('../views/semester/SemesterExport.vue') },
+      { path: 'scores', name: 'ScoreManagement', component: () => import('../views/score/ScoreManagement.vue') },
+      { path: 'scores/export', name: 'ScoreExport', component: () => import('../views/score/ScoreExport.vue') },
+      { path: 'departments', name: 'DepartmentManagement', component: () => import('../views/department/DepartmentView.vue') },
+      { path: 'departments/export', name: 'DepartmentsExport', component: () => import('../views/department/DepartmentExport.vue') },
+      { path: 'schedules', name: 'ScheduleManagement', component: () => import('../views/schedule/ScheduleManagement.vue') },
+      { path: 'schedules/export', name: 'SchedulesExport', component: () => import('../views/schedule/ScheduleExport.vue') },
+      { path: 'activities', name: 'ActivityView', component: () => import('../views/misc/ActivityView.vue') },
+      { path: 'activities/export', name: 'ActivitiesExport', component: () => import('../views/misc/ActivityExport.vue') },
     ],
   },
   // Teacher Dashboard
@@ -53,13 +63,20 @@ const routes = [
     meta: { requiresAuth: true, title: 'Bảng điều khiển giảng viên' },
     children: [
       { path: '', name: 'TeacherProfile', component: () => import('../views/profile/ProfileView.vue') },
-      { path: 'class', name: 'TeacherClassManagement', component: () => import('../views/class/ClassManagement.vue') },
-      { path: 'class/view', name: 'TeacherClassView', component: () => import('../views/class/ClassView.vue') },
-      { path: 'subject', name: 'TeacherSubjectManagement', component: () => import('../views/subject/SubjectManagement.vue') },
-      { path: 'subject/view', name: 'TeacherSubjectView', component: () => import('../views/subject/SubjectView.vue') },
-      { path: 'score', name: 'TeacherScoreManagement', component: () => import('../views/score/ScoreManagement.vue') },
-      { path: 'schedule', name: 'TeacherScheduleManagement', component: () => import('../views/schedule/ScheduleManagement.vue') },
-      { path: 'activity', name: 'TeacherActivityView', component: () => import('../views/misc/ActivityView.vue') },
+      { path: 'profile', name: 'TeacherUserProfile', component: () => import('../views/profile/ProfileView.vue') },
+      { path: 'change-password', name: 'TeacherChangePassword', component: () => import('../views/proflie/ChangePassword.vue') },
+      { path: 'upload-avatar', name: 'TeacherUploadAvatar', component: () => import('../views/proflie/UploadAvatar.vue') },
+      { path: 'me', name: 'TeacherSelfProfile', component: () => import('../views/teacher/TeacherProfile.vue') },
+      { path: 'classes', name: 'TeacherClassManagement', component: () => import('../views/class/ClassManagement.vue') },
+      { path: 'classes/export', name: 'TeacherClassesExport', component: () => import('../views/class/ClassExport.vue') },
+      { path: 'subjects', name: 'TeacherSubjectManagement', component: () => import('../views/subject/SubjectManagement.vue') },
+      { path: 'subjects/export', name: 'TeacherSubjectsExport', component: () => import('../views/subject/SubjectExport.vue') },
+      { path: 'scores', name: 'TeacherScoreManagement', component: () => import('../views/score/ScoreManagement.vue') },
+      { path: 'scores/export', name: 'TeacherScoreExport', component: () => import('../views/score/ScoreExport.vue') },
+      { path: 'schedules', name: 'TeacherScheduleManagement', component: () => import('../views/schedule/ScheduleManagement.vue') },
+      { path: 'schedules/export', name: 'TeacherSchedulesExport', component: () => import('../views/schedule/ScheduleExport.vue') },
+      { path: 'activities', name: 'TeacherActivityView', component: () => import('../views/misc/ActivityView.vue') },
+      { path: 'activities/export', name: 'TeacherActivitiesExport', component: () => import('../views/misc/ActivityExport.vue') },
     ],
   },
   // Student Dashboard
@@ -69,10 +86,18 @@ const routes = [
     meta: { requiresAuth: true, title: 'Bảng điều khiển sinh viên' },
     children: [
       { path: '', name: 'StudentProfile', component: () => import('../views/profile/ProfileView.vue') },
-      { path: 'score', name: 'MyScores', component: () => import('../views/score/MyScores.vue') },
-      { path: 'schedule', name: 'MySchedules', component: () => import('../views/schedule/MySchedules.vue') },
-      { path: 'enrollment', name: 'MyEnrollments', component: () => import('../views/enrollment/MyEnrollments.vue') },
-      { path: 'activity', name: 'StudentActivityView', component: () => import('../views/misc/ActivityView.vue') },
+      { path: 'profile', name: 'StudentUserProfile', component: () => import('../views/profile/ProfileView.vue') },
+      { path: 'change-password', name: 'StudentChangePassword', component: () => import('../views/proflie/ChangePassword.vue') },
+      { path: 'upload-avatar', name: 'StudentUploadAvatar', component: () => import('../views/proflie/UploadAvatar.vue') },
+      { path: 'me', name: 'StudentSelfProfile', component: () => import('../views/student/StudentProfile.vue') },
+      { path: 'scores', name: 'MyScores', component: () => import('../views/score/MyScores.vue') },
+      { path: 'scores/export', name: 'MyScoresExport', component: () => import('../views/score/ScoreExport.vue') },
+      { path: 'schedules', name: 'MySchedules', component: () => import('../views/schedule/MySchedules.vue') },
+      { path: 'schedules/export', name: 'MySchedulesExport', component: () => import('../views/schedule/ScheduleExport.vue') },
+      { path: 'enrollments', name: 'MyEnrollments', component: () => import('../views/enrollment/MyEnrollments.vue') },
+      { path: 'enrollments/export', name: 'MyEnrollmentsExport', component: () => import('../views/enrollment/EnrollmentExport.vue') },
+      { path: 'activities', name: 'StudentActivityView', component: () => import('../views/misc/ActivityView.vue') },
+      { path: 'activities/export', name: 'StudentActivitiesExport', component: () => import('../views/misc/ActivityExport.vue') },
     ],
   },
   {
@@ -98,9 +123,9 @@ router.beforeEach(async (to, from, next) => {
   // Redirect authenticated users from Welcome/Login to their dashboard
   if ((to.name === 'Welcome' || to.name === 'Login') && isAuthenticated.value) {
     isLoading.value = false
-    if (isAdmin.value) return next('/admin-dashboard')
-    if (isTeacher.value) return next('/teacher-dashboard')
-    return next('/student-dashboard')
+    if (isAdmin.value) return next('/admin')
+    if (isTeacher.value) return next('/teacher')
+    return next('/student')
   }
 
   // Redirect unauthenticated users to Welcome for protected routes

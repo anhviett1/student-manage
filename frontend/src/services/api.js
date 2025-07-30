@@ -56,7 +56,7 @@ api.interceptors.request.use(
     if (config.url === endpoints.djangoAdmin) {
       return config
     }
-
+    
     const token = localStorage.getItem('access_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

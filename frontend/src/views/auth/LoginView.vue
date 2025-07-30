@@ -81,12 +81,12 @@ const handleSubmit = async () => {
   try {
     await authStore.login(form)
     const role = authStore.user?.role
-    if (role === 'admin' || role === 'superuser') {
-      router.push('/admin-dashboard')
+    if (role === 'admin') {
+      router.push('/admin')
     } else if (role === 'teachers') {
-      router.push('/teacher-dashboard')
+      router.push('/teacher')
     } else if (role === 'students') {
-      router.push('/student-dashboard')
+      router.push('/student')
     } else {
       router.push('/')
     }
